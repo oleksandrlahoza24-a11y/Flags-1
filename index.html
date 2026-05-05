@@ -2,485 +2,162 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Librarian of the Damned</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Cursed Librarian</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
         body {
-            background: #1a0a00;
-            font-family: 'Times New Roman', serif;
-            min-height: 100vh;
+            margin: 0;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
+            flex-direction: column;
+            height: 100vh;
         }
-        #game {
-            background: #2b1810;
-            border: 8px double #8b4513;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 800px;
-            width: 100%;
-            box-shadow: 0 0 50px rgba(139, 69, 19, 0.5);
-            color: #d4c4a8;
-            position: relative;
-        }
-        h1 {
+        #header {
+            padding: 15px;
+            background: #2d2d2d;
+            border-bottom: 2px solid #444;
             text-align: center;
-            font-size: 2em;
-            text-shadow: 3px 3px 0 #4a0000;
-            color: #ff6b6b;
-            margin-bottom: 5px;
-            letter-spacing: 5px;
         }
-        .subtitle {
-            text-align: center;
-            font-style: italic;
-            font-size: 0.9em;
-            color: #a08060;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #5a3a2a;
-            padding-bottom: 10px;
-        }
-        #questBox {
-            background: #1f0f08;
-            border: 2px solid #6b3a1f;
-            border-radius: 10px;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            min-height: 70px;
-        }
-        #questTitle {
-            color: #ffcc00;
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-        #questDesc {
-            color: #c4b498;
-            font-size: 0.95em;
-            margin-top: 5px;
-        }
-        #wordTarget {
+        #target-word {
             color: #ff4444;
             font-weight: bold;
             font-size: 1.2em;
             text-transform: uppercase;
         }
-        #progressArea {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            background: #1f0f08;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #5a3a2a;
-        }
-        #scoreDisplay {
-            color: #ffcc00;
-            font-weight: bold;
-        }
-        #streakDisplay {
-            color: #ff6b6b;
-        }
-        #bookArea {
-            background: #1c110a;
-            border: 3px solid #8b4513;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            min-height: 300px;
-            max-height: 400px;
+        #book-container {
+            flex-grow: 1;
+            padding: 20px;
             overflow-y: auto;
-            font-size: 0.95em;
+            -webkit-overflow-scrolling: touch;
             line-height: 1.6;
-            position: relative;
+            font-size: 18px;
+            background: #f4e4bc;
+            color: #2c2c2c;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.2);
         }
-        #bookArea::-webkit-scrollbar {
-            width: 8px;
-        }
-        #bookArea::-webkit-scrollbar-track {
-            background: #1a0a00;
-        }
-        #bookArea::-webkit-scrollbar-thumb {
-            background: #8b4513;
-            border-radius: 10px;
-        }
-        .highlighted {
-            background: #ff4444;
-            color: white;
-            padding: 0 2px;
+        .word {
+            display: inline-block;
+            padding: 2px 4px;
+            cursor: pointer;
             border-radius: 3px;
-            cursor: pointer;
         }
-        .highlighted:hover {
-            background: #ff6666;
-            transform: scale(1.1);
+        .highlight {
+            background: rgba(255, 255, 0, 0.3);
         }
-        #inputArea {
+        #stats {
+            padding: 10px;
+            background: #2d2d2d;
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        #wordInput {
-            flex: 1;
-            background: #1f0f08;
-            border: 2px solid #6b3a1f;
-            border-radius: 8px;
-            padding: 10px 15px;
-            color: #d4c4a8;
-            font-size: 1em;
-            font-family: 'Times New Roman', serif;
-        }
-        #wordInput::placeholder {
-            color: #6a5a4a;
-            font-style: italic;
-        }
-        #submitBtn {
-            background: #8b4513;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            color: white;
-            font-weight: bold;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Times New Roman', serif;
-        }
-        #submitBtn:active {
-            background: #6b3a1f;
-            transform: scale(0.95);
-        }
-        .buttonRow {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
+            justify-content: space-around;
         }
         .btn {
-            background: #5a3a2a;
+            background: #444;
+            color: white;
             border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            color: #d4c4a8;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.2s;
-            font-family: 'Times New Roman', serif;
-        }
-        .btn:active {
-            background: #3a2a1a;
-            transform: scale(0.95);
-        }
-        #messageBox {
-            margin-top: 10px;
-            padding: 8px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            min-height: 30px;
-        }
-        .good {
-            color: #44ff44;
-        }
-        .bad {
-            color: #ff4444;
-        }
-        .special {
-            color: #ff88ff;
-        }
-        #hintText {
-            font-size: 0.85em;
-            font-style: italic;
-            color: #8a7a6a;
-            margin-top: 5px;
-            text-align: center;
-        }
-        @media (max-width: 600px) {
-            #game {
-                padding: 12px;
-            }
-            h1 {
-                font-size: 1.5em;
-            }
-            #bookArea {
-                min-height: 250px;
-                max-height: 350px;
-                font-size: 0.9em;
-            }
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
-<div id="game">
-    <h1>📖 LIBRARIAN OF THE DAMNED 📖</h1>
-    <div class="subtitle">"Find the words. Survive the depravity."</div>
-    
-    <div id="questBox">
-        <div id="questTitle">🔥 CURRENT QUEST 🔥</div>
-        <div id="questDesc">Find the word: <span id="wordTarget">CUMSLUT</span> in the book by tapping it!</div>
-    </div>
-    
-    <div id="progressArea">
-        <span id="scoreDisplay">💀 Score: 0</span>
-        <span id="streakDisplay">🔥 Streak: 0</span>
-    </div>
-    
-    <div id="bookArea">
-        <!-- Book text will be injected here -->
-        Loading the forbidden texts...
-    </div>
-    
-    <div id="inputArea">
-        <input type="text" id="wordInput" placeholder="Or type the word here..." autocomplete="off">
-        <button id="submitBtn">🔍 FIND</button>
-    </div>
-    
-    <div class="buttonRow">
-        <button class="btn" id="newBookBtn">📚 NEW BOOK</button>
-        <button class="btn" id="skipBtn">⏭️ SKIP QUEST</button>
-        <button class="btn" id="resetBtn">💀 RESET</button>
-    </div>
-    
-    <div id="messageBox"></div>
-    <div id="hintText">Tap highlighted words or type them in!</div>
+
+<div id="header">
+    <div>LIBRARIAN QUEST: FIND THE FORBIDDEN WORD</div>
+    <div id="target-display">SEARCHING FOR: <span id="target-word">---</span></div>
+</div>
+
+<div id="book-container" id="book-text">
+    <!-- Text will be injected here -->
+</div>
+
+<div id="stats">
+    <div>Score: <span id="score">0</span></div>
+    <button class="btn" onclick="nextBook()">Next Book</button>
 </div>
 
 <script>
-// ========== DEPRAVED BOOK CONTENT GENERATOR ==========
-const insaneContent = [
-    // Book 1: The Analects of Filth
-    `The ancient tome reeks of dried cum and regret. Page after page describes how the village priest would fuck the altar boys during communion, their tiny asses stretched wide on his gnarled cock while the congregation chanted hymns. "Blessed are the tight holes," it reads, "for they shall be filled without mercy." One passage details a gangbang involving twelve nuns, a donkey, and a jar of holy water used as lubricant. The word CUMSLUT appears in a footnote about a woman who could squirt across an entire cathedral. Another paragraph describes a man fucking his own mother's corpse while she rotted, necrophilia rendered in loving detail. The book ends with a recipe for "Cum Stew" that requires at least five loads from different men.`,
+    const targets = ["GLITCH", "VOID", "OATMEAL", "SQUID", "PANIC", "EGG", "SOCKS"];
+    
+    // Abstract, unhinged sentence fragments
+    const fragments = [
+        "The sky was the color of a bruised banana.",
+        "Why does the government hide the truth about the sentient ham?",
+        "I saw the librarian eating a stapler yesterday.",
+        "The ritual requires exactly three socks and a moderate amount of screaming.",
+        "The digital ghosts are living in your browser history.",
+        "Never trust a man who keeps bees in his pockets.",
+        "The moon is actually a giant disco ball that stopped spinning in 1974.",
+        "If you stare at the toaster long enough, it starts whispering stock tips.",
+        "Your cat is plotting to replace the internet with yarn.",
+        "The secret ingredient in the cafeteria mystery meat is 'Regret'."
+    ];
 
-    // Book 2: The Necronomicon of Cock
-    `This leather-bound nightmare contains summoning rituals that require the reader to masturbate onto the pages while chanting in Latin. One spell turns your dick into a tentacle that can fuck multiple holes simultaneously. Another ritual involves fucking a goat until it gives birth to a demon child with a prehensile dick. The word CUMDRINKER appears 47 times in a chapter about vampires that only feed on semen. There's a detailed illustration of a woman being fucked by a horse while her husband watches and jerks off. The text describes how to make a sex slave by repeatedly raping someone until they develop Stockholm syndrome. One passage is written entirely in the form of a diary from a man who only farts on women's faces because he's too lazy to fuck them properly.`,
+    let currentTarget = "";
+    let score = 0;
 
-    // Book 3: The Diary of a Depraved Milkman
-    `"Tuesday: Fucked Mrs. Henderson while her husband was at work. She liked it when I choked her with my cock until she passed out. Wednesday: Found a 12-year-old boy delivering newspapers. Bent him over and fucked his tight little ass without lube. He cried but I didn't care. Thursday: The milk is spoiled because I came into the bottles instead of pasteurizing them. The whole neighborhood is drinking my cum. Friday: Raped a cow. It was surprisingly tight. The farmer watched and offered me money to do it again." The word CUMWHORE is scrawled in the margins next to descriptions of incest, bestiality, and coprophagia. One entry describes how the milkman fucked a woman's severed head after a car accident.`,
-
-    // Book 4: The Kama Sutra of Shit and Piss
-    `This illustrated guide shows positions for scat play, watersports, and everything in between. One chapter explains how to properly eat someone's ass and then vomit into their mouth. Another describes "The Golden Shower of Enlightenment" where a guru pisses directly into his disciples' mouths. The word SHITEATER appears under a diagram of a woman licking shit from her partner's asshole. There's a section on "Fisting and Feces" that recommends using poop as lubricant for fisting someone's ass until their colon prolapses. The book contains multiple references to "scat orgies" where participants cover each other in waste and then fuck in it. One particularly vile passage describes a man who only gets off by having his testicles stomped while he licks a toilet bowl clean.`,
-
-    // Book 5: The Pedophile's Picturebook
-    `Warning: This book contains graphic descriptions of adults raping children. One story details a priest who molested an entire kindergarten class, making them suck his cock one by one while telling them it was "communion." Another tale involves a stepfather who fucks his 8-year-old daughter every night while her mother holds her down. The word CHILDFUCKER is repeated like a mantra throughout. There's a section on how to groom children using candy and threats. One passage describes a baby being raped by its own father while the mother watches and films it. The book ends with a poem about the joys of deflowering virgins, with the youngest victim being only 4 years old. It's absolutely disgusting.`,
-
-    // Book 6: The Autopsy of a Sex Addict
-    `The coroner's notes detail how this man died with 14 dildos up his ass, three in his urethra, and a fist lodged in his rectum. His stomach contained over 2 gallons of cum he had swallowed. The word COCKSUCKER appears in his tattoo across his chest. His skin was covered in bite marks and burn scars from BDSM sessions gone wrong. One page describes how he would pay homeless men to fuck his ass with broken bottles. Another reveals he had sex with over 5000 partners, including animals and corpses. His brain showed damage from repeated asphyxiation during masturbation. The final note reads: "Cause of death: too much pleasure."`,
-
-    // Book 7: The Bible of Blasphemy
-    `"In the beginning, God created heaven and earth... and then he fucked Mary while she was still a virgin, cumming inside her to create Jesus. But Jesus was a faggot who loved getting fucked by Roman soldiers. The Holy Spirit is just God's cum flying around the world to impregnate anyone. The devil is actually the patron saint of anal fisting. The word CUMGOD appears in a rewritten Ten Commandments: 'Thou shalt cum in thy neighbor's wife, and also in thy neighbor's ass.' The book describes church orgies where nuns fuck altars and priests use crucifixes as dildos. One passage claims the Eucharist is actually the dried cum of Jesus, and that drinking it grants salvation through protein.`,
-
-    // Book 8: The Furry's Fuck-Fest
-    `This book is written from the perspective of a fursuited wolf who fucks everything that moves. "I mounted the ponyboy from behind, my knotted cock stretching his tight hole. He whinnied as I came inside him, filling him with wolf seed." The word KNOTFUCK appears frequently. There are descriptions of tentacle monsters, dragons with barbed cocks, and horses with prehensile penises. One story involves a mermaid with a cock instead of a tail, who fucks sailors until they drown. Another features sentient sex toys that rape their owners. The final chapter is an orgy involving 50 furries, 3 robots, and a sentient pile of cum.`,
-
-    // Book 9: The Dominatrix's Diary
-    `"Today I made a senator lick my boots clean after I stepped in dog shit. Then I strapped a dildo to his face and made him fuck himself while I whipped his balls. He paid me $5000." The word CUMDUMP appears in a description of a submissive who is forced to eat the combined ejaculate of 20 men. The diary details sessions involving electrical torture, needle play, and castration fantasies. One entry describes making a man drink his own urine while wearing a dog collar. Another involves a CEO who pays to be treated like a human toilet. The most extreme entry involves a client who wants to be hanged while being fucked in the ass.`,
-
-    // Book 10: The Cannibal's Cookbook
-    `"Recipe 47: Roasted Testicles. Remove the testicles from your victim while still alive. Season with salt and pepper. Grill until golden brown. Serve with a side of semen sauce." The word HUMANFLESH is used throughout. One recipe describes how to make "Long Pig Stew" using the meat of a virgin girl. Another explains how to cook a baby in its mother's milk. There's a section on "Cum-Based Marinades" that recommends using fresh ejaculate as a tenderizer. The book includes instructions for making sausage from a man's penis, and how to smoke a woman's breasts like brisket. The final chapter recommends eating the victim's brain while they're still alive for maximum flavor.`
-];
-
-// ========== QUEST WORD POOL ==========
-const questWords = [
-    "CUMSLUT", "CUMDRINKER", "CUMWHORE", "SHITEATER", "CHILDFUCKER",
-    "COCKSUCKER", "CUMGOD", "KNOTFUCK", "CUMDUMP", "HUMANFLESH",
-    "BUTTFUCK", "COCKSHIT", "FARTSLUT", "PISSLICKER", "INCESTCUM",
-    "BABYFUCK", "CORPSESEX", "ANALGAPE", "SCATEATER", "SHITDICK"
-];
-
-// ========== GAME STATE ==========
-let currentBookIndex = 0;
-let currentQuestWord = "";
-let currentBookContent = "";
-let score = 0;
-let streak = 0;
-let maxStreak = 0;
-let questsCompleted = 0;
-let currentHighlightedWord = null;
-let foundInCurrentBook = false;
-
-// ========== DOM REFERENCES ==========
-const bookArea = document.getElementById('bookArea');
-const wordTarget = document.getElementById('wordTarget');
-const questDesc = document.getElementById('questDesc');
-const scoreDisplay = document.getElementById('scoreDisplay');
-const streakDisplay = document.getElementById('streakDisplay');
-const wordInput = document.getElementById('wordInput');
-const submitBtn = document.getElementById('submitBtn');
-const messageBox = document.getElementById('messageBox');
-const hintText = document.getElementById('hintText');
-
-// ========== FUNCTIONS ==========
-
-function getRandomWord() {
-    return questWords[Math.floor(Math.random() * questWords.length)];
-}
-
-function getRandomBook() {
-    return insaneContent[Math.floor(Math.random() * insaneContent.length)];
-}
-
-function generateBookText(word) {
-    const baseText = getRandomBook();
-    // Insert the quest word at a random position if not already present
-    let text = baseText;
-    if (!text.toUpperCase().includes(word.toUpperCase())) {
-        // Find a random place to insert
-        const sentences = text.split('. ');
-        const insertPos = Math.floor(Math.random() * sentences.length);
-        const insertText = ` The word ${word} appears here, written in blood and cum. `;
-        sentences.splice(insertPos, 0, insertText);
-        text = sentences.join('. ');
+    function initGame() {
+        nextBook();
     }
-    return text;
-}
 
-function highlightWordInText(text, word) {
-    // Case insensitive replacement with highlighting
-    const regex = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'gi');
-    return text.replace(regex, (match) => {
-        return `<span class="highlighted" data-word="${word.toUpperCase()}">${match}</span>`;
-    });
-}
+    function nextBook() {
+        currentTarget = targets[Math.floor(Math.random() * targets.length)];
+        document.getElementById('target-word').innerText = currentTarget;
+        generateText();
+    }
 
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function showMessage(text, type = 'good') {
-    messageBox.textContent = text;
-    messageBox.className = type;
-    setTimeout(() => {
-        if (messageBox.textContent === text) {
-            messageBox.textContent = '';
-            messageBox.className = '';
+    function generateText() {
+        const container = document.getElementById('book-container');
+        container.innerHTML = "";
+        
+        // Generate 30-40 random sentences
+        let textArray = [];
+        for(let i=0; i<40; i++) {
+            let sentence = fragments[Math.floor(Math.random() * fragments.length)];
+            // Randomly inject the target word
+            if(Math.random() > 0.85) {
+                sentence += ` THE ${currentTarget} HAS ARRIVED.`;
+            }
+            textArray.push(sentence);
         }
-    }, 3000);
-}
 
-function newQuest() {
-    currentQuestWord = getRandomWord().toUpperCase();
-    wordTarget.textContent = currentQuestWord;
-    
-    const bookNum = Math.floor(Math.random() * 9999);
-    questDesc.innerHTML = `📖 Book #${bookNum}: Find the word <strong>${currentQuestWord}</strong> in the depraved text...`;
-    
-    currentBookContent = generateBookText(currentQuestWord);
-    const highlightedText = highlightWordInText(currentBookContent, currentQuestWord);
-    bookArea.innerHTML = highlightedText;
-    bookArea.scrollTop = 0;
-    
-    foundInCurrentBook = false;
-    wordInput.value = '';
-    wordInput.focus();
-    hintText.textContent = `💀 Tip: The word "${currentQuestWord}" is hidden in the text above. Tap it or type it!`;
-    
-    // Attach click events to highlighted words
-    document.querySelectorAll('.highlighted').forEach(el => {
-        el.addEventListener('click', function() {
-            const foundWord = this.getAttribute('data-word');
-            handleWordFound(foundWord);
+        const fullText = textArray.join(" ");
+        const words = fullText.split(" ");
+
+        words.forEach(wordStr => {
+            const span = document.createElement('span');
+            span.className = "word";
+            span.innerText = wordStr + " ";
+            
+            // Interaction for iPad (Click/Touch)
+            span.onclick = () => checkWord(wordStr, span);
+            container.appendChild(span);
         });
-    });
-}
+    }
 
-function handleWordFound(word) {
-    if (foundInCurrentBook) return;
-    if (word.toUpperCase() === currentQuestWord.toUpperCase()) {
-        foundInCurrentBook = true;
-        score += 10 + (streak * 5);
-        streak++;
-        if (streak > maxStreak) maxStreak = streak;
-        questsCompleted++;
-        updateDisplay();
-        showMessage(`✅ FOUND! +${10 + ((streak-1) * 5)} points! Streak: ${streak} 🔥`, 'good');
+    function checkWord(clickedWord, element) {
+        // Clean word of punctuation
+        const cleanWord = clickedWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").toUpperCase();
         
-        // Celebrate with cum explosion text
-        bookArea.innerHTML += `<br><span style="color:#ff88ff; display:block; text-align:center; font-size:1.2em;">💦💦💦 CUM SPLOSION! 💦💦💦</span>`;
-        
-        // Auto new quest after delay
-        setTimeout(() => {
-            newQuest();
-        }, 1500);
-    } else {
-        // Wrong word? Shouldn't happen with clicking but just in case
+        if(cleanWord === currentTarget) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            element.style.background = "#44ff44";
+            alert("FOUND IT! The unhinged knowledge is yours.");
+            nextBook();
+        } else {
+            element.style.background = "#ff4444";
+            setTimeout(() => { element.style.background = "transparent"; }, 500);
+        }
     }
-}
 
-function updateDisplay() {
-    scoreDisplay.textContent = `💀 Score: ${score}`;
-    streakDisplay.textContent = `🔥 Streak: ${streak} (Best: ${maxStreak})`;
-}
-
-function resetGame() {
-    score = 0;
-    streak = 0;
-    maxStreak = 0;
-    questsCompleted = 0;
-    updateDisplay();
-    showMessage('💀 Game reset! Everything is fresh and filthy again!', 'bad');
-    newQuest();
-}
-
-function skipQuest() {
-    if (streak > 0) streak = 0;
-    showMessage(`⏭️ Skipped "${currentQuestWord}" - streak reset!`, 'bad');
-    setTimeout(() => newQuest(), 500);
-}
-
-function loadNewBook() {
-    if (streak > 0) streak = 0;
-    showMessage('📚 New depraved tome acquired!', 'special');
-    setTimeout(() => newQuest(), 300);
-}
-
-// ========== EVENT LISTENERS ==========
-
-submitBtn.addEventListener('click', function() {
-    const inputWord = wordInput.value.trim().toUpperCase();
-    if (!inputWord) {
-        showMessage('Type something, you illiterate cumstain!', 'bad');
-        return;
-    }
-    if (inputWord === currentQuestWord) {
-        handleWordFound(inputWord);
-    } else {
-        if (streak > 0) streak = 0;
-        updateDisplay();
-        showMessage(`❌ "${inputWord}" is NOT the quest word! Streak broken!`, 'bad');
-        wordInput.value = '';
-        wordInput.focus();
-    }
-});
-
-wordInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        submitBtn.click();
-    }
-});
-
-document.getElementById('newBookBtn').addEventListener('click', loadNewBook);
-document.getElementById('skipBtn').addEventListener('click', skipQuest);
-document.getElementById('resetBtn').addEventListener('click', resetGame);
-
-// Also handle clicks on dynamically added highlights
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('highlighted')) {
-        const word = e.target.getAttribute('data-word');
-        if (word) handleWordFound(word);
-    }
-});
-
-// ========== INIT GAME ==========
-newQuest();
-updateDisplay();
-showMessage('🔥 Welcome to the Library of the Damned! Find the filth!', 'special');
+    window.onload = initGame;
 </script>
+
 </body>
 </html>
