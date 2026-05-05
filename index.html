@@ -2,251 +2,203 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tsar-Chan: Critical Obsession</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URANIUM FORK EATER</title>
     <style>
-        :root { --main-color: #ff0055; }
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; }
-        
-        /* The UI */
-        #ui-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column;
+        body {
+            margin: 0;
+            background: #050a05;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
 
-        #stats {
-            padding: 20px; display: flex; gap: 20px;
+        #game-container {
+            position: relative;
+            border: 4px solid #00ff00;
+            box-shadow: 0 0 20px #00ff00;
+            background: black;
+            cursor: none;
         }
 
-        .stat-box {
-            background: rgba(0,0,0,0.8); border: 2px solid var(--main-color);
-            padding: 10px; color: white; border-radius: 10px; flex: 1;
-            box-shadow: 0 0 15px var(--main-color);
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
         }
 
-        #dialogue-box {
-            margin-top: auto; background: rgba(10, 0, 0, 0.9);
-            border-top: 4px solid var(--main-color); padding: 25px;
-            pointer-events: auto; min-height: 150px; position: relative;
+        .stats {
+            font-size: 1.2rem;
+            text-shadow: 2px 2px black;
         }
 
-        #name-tag {
-            position: absolute; top: -30px; left: 20px;
-            background: var(--main-color); color: white;
-            padding: 5px 20px; font-weight: bold; border-radius: 5px 5px 0 0;
-        }
-
-        #text-content { color: #fff; font-size: 1.2rem; margin-bottom: 20px; text-shadow: 0 0 5px var(--main-color); }
-
-        #input-row { display: flex; gap: 10px; }
-        input {
-            flex: 1; background: #111; border: 1px solid var(--main-color);
-            color: #0f0; padding: 12px; font-size: 1rem; border-radius: 5px;
-        }
-        button {
-            background: var(--main-color); border: none; color: white;
-            padding: 0 25px; border-radius: 5px; font-weight: bold; cursor: pointer;
-        }
-
-        #flash {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: white; opacity:0; pointer-events:none; z-index:9999;
-        }
-        
-        .shake { animation: shake 0.2s infinite; }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px); }
-            50% { transform: translate(-2px, -1px); }
-            100% { transform: translate(1px, -1px); }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            text-align: center;
+            display: none;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
 
-<div id="flash"></div>
-
-<div id="ui-layer">
-    <div id="stats">
-        <div class="stat-box">RAD-LOVE: <span id="love-val">20</span>%</div>
-        <div class="stat-box">STABILITY: <span id="stab-val">100</span>%</div>
+    <div id="ui">
+        <div class="stats">FORKS CONSUMED: <span id="score">0</span></div>
+        <div class="stats">RADIATION LEVEL: <span id="rads">0</span> mSv</div>
     </div>
 
-    <div id="dialogue-box">
-        <div id="name-tag">TSAR-CHAN</div>
-        <div id="text-content">...Target locked. Oh, it's just you. Don't get too close, I'm... sensitive today.</div>
-        <div id="input-row">
-            <input type="text" id="user-input" placeholder="Whisper something to the warhead..." onkeypress="if(event.key==='Enter') processText()">
-            <button onclick="processText()">TALK</button>
-        </div>
-    </div>
-</div>
+    <div id="message">CRITICAL MELTDOWN<br><button onclick="location.reload()" style="background:#0f0; border:none; padding:10px; cursor:pointer;">RESTART</button></div>
 
-<script type="importmap">
-    {
-        "imports": {
-            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-        }
-    }
-</script>
+    <canvas id="gameCanvas"></canvas>
 
-<script type="module">
-    import * as THREE from 'three';
-    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const radsEl = document.getElementById('rads');
+        const msgEl = document.getElementById('message');
 
-    let scene, camera, renderer, composer, clock, nuke, eyeL, eyeR;
-    let love = 20;
-    let stability = 100;
-    let isGameOver = false;
+        canvas.width = 800;
+        canvas.height = 600;
 
-    // --- SPICY AI BRAIN ---
-    const Brain = {
-        patterns: [
-            { reg: /love|cute|hot|sexy|beautiful|marry/i, score: 15, stab: 5, responses: ["H-huh? You think a weapon is... hot?", "My cooling fans are failing... don't look at me like that!", "Is that a proposal? My core is reaching 10 million degrees!"] },
-            { reg: /hate|ugly|stupid|dumb|small|weak/i, score: -20, stab: -25, responses: ["I was built to erase cities. You think I'm weak?", "Say that again and I'll shorten your half-life!", "Stability failing... you're pushing my buttons, literally!"] },
-            { reg: /touch|pet|rub|hold/i, score: 10, stab: -10, responses: ["Don't touch my detonation cord! It's... sensitive.", "Ah! That's a restricted zone!", "You're playing with fire. Radioactive fire."] },
-            { reg: /hi|hello|hey/i, score: 2, stab: 0, responses: ["Target acquired. Identify yourself.", "Greetings, carbon-based lifeform.", "Stop wasting my uranium clock cycles."] }
-        ],
-        fallback: ["Processing...", "My Geiger counter is clicking for you.", "I'm a 50-megaton bomb. What do you want?"]
-    };
+        let score = 0;
+        let radiation = 0;
+        let gameOver = false;
 
-    window.processText = () => {
-        if(isGameOver) return;
-        const input = document.getElementById('user-input');
-        const text = input.value;
-        if(!text) return;
-        input.value = '';
+        const player = {
+            x: 400,
+            y: 500,
+            size: 40,
+            mouthOpen: 0
+        };
 
-        let matched = false;
-        Brain.patterns.forEach(p => {
-            if(p.reg.test(text)) {
-                love += p.score;
-                stability += p.stab;
-                document.getElementById('text-content').innerText = p.responses[Math.floor(Math.random()*p.responses.length)];
-                matched = true;
-            }
+        const forks = [];
+
+        // Input handling
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.x = e.clientX - rect.left;
+            player.y = e.clientY - rect.top;
         });
 
-        if(!matched) {
-            document.getElementById('text-content').innerText = Brain.fallback[Math.floor(Math.random()*Brain.fallback.length)];
+        function spawnFork() {
+            if (gameOver) return;
+            forks.push({
+                x: Math.random() * (canvas.width - 20),
+                y: -50,
+                speed: 2 + Math.random() * 4,
+                rot: Math.random() * Math.PI * 2
+            });
+            setTimeout(spawnFork, 1000 - Math.min(score * 10, 800));
         }
 
-        love = Math.max(0, Math.min(100, love));
-        stability = Math.max(0, Math.min(100, stability));
-        updateStats();
-        checkConditions();
-    };
-
-    function updateStats() {
-        document.getElementById('love-val').innerText = love;
-        document.getElementById('stab-val').innerText = stability;
-        
-        // Visual feedback
-        const color = new THREE.Color().setHSL(love/300, 1, 0.5);
-        eyeL.material.color = color;
-        eyeR.material.color = color;
-        
-        if(stability < 40) document.body.classList.add('shake');
-        else document.body.classList.remove('shake');
-    }
-
-    function checkConditions() {
-        if(love >= 100) {
-            isGameOver = true;
-            document.getElementById('text-content').innerText = "I can't hide it. My safety is off. I want to spend my final countdown with you. Will you be my detonator? (YES/NO)";
-            document.getElementById('input-row').innerHTML = `
-                <button onclick="end(true)" style="background:green">YES (MARRY)</button>
-                <button onclick="end(false)" style="background:black">NO (DECLINE)</button>
-            `;
-        } else if(stability <= 0) {
-            isGameOver = true;
-            document.getElementById('text-content').innerText = "CRITICAL FAILURE. IF I CAN'T HAVE YOU, NO ONE GETS THE PLANET!";
-            setTimeout(detonate, 1000);
+        function drawFork(f) {
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            ctx.rotate(f.rot);
+            
+            // Uranium Glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ff00";
+            
+            // Fork Handle
+            ctx.fillStyle = "#88ff88";
+            ctx.fillRect(-2, -20, 4, 30);
+            
+            // Fork Tines
+            ctx.fillRect(-6, -25, 12, 5);
+            ctx.fillRect(-6, -35, 2, 10);
+            ctx.fillRect(-2, -35, 2, 10);
+            ctx.fillRect(2, -35, 2, 10);
+            ctx.fillRect(6, -35, 2, 10);
+            
+            ctx.restore();
         }
-    }
 
-    window.end = (choice) => {
-        if(choice) {
-            document.getElementById('text-content').innerText = "System override! We're eloping to the moon! ❤️";
-            scene.background.setHex(0xff0055);
-        } else {
-            document.getElementById('text-content').innerText = "WRONG ANSWER. SEE YOU IN THE AFTER-GLOW.";
-            setTimeout(detonate, 1000);
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // The "Mouth"
+            ctx.fillStyle = "#ff5555";
+            ctx.beginPath();
+            // Mouth animation based on "eating"
+            let mouthSize = 0.2 + Math.abs(Math.sin(Date.now() / 200)) * 0.5;
+            ctx.arc(0, 0, player.size, mouthSize, Math.PI * 2 - mouthSize);
+            ctx.lineTo(0, 0);
+            ctx.fill();
+            
+            // Teeth
+            ctx.fillStyle = "white";
+            ctx.fillRect(10, -25, 5, 5);
+            ctx.fillRect(10, 20, 5, 5);
+            
+            ctx.restore();
         }
-    };
 
-    // --- 3D ENGINE ---
-    function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 15, 40);
+        function update() {
+            if (gameOver) return;
 
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
-        document.body.appendChild(renderer.domElement);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        composer = new EffectComposer(renderer);
-        composer.addPass(new RenderPass(scene, camera));
-        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2, 0.4, 0.85));
+            // Update and draw forks
+            for (let i = forks.length - 1; i >= 0; i--) {
+                let f = forks[i];
+                f.y += f.speed;
+                f.rot += 0.05;
 
-        // Nuke Model
-        const bodyGeo = new THREE.CapsuleGeometry(5, 8, 8, 32);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.1 });
-        nuke = new THREE.Mesh(bodyGeo, bodyMat);
-        scene.add(nuke);
+                drawFork(f);
 
-        // Glowing Eyes
-        const eyeGeo = new THREE.SphereGeometry(0.8, 16, 16);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeL.position.set(-2, 3, 4);
-        nuke.add(eyeL);
+                // Collision detection
+                let dx = f.x - player.x;
+                let dy = f.y - player.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
 
-        eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeR.position.set(2, 3, 4);
-        nuke.add(eyeR);
+                if (distance < player.size) {
+                    // EAT IT
+                    forks.splice(i, 1);
+                    score++;
+                    radiation += 1000;
+                    scoreEl.innerText = score;
+                    radsEl.innerText = radiation;
+                    
+                    // Flash effect
+                    canvas.style.backgroundColor = "#22ff22";
+                    setTimeout(() => canvas.style.backgroundColor = "black", 50);
 
-        const light = new THREE.PointLight(0xff0055, 500, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+                    if (radiation >= 20000) {
+                        endGame();
+                    }
+                }
 
-        clock = new THREE.Clock();
-        animate();
-    }
+                // Remove off-screen forks
+                if (f.y > canvas.height + 50) {
+                    forks.splice(i, 1);
+                }
+            }
 
-    function detonate() {
-        const flash = document.getElementById('flash');
-        flash.style.opacity = '1';
-        isGameOver = true;
-        
-        // Remove UI
-        document.getElementById('ui-layer').style.display = 'none';
-
-        // Explode Scene logic (abbreviated for speed)
-        nuke.visible = false;
-        scene.background = new THREE.Color(1,1,1);
-        setTimeout(() => { location.reload(); }, 4000);
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const t = clock.getElapsedTime();
-        if(nuke && !isGameOver) {
-            nuke.rotation.y += 0.01;
-            nuke.position.y = Math.sin(t) * 2 + 5;
-            // Eyes pulse
-            const s = 1 + Math.sin(t * (love/10)) * 0.2;
-            eyeL.scale.set(s,s,s);
-            eyeR.scale.set(s,s,s);
+            drawPlayer();
+            requestAnimationFrame(update);
         }
-        composer.render();
-    }
 
-    init();
-</script>
+        function endGame() {
+            gameOver = true;
+            msgEl.style.display = "block";
+            canvas.style.filter = "blur(5px) grayscale(1)";
+        }
+
+        spawnFork();
+        update();
+    </script>
 </body>
 </html>
