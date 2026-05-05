@@ -3,30 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Realistic 3D Nuke Simulation</title>
+    <title>The Proposal</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; }
-        #ui {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            z-index: 10; text-align: center; width: 100%;
+        body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
+        
+        /* Proposal UI */
+        #proposal-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            z-index: 1000;
+            width: 80%;
+            max-width: 400px;
+            color: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: opacity 0.5s ease;
         }
+
+        h1 { margin-bottom: 30px; font-weight: 300; letter-spacing: 2px; }
+
+        .btn-container { display: flex; justify-content: space-around; gap: 20px; }
+
         button {
-            background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255,255,255,0.4);
-            padding: 16px 32px; border-radius: 12px; font-size: 18px; font-weight: bold;
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            cursor: pointer; active: scale(0.9); transition: 0.2s;
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 120px;
         }
+
+        #yes-btn { background: #ff4d6d; color: white; }
+        #no-btn { background: #444; color: white; }
+        button:active { transform: scale(0.9); }
+
         #flash {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; opacity: 0; pointer-events: none; z-index: 100;
+            background: white; opacity: 0; pointer-events: none; z-index: 2000;
+        }
+
+        #status-msg {
+            position: fixed; top: 40px; width: 100%; text-align: center;
+            color: white; font-size: 24px; pointer-events: none; opacity: 0;
+            transition: opacity 1s; z-index: 1000;
         }
     </style>
 </head>
 <body>
 
 <div id="flash"></div>
-<div id="ui">
-    <button onclick="detonate()">INITIATE TEST</button>
+<div id="status-msg"></div>
+
+<div id="proposal-card">
+    <h1>I've been thinking...<br>Will you marry me?</h1>
+    <div class="btn-container">
+        <button id="yes-btn" onclick="accept()">YES</button>
+        <button id="no-btn" onclick="decline()">NO</button>
+    </div>
 </div>
 
 <script type="importmap">
@@ -45,7 +88,7 @@
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    // --- Shader for Realistic Volumetric Smoke ---
+    // --- Shader Logic ---
     const CloudShader = {
         uniforms: {
             time: { value: 0 },
@@ -54,64 +97,20 @@
             uOpacity: { value: 1.0 }
         },
         vertexShader: `
-            varying vec2 vUv;
             varying vec3 vNormal;
             varying vec3 vViewPosition;
             uniform float time;
             
-            // Simplex Noise
-            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-            vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-            vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-            float snoise(vec3 v) {
-                const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-                const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-                vec3 i  = floor(v + dot(v, C.yyy) );
-                vec3 x0 = v - i + dot(i, C.xxx) ;
-                vec3 g = step(x0.yzx, x0.xyz);
-                vec3 l = 1.0 - g;
-                vec3 i1 = min( g.xyz, l.zxy );
-                vec3 i2 = max( g.xyz, l.zxy );
-                vec3 x1 = x0 - i1 + C.xxx;
-                vec3 x2 = x0 - i2 + C.yyy;
-                vec3 x3 = x0 - D.yyy;
-                i = mod289(i); 
-                vec4 p = permute( permute( permute( 
-                           i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-                         + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-                         + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-                float n_ = 0.142857142857;
-                vec3  ns = n_ * D.wyz - D.xzx;
-                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-                vec4 x_ = floor(j * ns.z);
-                vec4 y_ = floor(j - 7.0 * x_ );
-                vec4 x = x_ *ns.x + ns.yyyy;
-                vec4 y = y_ *ns.x + ns.yyyy;
-                vec4 h = 1.0 - abs(x) - abs(y);
-                vec4 b0 = vec4( x.xy, y.xy );
-                vec4 b1 = vec4( x.zw, y.zw );
-                vec4 s0 = floor(b0)*2.0 + 1.0;
-                vec4 s1 = floor(b1)*2.0 + 1.0;
-                vec4 sh = -step(h, vec4(0.0));
-                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-                vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-                vec3 p0 = vec3(a0.xy,h.x);
-                vec3 p1 = vec3(a0.zw,h.y);
-                vec3 p2 = vec3(a1.xy,h.z);
-                vec3 p3 = vec3(a1.zw,h.w);
-                vec4 norm = 1.79284291400159 - 0.85373472095314 * vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3));
-                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-                float m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-                m = m * m;
-                return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+            float hash(vec3 p) {
+                p = fract(p * 0.3183099 + 0.1);
+                p *= 17.0;
+                return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
             }
 
             void main() {
-                vUv = uv;
                 vNormal = normal;
-                // Displace vertices to create "billowing" effect
-                float noise = snoise(position * 0.05 + time * 0.5);
-                vec3 newPos = position + normal * noise * 2.0;
+                float noise = hash(position * 0.1 + time);
+                vec3 newPos = position + normal * noise * 1.5;
                 vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
                 vViewPosition = -mvPosition.xyz;
                 gl_Position = projectionMatrix * mvPosition;
@@ -123,18 +122,15 @@
             uniform vec3 uColor;
             uniform float uHeat;
             uniform float uOpacity;
-            
             void main() {
                 float fresnel = pow(1.0 - dot(normalize(vNormal), normalize(vViewPosition)), 3.0);
-                vec3 fireColor = vec3(1.0, 0.4, 0.1) * uHeat * 5.0;
-                vec3 finalColor = mix(uColor, fireColor, uHeat);
-                gl_FragColor = vec4(finalColor + (fresnel * 0.2), uOpacity);
+                vec3 fireColor = vec3(1.0, 0.3, 0.05) * uHeat * 6.0;
+                gl_FragColor = vec4(mix(uColor, fireColor, uHeat) + (fresnel * 0.1), uOpacity);
             }
         `
     };
 
-    let scene, camera, renderer, composer, controls, clock;
-    let mushroomCap, stem, shockwave;
+    let scene, camera, renderer, composer, clock, mushroomCap, stem, shockwave, bombBody;
     let isExploding = false;
     let startTime = 0;
 
@@ -143,53 +139,86 @@
 
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x11141a);
-        scene.fog = new THREE.FogExp2(0x11141a, 0.0015);
+        scene.background = new THREE.Color(0x0a0a0c);
+        scene.fog = new THREE.FogExp2(0x0a0a0c, 0.002);
 
         camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000);
-        camera.position.set(0, 50, 600);
+        camera.position.set(0, 40, 200);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        // Post Processing (Bloom is critical for realism)
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-        bloomPass.threshold = 0.2;
-        bloomPass.strength = 1.2;
+        bloomPass.threshold = 0.25;
+        bloomPass.strength = 1.0;
         composer = new EffectComposer(renderer);
         composer.addPass(renderScene);
         composer.addPass(bloomPass);
 
-        controls = new OrbitControls(camera, renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.maxPolarAngle = Math.PI / 2.05;
 
         clock = new THREE.Clock();
 
-        // Lighting
-        const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
-        scene.add(hemi);
-
-        // Ground
-        const groundGeo = new THREE.PlaneGeometry(5000, 5000, 32, 32);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1 });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
+        // Environment
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(5000, 5000),
+            new THREE.MeshStandardMaterial({ color: 0x111111 })
+        );
         ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
-        // Grid for scale reference
-        const grid = new THREE.GridHelper(2000, 50, 0x333333, 0x222222);
-        scene.add(grid);
+        const light = new THREE.PointLight(0xffffff, 20);
+        light.position.set(0, 20, 0);
+        scene.add(light);
+
+        // The "Nuke" Bomb Object
+        const bombGeo = new THREE.CapsuleGeometry(5, 10, 4, 16);
+        const bombMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 1, roughness: 0.2 });
+        bombBody = new THREE.Mesh(bombGeo, bombMat);
+        bombBody.position.y = 10;
+        scene.add(bombBody);
 
         window.addEventListener('resize', onWindowResize);
     }
 
-    function createMushroom() {
-        // Mushroom Cap (Squashed Sphere with Shader)
+    window.accept = function() {
+        document.getElementById('proposal-card').style.opacity = '0';
+        setTimeout(() => document.getElementById('proposal-card').remove(), 500);
+        
+        const msg = document.getElementById('status-msg');
+        msg.innerText = "❤️ I LOVE YOU TOO! ❤️";
+        msg.style.opacity = '1';
+        
+        // Add some hearts
+        for(let i=0; i<50; i++) {
+            const heart = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xff0000 })
+            );
+            heart.position.set(Math.random()*100-50, Math.random()*50, Math.random()*100-50);
+            scene.add(heart);
+        }
+    };
+
+    window.decline = function() {
+        document.getElementById('proposal-card').style.opacity = '0';
+        setTimeout(() => document.getElementById('proposal-card').remove(), 500);
+        
+        const msg = document.getElementById('status-msg');
+        msg.innerText = "WRONG ANSWER.";
+        msg.style.color = "red";
+        msg.style.opacity = '1';
+
+        setTimeout(detonate, 1000);
+    };
+
+    function detonate() {
+        scene.remove(bombBody);
+        
         const capGeo = new THREE.SphereGeometry(1, 64, 64);
         const capMat = new THREE.ShaderMaterial({
             uniforms: THREE.UniformsUtils.clone(CloudShader.uniforms),
@@ -200,67 +229,49 @@
         mushroomCap = new THREE.Mesh(capGeo, capMat);
         scene.add(mushroomCap);
 
-        // Stem
         const stemGeo = new THREE.CylinderGeometry(0.5, 1, 1, 32, 32, true);
-        const stemMat = capMat.clone();
-        stem = new THREE.Mesh(stemGeo, stemMat);
+        stem = new THREE.Mesh(stemGeo, capMat.clone());
         scene.add(stem);
 
-        // Shockwave Ring
         const ringGeo = new THREE.TorusGeometry(1, 0.05, 16, 100);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
         shockwave = new THREE.Mesh(ringGeo, ringMat);
         shockwave.rotation.x = Math.PI / 2;
         scene.add(shockwave);
-    }
 
-    window.detonate = function() {
-        if (isExploding) return;
-        if (mushroomCap) {
-            scene.remove(mushroomCap);
-            scene.remove(stem);
-            scene.remove(shockwave);
-        }
-        
-        createMushroom();
         isExploding = true;
         startTime = clock.getElapsedTime();
         
-        // Blind Flash Effect
         const flashDiv = document.getElementById('flash');
         flashDiv.style.opacity = '1';
-        setTimeout(() => { flashDiv.style.transition = 'opacity 2s'; flashDiv.style.opacity = '0'; }, 100);
-    };
+        setTimeout(() => { 
+            flashDiv.style.transition = 'opacity 3s'; 
+            flashDiv.style.opacity = '0'; 
+            scene.background.setHex(0x87CEEB); // Sky turns blue after flash
+            scene.fog.color.setHex(0x87CEEB);
+        }, 100);
+    }
 
     function updateSimulation() {
         if (!isExploding) return;
         const t = clock.getElapsedTime() - startTime;
 
-        // 1. Cap Dynamics
-        const capScale = Math.pow(t, 0.6) * 60;
-        const capHeight = Math.pow(t, 0.7) * 80;
-        mushroomCap.scale.set(capScale * 1.5, capScale * 0.8, capScale * 1.5);
+        const capScale = Math.pow(t, 0.6) * 50;
+        const capHeight = Math.pow(t, 0.7) * 70;
+        mushroomCap.scale.set(capScale * 1.4, capScale * 0.8, capScale * 1.4);
         mushroomCap.position.y = capHeight;
         mushroomCap.material.uniforms.time.value = t;
-        
-        // Heat to Smoke transition
-        const heat = Math.max(0, 1.0 - t / 6);
-        mushroomCap.material.uniforms.uHeat.value = heat;
-        mushroomCap.material.uniforms.uOpacity.value = Math.max(0, 1.0 - t/20);
+        mushroomCap.material.uniforms.uHeat.value = Math.max(0, 1.0 - t/5);
+        mushroomCap.material.uniforms.uOpacity.value = Math.max(0, 1.0 - t/15);
 
-        // 2. Stem Dynamics
-        const stemWidth = Math.pow(t, 0.4) * 15;
+        const stemWidth = Math.pow(t, 0.4) * 12;
         stem.scale.set(stemWidth, capHeight, stemWidth);
         stem.position.y = capHeight / 2;
-        stem.material.uniforms.time.value = t;
-        stem.material.uniforms.uHeat.value = heat * 0.5;
+        stem.material.uniforms.uHeat.value = Math.max(0, 0.5 - t/5);
 
-        // 3. Shockwave
-        const swScale = t * 400;
+        const swScale = t * 500;
         shockwave.scale.set(swScale, swScale, 1);
-        shockwave.material.opacity = Math.max(0, 0.8 - t/4);
-
-        if (t > 20) isExploding = false;
+        shockwave.material.opacity = Math.max(0, 0.8 - t/3);
     }
 
     function onWindowResize() {
@@ -273,7 +284,6 @@
     function animate() {
         requestAnimationFrame(animate);
         updateSimulation();
-        controls.update();
         composer.render();
     }
 </script>
