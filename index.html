@@ -3,220 +3,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Woodwork Studio</title>
+    <title>Woodwork Pro Studio</title>
     <style>
         :root {
-            --wood-color: #8b5a2b;
-            --bg-color: #2c3e50;
-            --ui-panel: rgba(0, 0, 0, 0.7);
+            --accent: #ffcc33;
+            --dark-panel: #1a1a1a;
+            --glass: rgba(255, 255, 255, 0.1);
         }
 
         body {
             margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #121212;
+            color: #eee;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
             touch-action: none;
             display: flex;
-            flex-direction: column;
             height: 100vh;
         }
 
-        #game-container {
+        /* --- Sidebar Navigation --- */
+        #sidebar {
+            width: 100px;
+            background: var(--dark-panel);
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 25px;
+            z-index: 10;
+        }
+
+        .station-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            border: 1px solid #444;
+            background: #222;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .station-btn.active {
+            background: var(--accent);
+            color: black;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .station-btn i { font-size: 20px; margin-bottom: 4px; }
+
+        /* --- Main Work Area --- */
+        #main-view {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
             position: relative;
+        }
+
+        #canvas-container {
             flex-grow: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: radial-gradient(circle, #2c2c2c 0%, #121212 100%);
         }
 
         canvas {
-            background: #1a1a1a;
-            border: 4px solid #444;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-width: 95vw;
+            max-width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
 
-        #ui-overlay {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 600px;
-            background: var(--ui-panel);
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid #555;
+        /* --- Character / Dialogue System --- */
+        #character-overlay {
+            height: 160px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
             display: flex;
-            gap: 15px;
-            align-items: center;
+            padding: 20px 40px;
+            align-items: flex-end;
+            gap: 30px;
         }
 
-        .avatar {
-            width: 80px;
-            height: 80px;
-            background: #ddd;
-            border-radius: 50%;
+        #avatar-frame {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            background-size: cover;
+            background-position: center;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 20px rgba(255, 204, 51, 0.3);
+            position: relative;
             flex-shrink: 0;
-            border: 3px solid #ffd700;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #333;
+            transition: transform 0.3s ease;
+        }
+
+        #dialogue-box {
+            padding-bottom: 20px;
+        }
+
+        #char-name {
             font-weight: bold;
-            font-size: 0.8rem;
-            text-align: center;
+            color: var(--accent);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
         }
 
-        #dialogue-text {
+        #char-text {
             font-size: 1.1rem;
-            line-height: 1.4;
+            font-style: italic;
+            color: #ccc;
+            max-width: 600px;
         }
 
-        .instructor-note {
+        /* --- HUD --- */
+        .hud {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.9rem;
-            color: #aaa;
+            top: 20px;
+            right: 20px;
+            background: var(--glass);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
+
+        .stat-bar {
+            width: 150px;
+            height: 6px;
+            background: #333;
+            margin-top: 5px;
+            border-radius: 3px;
+        }
+
+        #smoothness-fill { width: 0%; height: 100%; background: #00ffcc; border-radius: 3px; transition: width 0.3s; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="instructor-note">Touch the wood to carve your design</div>
-    <canvas id="latheCanvas"></canvas>
+<div id="sidebar">
+    <div class="station-btn active" onclick="setStation('lathe', this)">
+        <span>SHAPE</span>
+    </div>
+    <div class="station-btn" onclick="setStation('sand', this)">
+        <span>SMOOTH</span>
+    </div>
+    <div class="station-btn" onclick="setStation('stain', this)">
+        <span>STAIN</span>
+    </div>
+</div>
 
-    <div id="ui-overlay">
-        <div class="avatar" id="classmate-avatar">Classmate</div>
-        <div id="dialogue-text">"Hey! Looking good so far. That piece is really coming together."</div>
+<div id="main-view">
+    <div class="hud">
+        <div style="font-size: 12px; color: #888;">SMOOTHNESS</div>
+        <div class="stat-bar"><div id="smoothness-fill"></div></div>
+        <div id="station-label" style="margin-top: 10px; font-weight: bold; color: var(--accent);">STATION: LATHE</div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="woodCanvas"></canvas>
+    </div>
+
+    <div id="character-overlay">
+        <div id="avatar-frame"></div>
+        <div id="dialogue-box">
+            <div id="char-name">JAX</div>
+            <div id="char-text">"Move with the grain, don't fight it. You're doing better than most in this class."</div>
+        </div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('latheCanvas');
+    const canvas = document.getElementById('woodCanvas');
     const ctx = canvas.getContext('2d');
-    const dialogueEl = document.getElementById('dialogue-text');
-    const avatarEl = document.getElementById('classmate-avatar');
+    canvas.width = 700;
+    canvas.height = 350;
 
-    // Setup dimensions for iPad
-    canvas.width = 600;
-    canvas.height = 300;
-
+    // Game State
+    let currentStation = 'lathe';
+    let smoothness = 0;
+    let woodColor = { r: 160, g: 100, b: 60 };
     const woodData = {
-        segments: 60,
+        segments: 100,
         radii: [],
-        color: '#d2b48c',
-        width: 500,
-        height: 150,
-        x: 50,
-        y: 75
+        x: 100,
+        y: 175,
+        width: 500
     };
 
-    // Initialize wood segments
-    for (let i = 0; i < woodData.segments; i++) {
-        woodData.radii.push(woodData.height / 2);
-    }
-
+    // Classmates Data
     const classmates = [
-        { name: "Alex", lines: ["Nice technique! You've got a steady hand.", "The grain on that oak looks perfect."] },
-        { name: "Jordan", lines: ["Looking sharp! Want me to pass you the varnish later?", "Almost done with the base? I'm just starting mine."] }
+        {
+            name: "JAX",
+            color: "#ff3366",
+            style: "linear-gradient(45deg, #121212, #2a0a10)",
+            avatar: "👤", // Placeholder for "Cool/Rebel" visuals
+            lines: ["The way you handle that lathe... impressive.", "Careful. One wrong move and you ruin the piece.", "I like your style. Rugged but precise."]
+        },
+        {
+            name: "VALERIE",
+            color: "#33ccff",
+            style: "linear-gradient(45deg, #0a1a2a, #121212)",
+            avatar: "✨", // Placeholder for "High-End/Cool" visuals
+            lines: ["Make it shine. I want to see my reflection in that wood.", "Sand it down until it feels like silk.", "You've got talent. Don't waste it on boring shapes."]
+        }
     ];
 
-    let currentClassmate = 0;
-    let lineIndex = 0;
+    let currentChar = 0;
 
-    function updateDialogue() {
-        const c = classmates[currentClassmate];
-        avatarEl.innerText = c.name;
-        dialogueEl.innerText = `"${c.lines[lineIndex]}"`;
-        
-        lineIndex = (lineIndex + 1) % c.lines.length;
-        if (lineIndex === 0) currentClassmate = (currentClassmate + 1) % classmates.length;
+    // Initialize wood
+    for (let i = 0; i < woodData.segments; i++) {
+        woodData.radii.push(60);
     }
 
-    // Carving Logic
-    function carve(touchX, touchY) {
+    function setStation(type, btn) {
+        currentStation = type;
+        document.querySelectorAll('.station-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('station-label').innerText = `STATION: ${type.toUpperCase()}`;
+        
+        // Switch character when station changes
+        currentChar = (currentChar + 1) % classmates.length;
+        updateUI();
+    }
+
+    function updateUI() {
+        const c = classmates[currentChar];
+        document.getElementById('char-name').innerText = c.name;
+        document.getElementById('char-name').style.color = c.color;
+        document.getElementById('char-text').innerText = `"${c.lines[Math.floor(Math.random()*c.lines.length)]}"`;
+        document.getElementById('avatar-frame').style.background = c.style;
+        document.getElementById('avatar-frame').style.borderColor = c.color;
+        document.getElementById('smoothness-fill').style.width = smoothness + '%';
+    }
+
+    function interact(touchX, touchY) {
         const rect = canvas.getBoundingClientRect();
         const x = (touchX - rect.left) * (canvas.width / rect.width);
         const y = (touchY - rect.top) * (canvas.height / rect.height);
 
-        // Check if carving wood
         if (x >= woodData.x && x <= woodData.x + woodData.width) {
-            const segmentWidth = woodData.width / woodData.segments;
-            const index = Math.floor((x - woodData.x) / segmentWidth);
+            const index = Math.floor(((x - woodData.x) / woodData.width) * woodData.segments);
             
-            if (index >= 0 && index < woodData.segments) {
-                const centerY = canvas.height / 2;
-                const distFromCenter = Math.abs(y - centerY);
-                
-                // If touching inside the current radius, carve it down
-                if (distFromCenter < woodData.radii[index]) {
-                    woodData.radii[index] = Math.max(10, distFromCenter);
+            if (currentStation === 'lathe') {
+                const dist = Math.abs(y - woodData.y);
+                if (dist < woodData.radii[index]) {
+                    woodData.radii[index] = Math.max(15, dist);
+                    if(smoothness > 0) smoothness -= 0.1; // Carving makes it rough again
                 }
+            } else if (currentStation === 'sand') {
+                if (smoothness < 100) smoothness += 0.5;
+            } else if (currentStation === 'stain') {
+                woodColor.r = Math.max(60, woodColor.r - 1);
+                woodColor.g = Math.max(30, woodColor.g - 1);
             }
+            updateUI();
         }
     }
 
-    // Main Draw Loop
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw Lathe Machine
-        ctx.fillStyle = "#444";
-        ctx.fillRect(20, 140, 30, 40); // Left mount
-        ctx.fillRect(550, 140, 30, 40); // Right mount
+        // Draw Mechanical Lathe Parts
+        ctx.fillStyle = "#333";
+        ctx.fillRect(70, 100, 30, 150); // Chuck
+        ctx.fillRect(600, 120, 20, 110); // Tailstock
 
-        const segmentWidth = woodData.width / woodData.segments;
-        const centerY = canvas.height / 2;
+        const segWidth = woodData.width / woodData.segments;
 
-        // Draw Wood Segments
-        ctx.fillStyle = woodData.color;
+        // Draw Wood
         for (let i = 0; i < woodData.segments; i++) {
             const r = woodData.radii[i];
-            const xPos = woodData.x + (i * segmentWidth);
+            const x = woodData.x + (i * segWidth);
             
-            // Draw segment with wood grain effect
-            ctx.globalAlpha = 1.0;
-            ctx.fillRect(xPos, centerY - r, segmentWidth + 1, r * 2);
+            // Base Color
+            const baseCol = `rgb(${woodColor.r}, ${woodColor.g}, ${woodColor.b})`;
+            ctx.fillStyle = baseCol;
+            ctx.fillRect(x, woodData.y - r, segWidth + 1, r * 2);
+
+            // Grain Texture (becomes less visible as smoothness increases)
+            if (smoothness < 90) {
+                ctx.fillStyle = `rgba(0,0,0,${0.2 - (smoothness/500)})`;
+                if (i % 4 === 0) ctx.fillRect(x, woodData.y - r, 1, r * 2);
+            }
+
+            // Highlights (Reflections)
+            let grad = ctx.createLinearGradient(x, woodData.y - r, x, woodData.y + r);
+            grad.addColorStop(0, 'rgba(255,255,255,0.2)');
+            grad.addColorStop(0.5, 'transparent');
+            grad.addColorStop(1, 'rgba(0,0,0,0.3)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(x, woodData.y - r, segWidth + 1, r * 2);
             
-            // Add highlights
-            ctx.fillStyle = "rgba(255,255,255,0.1)";
-            ctx.fillRect(xPos, centerY - r, segmentWidth + 1, r * 0.3);
-            ctx.fillStyle = woodData.color;
+            // Polishing Shine (Visible at high smoothness)
+            if (smoothness > 70) {
+                ctx.fillStyle = `rgba(255,255,255, ${(smoothness-70)/100})`;
+                ctx.fillRect(x, woodData.y - r*0.8, segWidth + 1, 2);
+            }
         }
 
         requestAnimationFrame(draw);
     }
 
-    // Touch Interaction
+    // Controls
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        carve(e.touches[0].clientX, e.touches[0].clientY);
+        interact(e.touches[0].clientX, e.touches[0].clientY);
     });
 
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        carve(e.touches[0].clientX, e.touches[0].clientY);
+        interact(e.touches[0].clientX, e.touches[0].clientY);
     });
 
-    // Mouse Fallback for testing
+    // Desktop support for testing
     canvas.addEventListener('mousedown', (e) => {
-        const moveHandler = (me) => carve(me.clientX, me.clientY);
-        window.addEventListener('mousemove', moveHandler);
-        window.addEventListener('mouseup', () => window.removeEventListener('mousemove', moveHandler), {once: true});
-        carve(e.clientX, e.clientY);
+        const move = (m) => interact(m.clientX, m.clientY);
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', () => window.removeEventListener('mousemove', move), {once:true});
+        interact(e.clientX, e.clientY);
     });
 
-    // Rotation effect: Periodically change dialogue
-    setInterval(updateDialogue, 8000);
-
+    updateUI();
     draw();
 </script>
 
