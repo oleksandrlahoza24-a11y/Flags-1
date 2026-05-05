@@ -3,416 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>URANIUM FORK: OVERLOAD</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
+    <title>Woodwork Studio</title>
     <style>
         :root {
-            --neon-green: #39ff14;
-            --uranium-blue: #00f3ff;
-            --hazard-yellow: #f3ec19;
-            --glass: rgba(0, 20, 0, 0.8);
+            --wood-color: #8b5a2b;
+            --bg-color: #2c3e50;
+            --ui-panel: rgba(0, 0, 0, 0.7);
         }
 
         body {
             margin: 0;
-            background: #020502;
+            padding: 0;
+            background-color: var(--bg-color);
             color: white;
-            font-family: 'Rajdhani', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             touch-action: none;
-            -webkit-user-select: none;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
 
-        #ui-layer {
+        #game-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background: #1a1a1a;
+            border: 4px solid #444;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 95vw;
+        }
+
+        #ui-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .hud-panel {
-            position: absolute;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--neon-green);
-            padding: 15px;
-            border-radius: 12px;
-            pointer-events: auto;
-        }
-
-        #stats-panel {
-            top: 20px;
-            left: 20px;
-            min-width: 150px;
-        }
-
-        #shop-panel {
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
             width: 90%;
             max-width: 600px;
-            justify-content: space-around;
-        }
-
-        .upgrade-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--uranium-blue);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            flex: 1;
-            text-align: center;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .upgrade-btn:active { transform: scale(0.95); background: var(--uranium-blue); }
-        .upgrade-btn.maxed { border-color: var(--hazard-yellow); color: var(--hazard-yellow); }
-
-        #rad-bar-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            height: 25px;
-            background: rgba(0,0,0,0.5);
-            border: 2px solid #333;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        #rad-bar-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-green), #ff0000);
-            box-shadow: 0 0 15px var(--neon-green);
-            transition: width 0.3s;
-        }
-
-        #game-canvas {
-            display: block;
-        }
-
-        .label { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--neon-green); display: block; margin-bottom: 5px; }
-        .value { font-size: 1.5rem; font-weight: bold; }
-
-        #overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
+            background: var(--ui-panel);
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #555;
             display: flex;
-            flex-direction: column;
+            gap: 15px;
             align-items: center;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            background: #ddd;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 3px solid #ffd700;
+            display: flex;
             justify-content: center;
-            z-index: 100;
+            align-items: center;
+            color: #333;
+            font-weight: bold;
+            font-size: 0.8rem;
             text-align: center;
         }
 
-        button.start-btn {
-            background: var(--neon-green);
-            border: none;
-            padding: 20px 40px;
-            font-family: 'Orbitron';
-            font-weight: bold;
-            font-size: 1.2rem;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 0 20px var(--neon-green);
+        #dialogue-text {
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .instructor-note {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <h1 style="font-family: 'Orbitron'; color: var(--neon-green); font-size: 2.5rem;">URANIUM FORK</h1>
-        <p style="margin-bottom: 30px;">EAT THE RADIOACTIVE CUTLERY. DON'T MELTDOWN.</p>
-        <button class="start-btn" onclick="startGame()">INITIATE CONSUMPTION</button>
+<div id="game-container">
+    <div class="instructor-note">Touch the wood to carve your design</div>
+    <canvas id="latheCanvas"></canvas>
+
+    <div id="ui-overlay">
+        <div class="avatar" id="classmate-avatar">Classmate</div>
+        <div id="dialogue-text">"Hey! Looking good so far. That piece is really coming together."</div>
     </div>
+</div>
 
-    <div id="ui-layer">
-        <div id="stats-panel" class="hud-panel">
-            <span class="label">ISOTOPES COLLECTED</span>
-            <span id="currency" class="value">0</span>
-        </div>
+<script>
+    const canvas = document.getElementById('latheCanvas');
+    const ctx = canvas.getContext('2d');
+    const dialogueEl = document.getElementById('dialogue-text');
+    const avatarEl = document.getElementById('classmate-avatar');
 
-        <div id="rad-bar-container">
-            <div id="rad-bar-fill"></div>
-        </div>
+    // Setup dimensions for iPad
+    canvas.width = 600;
+    canvas.height = 300;
 
-        <div id="shop-panel" class="hud-panel">
-            <div class="upgrade-btn" onclick="buyUpgrade('mouth')">
-                <span class="label">MAW SIZE</span>
-                <span id="price-mouth">10</span>
-            </div>
-            <div class="upgrade-btn" onclick="buyUpgrade('magnet')">
-                <span class="label">MAGNETISM</span>
-                <span id="price-magnet">25</span>
-            </div>
-            <div class="upgrade-btn" onclick="buyUpgrade('lead')">
-                <span class="label">LEAD LINING</span>
-                <span id="price-lead">50</span>
-            </div>
-        </div>
-    </div>
+    const woodData = {
+        segments: 60,
+        radii: [],
+        color: '#d2b48c',
+        width: 500,
+        height: 150,
+        x: 50,
+        y: 75
+    };
 
-    <canvas id="game-canvas"></canvas>
+    // Initialize wood segments
+    for (let i = 0; i < woodData.segments; i++) {
+        woodData.radii.push(woodData.height / 2);
+    }
 
-    <script>
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        const currencyEl = document.getElementById('currency');
-        const radFill = document.getElementById('rad-bar-fill');
+    const classmates = [
+        { name: "Alex", lines: ["Nice technique! You've got a steady hand.", "The grain on that oak looks perfect."] },
+        { name: "Jordan", lines: ["Looking sharp! Want me to pass you the varnish later?", "Almost done with the base? I'm just starting mine."] }
+    ];
 
-        let width, height;
-        let score = 0;
-        let isotopes = 0;
-        let radiation = 0;
-        let gameActive = false;
+    let currentClassmate = 0;
+    let lineIndex = 0;
 
-        // Upgrades
-        const upgrades = {
-            mouth: { level: 1, max: 10, cost: 10 },
-            magnet: { level: 0, max: 10, cost: 25 },
-            lead: { level: 1, max: 10, cost: 50 }
-        };
+    function updateDialogue() {
+        const c = classmates[currentClassmate];
+        avatarEl.innerText = c.name;
+        dialogueEl.innerText = `"${c.lines[lineIndex]}"`;
+        
+        lineIndex = (lineIndex + 1) % c.lines.length;
+        if (lineIndex === 0) currentClassmate = (currentClassmate + 1) % classmates.length;
+    }
 
-        const player = {
-            x: 0,
-            y: 0,
-            targetX: 0,
-            targetY: 0,
-            size: 40,
-            color: '#39ff14'
-        };
+    // Carving Logic
+    function carve(touchX, touchY) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (touchX - rect.left) * (canvas.width / rect.width);
+        const y = (touchY - rect.top) * (canvas.height / rect.height);
 
-        const forks = [];
-        const particles = [];
-
-        function init() {
-            resize();
-            player.x = width / 2;
-            player.y = height * 0.7;
-            player.targetX = player.x;
-            player.targetY = player.y;
-            window.addEventListener('resize', resize);
+        // Check if carving wood
+        if (x >= woodData.x && x <= woodData.x + woodData.width) {
+            const segmentWidth = woodData.width / woodData.segments;
+            const index = Math.floor((x - woodData.x) / segmentWidth);
             
-            // Touch Events
-            canvas.addEventListener('touchmove', e => {
-                e.preventDefault();
-                player.targetX = e.touches[0].clientX;
-                player.targetY = e.touches[0].clientY;
-            }, {passive: false});
-
-            canvas.addEventListener('mousemove', e => {
-                player.targetX = e.clientX;
-                player.targetY = e.clientY;
-            });
-        }
-
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width * window.devicePixelRatio;
-            canvas.height = height * window.devicePixelRatio;
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-
-        class Fork {
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = -100;
-                this.speed = 2 + Math.random() * 3;
-                this.rot = Math.random() * Math.PI * 2;
-                this.vRot = (Math.random() - 0.5) * 0.1;
-            }
-
-            update() {
-                this.y += this.speed;
-                this.rot += this.vRot;
-
-                // Magnetism logic
-                if (upgrades.magnet.level > 0) {
-                    const dx = player.x - this.x;
-                    const dy = player.y - this.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    const range = upgrades.magnet.level * 40;
-                    if (dist < range) {
-                        this.x += dx * 0.05;
-                        this.y += dy * 0.05;
-                    }
-                }
-            }
-
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rot);
+            if (index >= 0 && index < woodData.segments) {
+                const centerY = canvas.height / 2;
+                const distFromCenter = Math.abs(y - centerY);
                 
-                // Neon Glow
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#39ff14';
-                
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                
-                // Draw Fork Shape
-                ctx.beginPath();
-                ctx.moveTo(0, 20); ctx.lineTo(0, -10); // handle
-                ctx.moveTo(-8, -15); ctx.lineTo(8, -15); // base
-                ctx.moveTo(-8, -15); ctx.lineTo(-8, -30); // tines
-                ctx.moveTo(-3, -15); ctx.lineTo(-3, -35);
-                ctx.moveTo(3, -15); ctx.lineTo(3, -35);
-                ctx.moveTo(8, -15); ctx.lineTo(8, -30);
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 10;
-                this.vy = (Math.random() - 0.5) * 10;
-                this.life = 1.0;
-                this.color = color;
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 0.02;
-            }
-            draw() {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, 4, 4);
-                ctx.globalAlpha = 1;
-            }
-        }
-
-        function spawnFork() {
-            if (!gameActive) return;
-            forks.push(new Fork());
-            setTimeout(spawnFork, Math.max(200, 1500 - (score * 20)));
-        }
-
-        function buyUpgrade(type) {
-            const up = upgrades[type];
-            if (isotopes >= up.cost && up.level < up.max) {
-                isotopes -= up.cost;
-                up.level++;
-                up.cost = Math.floor(up.cost * 1.8);
-                updateUI();
-                
-                if (type === 'mouth') player.size += 8;
-            }
-        }
-
-        function updateUI() {
-            currencyEl.innerText = isotopes;
-            for (let key in upgrades) {
-                const btn = document.getElementById(`price-${key}`);
-                if (upgrades[key].level >= upgrades[key].max) {
-                    btn.innerText = "MAXED";
-                    btn.parentElement.classList.add('maxed');
-                } else {
-                    btn.innerText = upgrades[key].cost;
+                // If touching inside the current radius, carve it down
+                if (distFromCenter < woodData.radii[index]) {
+                    woodData.radii[index] = Math.max(10, distFromCenter);
                 }
             }
         }
+    }
 
-        function gameLoop() {
-            if (!gameActive) return;
+    // Main Draw Loop
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = 'rgba(2, 5, 2, 0.3)'; // Motion blur trail
-            ctx.fillRect(0, 0, width, height);
+        // Draw Lathe Machine
+        ctx.fillStyle = "#444";
+        ctx.fillRect(20, 140, 30, 40); // Left mount
+        ctx.fillRect(550, 140, 30, 40); // Right mount
 
-            // Interpolate player position for smoothness
-            player.x += (player.targetX - player.x) * 0.15;
-            player.y += (player.targetY - player.y) * 0.15;
+        const segmentWidth = woodData.width / woodData.segments;
+        const centerY = canvas.height / 2;
 
-            // Draw Player (The Maw)
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = varColor('--neon-green');
-            ctx.strokeStyle = player.color;
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            const mouthOpen = Math.sin(Date.now() / 100) * 0.4 + 0.4;
-            ctx.arc(player.x, player.y, player.size, mouthOpen, Math.PI * 2 - mouthOpen);
-            ctx.lineTo(player.x, player.y);
-            ctx.closePath();
-            ctx.stroke();
-            ctx.fillStyle = 'rgba(57, 255, 20, 0.1)';
-            ctx.fill();
-
-            // Update/Draw Forks
-            for (let i = forks.length - 1; i >= 0; i--) {
-                const f = forks[i];
-                f.update();
-                f.draw();
-
-                const dx = f.x - player.x;
-                const dy = f.y - player.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-
-                if (dist < player.size) {
-                    // Eat fork
-                    for(let p=0; p<10; p++) particles.push(new Particle(f.x, f.y, '#39ff14'));
-                    forks.splice(i, 1);
-                    score++;
-                    isotopes += 5;
-                    radiation += (15 / upgrades.lead.level);
-                    updateUI();
-                } else if (f.y > height + 100) {
-                    forks.splice(i, 1);
-                }
-            }
-
-            // Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].life <= 0) particles.splice(i, 1);
-            }
-
-            // Radiation Decay & HUD
-            radiation = Math.max(0, radiation - 0.05);
-            radFill.style.width = radiation + '%';
-            if (radiation > 100) gameOver();
-
-            requestAnimationFrame(gameLoop);
+        // Draw Wood Segments
+        ctx.fillStyle = woodData.color;
+        for (let i = 0; i < woodData.segments; i++) {
+            const r = woodData.radii[i];
+            const xPos = woodData.x + (i * segmentWidth);
+            
+            // Draw segment with wood grain effect
+            ctx.globalAlpha = 1.0;
+            ctx.fillRect(xPos, centerY - r, segmentWidth + 1, r * 2);
+            
+            // Add highlights
+            ctx.fillStyle = "rgba(255,255,255,0.1)";
+            ctx.fillRect(xPos, centerY - r, segmentWidth + 1, r * 0.3);
+            ctx.fillStyle = woodData.color;
         }
 
-        function varColor(name) {
-            return getComputedStyle(document.documentElement).getPropertyValue(name);
-        }
+        requestAnimationFrame(draw);
+    }
 
-        function startGame() {
-            document.getElementById('overlay').style.display = 'none';
-            gameActive = true;
-            score = 0;
-            isotopes = 0;
-            radiation = 0;
-            init();
-            spawnFork();
-            gameLoop();
-        }
+    // Touch Interaction
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        carve(e.touches[0].clientX, e.touches[0].clientY);
+    });
 
-        function gameOver() {
-            gameActive = false;
-            alert(`CRITICAL MELTDOWN!\nYou consumed ${score} uranium forks before disintegrating.`);
-            location.reload();
-        }
-    </script>
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        carve(e.touches[0].clientX, e.touches[0].clientY);
+    });
+
+    // Mouse Fallback for testing
+    canvas.addEventListener('mousedown', (e) => {
+        const moveHandler = (me) => carve(me.clientX, me.clientY);
+        window.addEventListener('mousemove', moveHandler);
+        window.addEventListener('mouseup', () => window.removeEventListener('mousemove', moveHandler), {once: true});
+        carve(e.clientX, e.clientY);
+    });
+
+    // Rotation effect: Periodically change dialogue
+    setInterval(updateDialogue, 8000);
+
+    draw();
+</script>
+
 </body>
 </html>
