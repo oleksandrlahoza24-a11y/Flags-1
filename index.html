@@ -3,216 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ember & Shadow</title>
+    <title>EMBER - Silhouette Atmosphere</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #050505;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-            touch-action: none;
-        }
-        canvas {
-            display: block;
-            image-rendering: auto;
-        }
-        #ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        .controls {
-            position: absolute;
-            bottom: 40px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 50px;
-            box-sizing: border-box;
-            pointer-events: auto;
-        }
-        #joystick-container {
-            width: 150px;
-            height: 150px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 50%;
-            position: relative;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-        #joystick-knob {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            position: absolute;
-            top: 45px;
-            left: 45px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-        }
-        #btn-throw {
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 100, 0, 0.15);
-            border: 3px solid rgba(255, 80, 0, 0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px #ff6600;
-            box-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        #btn-throw:active {
-            transform: scale(0.9);
-            background: rgba(255, 100, 0, 0.3);
-        }
-        #instructions {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255,255,255,0.4);
-            font-size: 14px;
-            letter-spacing: 1px;
-            pointer-events: none;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050508; }
+        canvas { display: block; touch-action: none; }
+        #ui { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 50px; box-sizing: border-box; pointer-events: none; font-family: 'Segoe UI', Tahoma, sans-serif; color: white; }
+        .stick-container { width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); position: relative; pointer-events: auto; }
+        #stick { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; position: absolute; top: 40px; left: 40px; transition: transform 0.1s; }
+        #btn-fire { width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle, rgba(255,100,0,0.3) 0%, rgba(255,50,0,0.1) 100%); border: 2px solid rgba(255,150,0,0.4); pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 2px; font-size: 10px; }
+        #btn-fire:active { transform: scale(0.9); background: rgba(255,100,0,0.5); }
     </style>
 </head>
 <body>
-
-<canvas id="gameCanvas"></canvas>
-<div id="ui">
-    <div id="instructions">MOVE TO EXPLORE • THROW TO IGNITE THE WORLD</div>
-    <div class="controls">
-        <div id="joystick-container">
-            <div id="joystick-knob"></div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div class="stick-container" id="joystick-zone">
+            <div id="stick"></div>
         </div>
-        <div id="btn-throw">IGNITE</div>
+        <div id="btn-fire">Ignite</div>
     </div>
-</div>
 
 <script>
-/**
- * EMBER & SHADOW
- * A high-fidelity atmospheric silhouette experience.
+/** 
+ * EMBER: AN ATMOSPHERIC INDIE EXPERIENCE
+ * Procedural Silhouettes & Advanced VFX
  */
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const knob = document.getElementById('joystick-knob');
-const btnThrow = document.getElementById('btn-throw');
+let width, height, dpr;
 
-// --- GAME CONSTANTS ---
+// Constants
 const WORLD_WIDTH = 6000;
+const GROUND_Y_OFFSET = 120;
 const GRAVITY = 0.4;
-const FRICTION = 0.85;
+const COLORS = {
+    skyTop: '#1a1a2e',
+    skyMid: '#4a263c',
+    skyBot: '#e88a6b',
+    fireInner: '#ffffff',
+    fireMid: '#ffaa00',
+    fireOuter: 'rgba(255, 68, 0, 0)',
+    ember: '#ffcc00'
+};
 
-// --- STATE ---
-let width, height;
+// State
 let cameraX = 0;
-let shake = 0;
-const input = { x: 0, y: 0, throwing: false, lastDir: 1 };
-const particles = [];
-const worldEntities = [];
-const projectiles = [];
-const fireflies = [];
-
-// --- ASSET CACHE (Procedural Silhouettes) ---
-const cache = {};
+let particles = [];
+let worldObjects = [];
+let fires = [];
+let fireflies = [];
+let atmosphericLeaves = [];
+const input = { x: 0, y: 0, angle: 0, active: false, jump: false };
 
 // --- UTILS ---
 const lerp = (a, b, t) => a + (b - a) * t;
-const rnd = (min, max) => Math.random() * (max - min) + min;
+const random = (min, max) => Math.random() * (max - min) + min;
 
-// --- CLASSES ---
+// --- PROCEDURAL DRAWING ---
+function drawSilhouette(ctx, type, x, y, scale = 1, flip = false, seed = 0) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (flip) ctx.scale(-1, 1);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+
+    switch(type) {
+        case 'savanna':
+            // Trunk
+            ctx.moveTo(-5, 0);
+            ctx.bezierCurveTo(-3, -40, -10, -80, -20, -120);
+            ctx.lineTo(20, -120);
+            ctx.bezierCurveTo(10, -80, 3, -40, 5, 0);
+            ctx.fill();
+            // Canopy lobes
+            for(let i=0; i<5; i++) {
+                const ox = (i-2) * 40;
+                const oy = -130 - (Math.abs(i-2) * 5);
+                ctx.beginPath();
+                ctx.ellipse(ox, oy, 60, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            break;
+        
+        case 'pine':
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(5, 0);
+            ctx.lineTo(2, -150);
+            ctx.lineTo(-2, -150);
+            ctx.fill();
+            for(let i=0; i<6; i++) {
+                const w = 60 - (i*8);
+                const h = -20 - (i*22);
+                ctx.beginPath();
+                ctx.moveTo(-w, h);
+                ctx.quadraticCurveTo(0, h-10, w, h);
+                ctx.lineTo(0, h-35);
+                ctx.closePath();
+                ctx.fill();
+            }
+            break;
+
+        case 'palm':
+            ctx.beginPath();
+            ctx.moveTo(-8, 0);
+            ctx.bezierCurveTo(-5, -50, 20, -120, 40, -160);
+            ctx.lineTo(50, -155);
+            ctx.bezierCurveTo(30, -110, 5, -45, 8, 0);
+            ctx.fill();
+            for(let i=0; i<8; i++) {
+                ctx.save();
+                ctx.translate(45, -158);
+                ctx.rotate((i * 45) * Math.PI/180);
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.quadraticCurveTo(30, 20, 60, 0);
+                ctx.quadraticCurveTo(30, -5, 0, 0);
+                ctx.fill();
+                ctx.restore();
+            }
+            break;
+
+        case 'bush':
+            for(let i=0; i<7; i++) {
+                ctx.beginPath();
+                const r = 20 + Math.sin(seed + i) * 5;
+                ctx.arc(Math.cos(i) * 20, -10 + Math.sin(i)*10, r, 0, Math.PI*2);
+                ctx.fill();
+            }
+            break;
+
+        case 'grass':
+            for(let i=0; i<12; i++) {
+                ctx.beginPath();
+                const ang = (i-6) * 0.15;
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(Math.sin(ang)*20, -20, Math.sin(ang)*35, -40);
+                ctx.quadraticCurveTo(Math.sin(ang)*15, -15, 2, 0);
+                ctx.fill();
+            }
+            break;
+
+        case 'cottage':
+            ctx.fillRect(-50, -60, 100, 60);
+            ctx.beginPath();
+            ctx.moveTo(-60, -60); ctx.lineTo(0, -110); ctx.lineTo(60, -60);
+            ctx.fill();
+            ctx.fillRect(20, -100, 15, 30); // Chimney
+            ctx.clearRect(-30, -40, 15, 15); // Window holes
+            ctx.clearRect(15, -40, 15, 15);
+            break;
+    }
+    ctx.restore();
+}
+
+// --- SYSTEMS ---
+
+class Particle {
+    constructor(x, y, vx, vy, life, color, size, type = 'ember') {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.maxLife = life; this.life = life;
+        this.color = color; this.size = size; this.type = type;
+        this.rot = Math.random() * Math.PI * 2;
+    }
+    update(dt) {
+        this.life -= dt;
+        this.x += this.vx;
+        this.y += this.vy;
+        if(this.type === 'smoke' || this.type === 'flame') {
+            this.vy -= 0.05;
+            this.vx += Math.sin(Date.now()*0.01) * 0.1;
+        } else {
+            this.vy += 0.1; // Gravity for sparks
+        }
+    }
+    draw(ctx) {
+        const op = this.life / this.maxLife;
+        ctx.globalAlpha = op;
+        if(this.type === 'flame') {
+            const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+            grad.addColorStop(0, '#fff');
+            grad.addColorStop(0.3, '#ffaa00');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+        } else {
+            ctx.fillStyle = this.color;
+        }
+        ctx.beginPath();
+        if(this.type === 'leaf') {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rot + this.life);
+            ctx.ellipse(0, 0, this.size, this.size/2, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        } else {
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+}
+
+class FireInstance {
+    constructor(parent) {
+        this.parent = parent;
+        this.progress = 0;
+        this.intensity = 1;
+    }
+    update(dt) {
+        this.progress += 0.002;
+        this.intensity = 0.8 + Math.sin(Date.now() * 0.01) * 0.2;
+        
+        // Emit flame particles
+        if(Math.random() > 0.3) {
+            particles.push(new Particle(
+                this.parent.x + random(-30, 30),
+                this.parent.y - 20,
+                random(-0.5, 0.5),
+                random(-1, -2),
+                random(0.5, 1),
+                '#ffaa00',
+                random(10, 20),
+                'flame'
+            ));
+        }
+        // Smoke
+        if(Math.random() > 0.8) {
+            particles.push(new Particle(
+                this.parent.x + random(-20, 20),
+                this.parent.y - 60,
+                random(-0.2, 0.2),
+                -0.5,
+                2,
+                'rgba(0,0,0,0.4)',
+                random(5, 15),
+                'smoke'
+            ));
+        }
+    }
+}
 
 class Player {
     constructor() {
-        this.x = 300;
-        this.y = 0;
-        this.vx = 0;
-        this.vy = 0;
-        this.w = 20;
-        this.h = 45;
-        this.grounded = false;
+        this.x = 300; this.y = 0;
+        this.vx = 0; this.vy = 0;
+        this.width = 20; this.height = 45;
+        this.groundY = 0;
         this.anim = 0;
-        this.rimLight = 0;
     }
-
     update(dt) {
-        // Movement
-        this.vx += input.x * 0.8;
-        this.vx *= FRICTION;
+        // Simple Physics
+        this.vx = input.x * 5;
+        if(input.jump && this.y >= this.groundY) {
+            this.vy = -12;
+            input.jump = false;
+        }
         this.x += this.vx;
-
-        if (input.x !== 0) {
-            input.lastDir = Math.sign(input.x);
-            this.anim += Math.abs(this.vx) * 0.15;
-        } else {
-            this.anim *= 0.9;
-        }
-
-        // Gravity
-        this.vy += GRAVITY;
         this.y += this.vy;
+        this.vy += GRAVITY;
 
-        // Ground Collision (Simple)
-        const groundY = height - 120 + Math.sin(this.x * 0.005) * 10;
-        if (this.y + this.h > groundY) {
-            this.y = groundY - this.h;
+        this.groundY = height - GROUND_Y_OFFSET - 10;
+        if(this.y > this.groundY) {
+            this.y = this.groundY;
             this.vy = 0;
-            this.grounded = true;
         }
 
-        // Rim light logic
-        let nearFire = worldEntities.some(e => e.burning && Math.abs(e.x - this.x) < 200);
-        this.rimLight = lerp(this.rimLight, nearFire ? 1 : 0, 0.1);
+        if(Math.abs(this.vx) > 0.1) this.anim += 0.2;
+        else this.anim *= 0.9;
 
-        // Camera follow
-        let targetCam = this.x - width / 2;
-        cameraX = lerp(cameraX, targetCam, 0.05);
-        cameraX = Math.max(0, Math.min(cameraX, WORLD_WIDTH - width));
+        // Interaction Check
+        worldObjects.forEach(obj => {
+            const dx = (this.x) - obj.x;
+            if(Math.abs(dx) < 120 && obj.y > height - 200) {
+                obj.swayTarget = dx > 0 ? -0.3 : 0.3;
+                if(Math.random() > 0.9 && (obj.type === 'bush' || obj.type === 'grass')) {
+                    this.emitRustle(obj.x, obj.y);
+                }
+            } else {
+                obj.swayTarget = 0;
+            }
+        });
+
+        // Keep in bounds
+        this.x = Math.max(50, Math.min(WORLD_WIDTH - 50, this.x));
+        cameraX = lerp(cameraX, this.x - width/2, 0.1);
+        cameraX = Math.max(0, Math.min(WORLD_WIDTH - width, cameraX));
     }
-
-    draw() {
+    emitRustle(x, y) {
+        for(let i=0; i<3; i++) {
+            particles.push(new Particle(x + random(-20, 20), y - 10, random(-2, 2), random(-1, -3), 0.8, '#000', 3, 'leaf'));
+        }
+    }
+    draw(ctx) {
         ctx.save();
         ctx.translate(this.x - cameraX, this.y);
-
-        // Rim Light Effect
-        if (this.rimLight > 0.1) {
-            ctx.shadowBlur = 15 * this.rimLight;
-            ctx.shadowColor = 'rgba(255, 150, 50, 0.5)';
-            ctx.fillStyle = `rgba(255, 100, 0, ${this.rimLight * 0.5})`;
-            ctx.fillRect(-2, -2, this.w + 4, this.h + 4);
-            ctx.shadowBlur = 0;
+        
+        // Rim Light if near fire
+        const nearFire = fires.some(f => Math.abs(f.parent.x - this.x) < 200);
+        if(nearFire) {
+            ctx.fillStyle = 'rgba(255, 150, 0, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(0, -22, 12, 25, 0, 0, Math.PI*2);
+            ctx.fill();
         }
 
-        // Body Silhouette
         ctx.fillStyle = '#000';
+        // Legs
+        const legH = Math.sin(this.anim) * 10;
+        ctx.fillRect(-8, -15, 6, 15 + (this.vx > 0 ? legH : -legH));
+        ctx.fillRect(2, -15, 6, 15 + (this.vx > 0 ? -legH : legH));
+        // Body
+        const bob = Math.sin(Date.now() * 0.005) * 2;
+        ctx.beginPath();
+        ctx.ellipse(0, -30 + bob, 10, 15, 0, 0, Math.PI*2);
+        ctx.fill();
         // Head
         ctx.beginPath();
-        ctx.arc(this.w/2, 5 + Math.sin(this.anim)*2, 8, 0, Math.PI*2);
+        ctx.arc(0, -50 + bob, 8, 0, Math.PI*2);
         ctx.fill();
-        // Torso
-        ctx.fillRect(this.w/2 - 6, 12, 12, 18);
-        // Legs (Animated)
-        let legL = Math.sin(this.anim) * 10;
-        let legR = Math.sin(this.anim + Math.PI) * 10;
-        ctx.fillRect(this.w/2 - 6, 30, 5, 10 + legL);
-        ctx.fillRect(this.w/2 + 1, 30, 5, 10 + legR);
-
         ctx.restore();
     }
 }
@@ -220,558 +330,224 @@ class Player {
 class Projectile {
     constructor(x, y, vx, vy) {
         this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-        this.life = 0;
-        this.dead = false;
+        this.life = 3;
     }
-
-    update() {
-        this.vx *= 0.99;
-        this.vy += GRAVITY * 0.5;
+    update(dt) {
         this.x += this.vx;
         this.y += this.vy;
-        this.life++;
+        this.vy += 0.2;
+        this.life -= dt;
+        
+        // Trail
+        particles.push(new Particle(this.x, this.y, random(-0.5,0.5), random(-0.5,0.5), 0.5, COLORS.ember, 2));
 
-        // Ember trail
-        if (Math.random() > 0.5) {
-            particles.push(new Particle(this.x, this.y, rnd(-1, 1), rnd(-1, 1), 'ember'));
+        // Collision
+        if(this.y > height - GROUND_Y_OFFSET) {
+            this.explode();
+            return false;
         }
-
-        // Collision with world objects
-        worldEntities.forEach(e => {
-            if (!e.burning && e.burnable && Math.abs(this.x - e.x) < e.w/2 && Math.abs(this.y - e.y) < e.h) {
-                e.ignite();
-                this.explode();
+        for(let obj of worldObjects) {
+            if(!obj.burning && Math.abs(this.x - obj.x) < 40 && Math.abs(this.y - obj.y) < 100) {
+                this.ignite(obj);
+                return false;
             }
-        });
-
-        if (this.y > height - 100 || this.life > 200) this.explode();
-    }
-
-    explode() {
-        this.dead = true;
-        shake = 10;
-        // Ignition burst
-        for (let i = 0; i < 25; i++) {
-            particles.push(new Particle(this.x, this.y, rnd(-5, 5), rnd(-8, 2), 'ember_burst'));
         }
-        // Light bloom
-        particles.push(new Particle(this.x, this.y, 0, 0, 'bloom'));
+        return this.life > 0;
     }
-
-    draw() {
-        ctx.save();
-        let g = ctx.createRadialGradient(this.x-cameraX, this.y, 0, this.x-cameraX, this.y, 12);
+    ignite(obj) {
+        obj.burning = true;
+        fires.push(new FireInstance(obj));
+        this.explode();
+    }
+    explode() {
+        for(let i=0; i<20; i++) {
+            particles.push(new Particle(this.x, this.y, random(-5, 5), random(-5, 2), 1, COLORS.ember, 3));
+        }
+        shake = 10;
+    }
+    draw(ctx) {
+        const g = ctx.createRadialGradient(this.x - cameraX, this.y, 0, this.x - cameraX, this.y, 15);
         g.addColorStop(0, '#fff');
-        g.addColorStop(0.4, '#ffcc00');
+        g.addColorStop(0.4, '#ff8800');
         g.addColorStop(1, 'transparent');
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(this.x-cameraX, this.y, 12, 0, Math.PI*2);
+        ctx.arc(this.x - cameraX, this.y, 15, 0, Math.PI*2);
         ctx.fill();
-        ctx.restore();
     }
-}
-
-class Entity {
-    constructor(x, type, scale = 1) {
-        this.x = x;
-        this.type = type;
-        this.scale = scale;
-        this.w = 100 * scale;
-        this.h = 150 * scale;
-        this.y = height - 120 + Math.sin(this.x * 0.005) * 10;
-        this.sway = 0;
-        this.swaySpeed = rnd(0.02, 0.05);
-        this.burning = false;
-        this.burnProgress = 0;
-        this.burnable = true;
-        this.lastRustle = 0;
-        
-        // Cache silhouette
-        this.ensureCache();
-    }
-
-    ensureCache() {
-        if (!cache[this.type]) {
-            const c = document.createElement('canvas');
-            c.width = 400; c.height = 600;
-            const tempCtx = c.getContext('2d');
-            tempCtx.fillStyle = 'black';
-            drawSilhouette(tempCtx, this.type, 200, 580);
-            cache[this.type] = c;
-        }
-    }
-
-    ignite() {
-        if (this.burning) return;
-        this.burning = true;
-    }
-
-    update(dt, player) {
-        // Proximity reaction
-        let dist = Math.abs(player.x - this.x);
-        let reaction = 0;
-        if (dist < 120) {
-            reaction = (1 - dist / 120) * 0.3;
-            // Rustle leaves
-            if (dist < 40 && Math.abs(player.vx) > 2 && Date.now() - this.lastRustle > 200) {
-                for (let i = 0; i < 8; i++) {
-                    particles.push(new Particle(this.x + rnd(-20, 20), this.y - rnd(10, 50), rnd(-2, 2), rnd(-3, -1), 'leaf'));
-                }
-                this.lastRustle = Date.now();
-            }
-        }
-        this.sway += this.swaySpeed + reaction;
-
-        // Fire logic
-        if (this.burning) {
-            this.burnProgress += 0.002;
-            if (Math.random() > 0.4) {
-                particles.push(new Particle(this.x + rnd(-this.w/3, this.w/3), this.y - rnd(0, this.h * (1-this.burnProgress)), rnd(-0.5, 0.5), rnd(-2, -4), 'flame'));
-            }
-            if (Math.random() > 0.8) {
-                particles.push(new Particle(this.x + rnd(-20, 20), this.y - this.h * (1-this.burnProgress) - 20, rnd(-1, 1), rnd(-1, -2), 'smoke'));
-            }
-
-            // Spread fire
-            if (this.burnProgress > 0.2 && this.burnProgress < 0.8 && Math.random() > 0.98) {
-                let neighbors = worldEntities.filter(e => !e.burning && e.burnable && Math.abs(e.x - this.x) < 220);
-                neighbors.forEach(n => {
-                    // Visual spark jump
-                    for(let i=0; i<5; i++) particles.push(new Particle(this.x, this.y-50, (n.x-this.x)*0.05 + rnd(-1,1), -5 + rnd(-2,2), 'ember'));
-                    setTimeout(() => n.ignite(), 1500);
-                });
-            }
-        }
-    }
-
-    draw() {
-        if (this.burnProgress >= 1) return;
-
-        ctx.save();
-        ctx.translate(this.x - cameraX, this.y);
-        
-        // Swaying transformation
-        const swayAngle = Math.sin(this.sway) * 0.03;
-        ctx.rotate(swayAngle);
-
-        // Fire glow
-        if (this.burning) {
-            let g = ctx.createRadialGradient(0, 0, 0, 0, 0, 150);
-            let pulse = 0.8 + Math.sin(Date.now()*0.01)*0.2;
-            g.addColorStop(0, `rgba(255, 100, 0, ${0.4 * pulse})`);
-            g.addColorStop(1, 'transparent');
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.ellipse(0, 20, 200, 60, 0, 0, Math.PI*2);
-            ctx.fill();
-        }
-
-        // Draw silhouette from cache
-        const img = cache[this.type];
-        const dw = img.width * this.scale * 0.5;
-        const dh = img.height * this.scale * 0.5;
-        
-        // Erosion effect using clipping
-        if (this.burning) {
-            ctx.beginPath();
-            ctx.rect(-dw/2, -dh + (dh * this.burnProgress), dw, dh);
-            ctx.clip();
-        }
-
-        ctx.drawImage(img, -dw/2, -dh, dw, dh);
-        ctx.restore();
-    }
-}
-
-class Particle {
-    constructor(x, y, vx, vy, type) {
-        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-        this.type = type;
-        this.life = 1.0;
-        this.decay = rnd(0.01, 0.03);
-        this.rot = Math.random() * Math.PI * 2;
-        this.rotV = rnd(-0.1, 0.1);
-        this.size = rnd(2, 5);
-        if (type === 'bloom') { this.size = 20; this.decay = 0.05; }
-        if (type === 'smoke') { this.size = 10; this.decay = 0.01; }
-    }
-
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
-        this.rot += this.rotV;
-        if (this.type === 'smoke') {
-            this.vx += Math.sin(Date.now()*0.01)*0.1;
-            this.size += 0.2;
-        }
-        if (this.type === 'flame') {
-            this.size *= 0.96;
-            this.vy *= 1.05;
-        }
-    }
-
-    draw() {
-        ctx.save();
-        ctx.translate(this.x - cameraX, this.y);
-        ctx.rotate(this.rot);
-        ctx.globalAlpha = Math.max(0, this.life);
-
-        if (this.type === 'leaf') {
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, this.size, this.size/2, 0, 0, Math.PI*2);
-            ctx.fill();
-        } else if (this.type === 'ember' || this.type === 'ember_burst') {
-            ctx.fillStyle = '#ff9900';
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#ff6600';
-            ctx.fillRect(-1, -1, 2, 2);
-        } else if (this.type === 'flame') {
-            let g = ctx.createLinearGradient(0, 0, 0, -this.size*4);
-            g.addColorStop(0, '#ffcc00');
-            g.addColorStop(1, '#ff3300');
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.moveTo(-this.size, 0);
-            ctx.quadraticCurveTo(0, -this.size*5, this.size, 0);
-            ctx.fill();
-        } else if (this.type === 'bloom') {
-            let g = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 10 * (1-this.life));
-            g.addColorStop(0, 'rgba(255, 180, 50, 0.6)');
-            g.addColorStop(1, 'transparent');
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.size * 10, 0, Math.PI*2);
-            ctx.fill();
-        } else if (this.type === 'smoke') {
-            ctx.fillStyle = `rgba(0, 0, 0, ${this.life * 0.4})`;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.size, 0, Math.PI*2);
-            ctx.fill();
-        }
-
-        ctx.restore();
-    }
-}
-
-// --- GENERATION FUNCTIONS ---
-
-function drawSilhouette(ctx, type, x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = 'black';
-
-    if (type === 'savanna') {
-        // Trunk
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.quadraticCurveTo(-2, -150, -20, -250);
-        ctx.lineTo(20, -250);
-        ctx.quadraticCurveTo(2, -150, 5, 0);
-        ctx.fill();
-        // Canopy - Flat layered lobes
-        for(let i=0; i<5; i++) {
-            drawLobe(ctx, rnd(-80, 80), -260 + rnd(-20, 20), rnd(80, 120), 40);
-        }
-    } else if (type === 'pine') {
-        ctx.fillRect(-6, -300, 12, 300);
-        for(let i=0; i<8; i++) {
-            let w = 120 - i*15;
-            ctx.beginPath();
-            ctx.moveTo(-w, -i*40);
-            ctx.lineTo(0, -i*40 - 80);
-            ctx.lineTo(w, -i*40);
-            ctx.fill();
-        }
-    } else if (type === 'deciduous') {
-        ctx.fillRect(-10, -100, 20, 100);
-        for(let i=0; i<12; i++) {
-            drawLobe(ctx, rnd(-60, 60), -150 + rnd(-100, 50), rnd(40, 70), rnd(40, 70));
-        }
-    } else if (type === 'jp_pine') {
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.bezierCurveTo(-20, -100, 80, -150, 100, -250);
-        ctx.lineWidth = 10; ctx.stroke();
-        // Needle clusters
-        for(let i=0; i<6; i++) {
-            drawStar(ctx, rnd(20, 120), -150 - i*20, rnd(20, 40));
-        }
-    } else if (type === 'baobab') {
-        ctx.beginPath();
-        ctx.moveTo(-50, 0);
-        ctx.bezierCurveTo(-60, -200, -20, -250, 0, -280);
-        ctx.lineTo(20, -280);
-        ctx.bezierCurveTo(40, -250, 60, -200, 50, 0);
-        ctx.fill();
-        drawLobe(ctx, 0, -300, 60, 30);
-    } else if (type === 'palm') {
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.quadraticCurveTo(20, -150, -30, -300);
-        ctx.lineWidth = 8; ctx.stroke();
-        for(let i=0; i<8; i++) {
-            ctx.save();
-            ctx.translate(-30, -300);
-            ctx.rotate(i * Math.PI/4);
-            ctx.beginPath();
-            ctx.moveTo(0,0);
-            ctx.quadraticCurveTo(40, 20, 80, 0);
-            ctx.stroke();
-            ctx.restore();
-        }
-    } else if (type === 'bush') {
-        for(let i=0; i<8; i++) drawLobe(ctx, rnd(-30, 30), rnd(-10, -40), rnd(20, 40), rnd(20, 40));
-    } else if (type === 'grass') {
-        for(let i=0; i<15; i++) {
-            ctx.beginPath();
-            ctx.moveTo(rnd(-20, 20), 0);
-            ctx.quadraticCurveTo(rnd(-30, 30), -50, rnd(-40, 40), -80);
-            ctx.stroke();
-        }
-    } else if (type === 'cottage') {
-        ctx.fillRect(-60, -80, 120, 80);
-        ctx.beginPath();
-        ctx.moveTo(-75, -80); ctx.lineTo(0, -150); ctx.lineTo(75, -80); ctx.fill();
-        ctx.clearRect(-15, -40, 10, 15); // Window cutout
-    }
-
-    ctx.restore();
-}
-
-function drawLobe(ctx, x, y, r1, r2) {
-    ctx.beginPath();
-    ctx.ellipse(x, y, r1, r2, rnd(0, Math.PI), 0, Math.PI*2);
-    ctx.fill();
-}
-
-function drawStar(ctx, x, y, r) {
-    ctx.save();
-    ctx.translate(x, y);
-    for(let i=0; i<6; i++) {
-        ctx.rotate(Math.PI/3);
-        ctx.fillRect(-r, -1, r*2, 2);
-    }
-    ctx.restore();
 }
 
 // --- INITIALIZATION ---
 
-const player = new Player();
+let player = new Player();
+let projectiles = [];
+let shake = 0;
 
 function initWorld() {
-    const types = ['savanna', 'pine', 'deciduous', 'jp_pine', 'baobab', 'palm'];
-    for (let x = 200; x < WORLD_WIDTH; x += rnd(150, 400)) {
-        let type = types[Math.floor(Math.random() * types.length)];
-        worldEntities.push(new Entity(x, type, rnd(0.8, 1.5)));
-    }
-    // Add bushes and grass
-    for (let x = 50; x < WORLD_WIDTH; x += rnd(30, 100)) {
-        let type = Math.random() > 0.5 ? 'bush' : 'grass';
-        worldEntities.push(new Entity(x, type, rnd(0.5, 1.0)));
-    }
-    // Add structures
-    for (let x = 1000; x < WORLD_WIDTH; x += 1500) {
-        worldEntities.push(new Entity(x, 'cottage', 1.2));
-    }
-    // Add fireflies
-    for (let i = 0; i < 40; i++) {
-        fireflies.push({
-            x: Math.random() * WORLD_WIDTH,
-            y: Math.random() * height,
-            off: Math.random() * 100,
-            s: rnd(1, 3)
+    const types = ['savanna', 'pine', 'palm', 'bush', 'grass', 'cottage'];
+    for(let i=0; i<150; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        worldObjects.push({
+            x: random(0, WORLD_WIDTH),
+            y: height - GROUND_Y_OFFSET + random(-5, 15),
+            type: type,
+            scale: type === 'bush' || type === 'grass' ? random(0.5, 1.2) : random(0.8, 1.5),
+            flip: Math.random() > 0.5,
+            seed: Math.random() * 100,
+            sway: 0,
+            swayTarget: 0,
+            burning: false
         });
     }
+    for(let i=0; i<30; i++) {
+        fireflies.push({ x: random(0, WORLD_WIDTH), y: random(200, height-200), s: random(0, 10) });
+    }
 }
+
+// --- INPUT HANDLERS ---
+const stick = document.getElementById('stick');
+const stickZone = document.getElementById('joystick-zone');
+const btnFire = document.getElementById('btn-fire');
+
+stickZone.addEventListener('pointerdown', e => input.active = true);
+window.addEventListener('pointermove', e => {
+    if(!input.active) return;
+    const rect = stickZone.getBoundingClientRect();
+    const centerX = rect.left + rect.width/2;
+    const centerY = rect.top + rect.height/2;
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    const dist = Math.min(60, Math.sqrt(dx*dx + dy*dy));
+    const angle = Math.atan2(dy, dx);
+    input.x = (Math.cos(angle) * dist) / 60;
+    input.y = (Math.sin(angle) * dist) / 60;
+    stick.style.transform = `translate(${input.x * 40}px, ${input.y * 40}px)`;
+    if(input.y < -0.8) input.jump = true;
+});
+window.addEventListener('pointerup', () => {
+    input.active = false;
+    input.x = 0; input.y = 0;
+    stick.style.transform = `translate(0,0)`;
+});
+
+btnFire.addEventListener('pointerdown', () => {
+    const vx = (input.x !== 0 ? input.x * 15 : 10);
+    const vy = (input.y !== 0 ? input.y * 15 : -8);
+    projectiles.push(new Projectile(player.x, player.y - 30, vx, vy));
+});
+
+// --- CORE LOOP ---
 
 function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
-
-// --- MAIN LOOP ---
-
-function update() {
-    const dt = 1;
-    
-    player.update(dt);
-    
-    worldEntities.forEach(e => e.update(dt, player));
-    
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        projectiles[i].update();
-        if (projectiles[i].dead) projectiles.splice(i, 1);
-    }
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].update();
-        if (particles[i].life <= 0) particles.splice(i, 1);
-    }
-
-    if (shake > 0) shake *= 0.9;
-}
-
-function draw() {
-    ctx.clearRect(0, 0, width, height);
-    
-    // 1. Sky Gradient
-    let skyG = ctx.createLinearGradient(0, 0, 0, height);
-    skyG.addColorStop(0, '#1a0a2e'); // Deep indigo
-    skyG.addColorStop(0.5, '#4a1e3c'); // Dusty rose
-    skyG.addColorStop(0.8, '#ff7e5f'); // Coral
-    skyG.addColorStop(1, '#feb47b'); // Amber
-    ctx.fillStyle = skyG;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    if (shake > 1) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
-
-    // 2. Parallax Layers
-    drawParallax(0.1, '#2a1545', 50, 0.2); // Farthest hills
-    drawParallax(0.25, '#1e0d2d', 80, 0.4); // Mid hills
-    drawParallax(0.5, '#0a0510', 120, 0.6); // Tree line
-
-    // 3. Ground Glows (under fire)
-    worldEntities.forEach(e => {
-        if (e.burning) {
-            let g = ctx.createRadialGradient(e.x-cameraX, e.y, 0, e.x-cameraX, e.y, 150);
-            g.addColorStop(0, 'rgba(255, 100, 0, 0.2)');
-            g.addColorStop(1, 'transparent');
-            ctx.fillStyle = g;
-            ctx.fillRect(e.x-cameraX-200, e.y-50, 400, 100);
-        }
-    });
-
-    // 4. World Entities (Silhouettes)
-    worldEntities.sort((a, b) => a.y - b.y);
-    worldEntities.forEach(e => e.draw());
-
-    // 5. Player
-    player.draw();
-
-    // 6. Projectiles & Particles
-    projectiles.forEach(p => p.draw());
-    particles.forEach(p => p.draw());
-
-    // 7. Ground Line (Rich Black)
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.moveTo(0, height);
-    for (let x = 0; x <= width; x += 20) {
-        let wx = x + cameraX;
-        ctx.lineTo(x, height - 110 + Math.sin(wx * 0.005) * 10);
-    }
-    ctx.lineTo(width, height);
-    ctx.fill();
-
-    // 8. Fireflies
-    fireflies.forEach(f => {
-        let x = (f.x - cameraX * 0.8 + WORLD_WIDTH) % WORLD_WIDTH;
-        if (x < width) {
-            let lum = Math.sin(Date.now() * 0.002 + f.off) * 0.5 + 0.5;
-            ctx.fillStyle = `rgba(200, 255, 100, ${lum * 0.8})`;
-            ctx.beginPath();
-            ctx.arc(x, f.y + Math.sin(Date.now()*0.001 + f.off)*20, f.s, 0, Math.PI*2);
-            ctx.fill();
-        }
-    });
-
-    ctx.restore();
-
-    // 9. Vignette Overlay
-    let vig = ctx.createRadialGradient(width/2, height/2, width/4, width/2, height/2, width*0.7);
-    vig.addColorStop(0, 'transparent');
-    vig.addColorStop(1, 'rgba(0,0,0,0.6)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, width, height);
-}
-
-function drawParallax(speed, color, baseHeight, scale) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(0, height);
-    for (let x = 0; x <= width; x += 50) {
-        let wx = x + cameraX * speed;
-        let h = height - baseHeight + Math.sin(wx * 0.002) * 40 * scale + Math.cos(wx * 0.005) * 20;
-        ctx.lineTo(x, h);
-    }
-    ctx.lineTo(width, height);
-    ctx.fill();
-}
-
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-
-// --- INPUT HANDLING ---
-
-let joystickActive = false;
-let joyStart = { x: 0, y: 0 };
-
-function handleThrow() {
-    const vx = input.lastDir * 12;
-    const vy = -10;
-    projectiles.push(new Projectile(player.x, player.y + 20, vx, vy));
+    dpr = window.devicePixelRatio || 1;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.scale(dpr, dpr);
 }
 
 window.addEventListener('resize', resize);
-btnThrow.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    handleThrow();
-});
-
-const joyContainer = document.getElementById('joystick-container');
-joyContainer.addEventListener('pointerdown', e => {
-    joystickActive = true;
-    joyStart = { x: e.clientX, y: e.clientY };
-});
-
-window.addEventListener('pointermove', e => {
-    if (!joystickActive) return;
-    let dx = e.clientX - joyStart.x;
-    let dy = e.clientY - joyStart.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-    let max = 45;
-    if (dist > max) {
-        dx *= max/dist;
-        dy *= max/dist;
-    }
-    knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    input.x = dx / max;
-    
-    if (dy < -30 && player.grounded) {
-        player.vy = -12;
-        player.grounded = false;
-    }
-});
-
-window.addEventListener('pointerup', () => {
-    joystickActive = false;
-    knob.style.transform = `translate(0, 0)`;
-    input.x = 0;
-});
-
-// Keyboard Fallback
-window.addEventListener('keydown', e => {
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.x = -1;
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.x = 1;
-    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-        if (player.grounded) { player.vy = -12; player.grounded = false; }
-    }
-    if (e.code === 'KeyF' || e.code === 'Enter') handleThrow();
-});
-window.addEventListener('keyup', e => {
-    if (['ArrowLeft', 'KeyA', 'ArrowRight', 'KeyD'].includes(e.code)) input.x = 0;
-});
-
-// Init
 resize();
 initWorld();
+
+function loop() {
+    // 1. Update
+    player.update(0.016);
+    projectiles = projectiles.filter(p => p.update(0.016));
+    particles.forEach(p => p.update(0.016));
+    particles = particles.filter(p => p.life > 0);
+    fires.forEach(f => f.update(0.016));
+    
+    if(shake > 0) shake *= 0.9;
+
+    // 2. Draw Sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+    skyGrad.addColorStop(0, COLORS.skyTop);
+    skyGrad.addColorStop(0.5, COLORS.skyMid);
+    skyGrad.addColorStop(1, COLORS.skyBot);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // 3. Parallax Layers
+    [0.1, 0.25, 0.5].forEach((depth, i) => {
+        ctx.save();
+        ctx.translate(-cameraX * depth, 0);
+        ctx.fillStyle = `rgba(10, 10, 30, ${0.2 + i * 0.2})`;
+        for(let j=0; j<15; j++) {
+            const x = j * 500;
+            ctx.beginPath();
+            ctx.moveTo(x, height);
+            ctx.quadraticCurveTo(x + 250, height - 300 - (i*50), x + 500, height);
+            ctx.fill();
+        }
+        ctx.restore();
+    });
+
+    // 4. World Objects
+    ctx.save();
+    if(shake > 1) ctx.translate(random(-shake, shake), random(-shake, shake));
+    
+    // Sort and Draw
+    worldObjects.forEach(obj => {
+        const screenX = obj.x - cameraX;
+        if(screenX < -200 || screenX > width + 200) return;
+
+        obj.sway = lerp(obj.sway, obj.swayTarget + Math.sin(Date.now() * 0.002 + obj.seed) * 0.05, 0.1);
+        
+        ctx.save();
+        ctx.translate(screenX, obj.y);
+        ctx.rotate(obj.sway);
+        drawSilhouette(ctx, obj.type, 0, 0, obj.scale, obj.flip, obj.seed);
+        ctx.restore();
+
+        if(obj.burning) {
+            // Draw Ground Glow
+            const g = ctx.createRadialGradient(screenX, obj.y, 0, screenX, obj.y, 100);
+            g.addColorStop(0, 'rgba(255, 100, 0, 0.3)');
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g;
+            ctx.fillRect(screenX - 100, obj.y - 20, 200, 40);
+        }
+    });
+
+    player.draw(ctx);
+    projectiles.forEach(p => p.draw(ctx));
+    particles.forEach(p => p.draw(ctx));
+
+    // Fireflies
+    fireflies.forEach(f => {
+        f.s += 0.02;
+        const op = (Math.sin(f.s) + 1) / 2;
+        const fx = f.x - cameraX + Math.cos(f.s) * 20;
+        const fy = f.y + Math.sin(f.s * 0.5) * 20;
+        ctx.globalAlpha = op;
+        const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 5);
+        g.addColorStop(0, '#fff');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(fx, fy, 5, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Foreground Ground
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, height - GROUND_Y_OFFSET, width, GROUND_Y_OFFSET);
+
+    // Vignette
+    const vig = ctx.createRadialGradient(width/2, height/2, width/4, width/2, height/2, width/1.2);
+    vig.addColorStop(0, 'transparent');
+    vig.addColorStop(1, 'rgba(0,0,0,0.7)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
+
+    requestAnimationFrame(loop);
+}
+
 loop();
 
 </script>
