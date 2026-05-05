@@ -3,235 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Quiet Desk - Librarian Simulator</title>
+    <title>The Quiet Desk</title>
     <style>
+        /* CSS RESET & VARIABLES */
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         :root {
-            --aero-bg: rgba(255, 255, 255, 0.35);
-            --aero-border: rgba(255, 255, 255, 0.4);
-            --win-blue: #0078d7;
-            --win-red: #e81123;
-            --taskbar-bg: rgba(10, 20, 40, 0.75);
-            --desk-wood: #4d2b1a;
+            --desk-color: #8b5a2b;
+            --ambient-light: rgba(255, 230, 180, 0.2);
+            --aero-glass: rgba(230, 240, 255, 0.45);
+            --aero-border: rgba(255, 255, 255, 0.7);
+            --aero-shadow: rgba(0, 0, 0, 0.4);
+            --taskbar-bg: linear-gradient(to bottom, rgba(160,200,240,0.7) 0%, rgba(100,150,210,0.8) 40%, rgba(60,110,180,0.9) 100%);
+            --theme-morning: linear-gradient(to bottom, #d4e4f7, #fdf6e3);
+            --theme-afternoon: linear-gradient(to bottom, #b3d4ff, #e6f0ff);
+            --theme-evening: linear-gradient(to bottom, #f2c98d, #f0e6d2);
+            --theme-night: linear-gradient(to bottom, #2b3a4a, #1a2530);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; background: #111;
-        }
-
-        /* --- LIBRARY AMBIENCE --- */
-        #library-desk {
-            width: 100vw; height: 100vh;
-            background: linear-gradient(to bottom, #333, #111);
-            display: flex; justify-content: center; align-items: center;
-            position: relative;
-        }
-
-        .desk-surface {
-            position: absolute; bottom: 0; width: 100%; height: 40%;
-            background: var(--desk-wood);
-            border-top: 10px solid #3d2114;
-            box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        .mug {
-            position: absolute; bottom: 15%; left: 10%;
-            width: 60px; height: 70px; background: #eee;
-            border-radius: 5px 5px 20px 20px; z-index: 2;
-        }
-        .mug::after {
-            content: ''; position: absolute; right: -15px; top: 15px;
-            width: 25px; height: 35px; border: 6px solid #eee; border-radius: 50%;
-        }
-
-        /* --- PC MONITOR --- */
-        #monitor-frame {
-            width: 95vw; height: 90vh;
-            max-width: 1366px; max-height: 1024px;
-            background: #222; border: 20px solid #111;
-            border-radius: 15px; position: relative;
-            box-shadow: 0 0 100px rgba(0,0,0,0.8), 0 0 20px rgba(100,150,255,0.1);
-            display: flex; flex-direction: column; overflow: hidden;
-            z-index: 5;
-        }
-
-        /* --- WINDOWS 7 DESKTOP --- */
-        #desktop {
-            flex: 1; position: relative;
-            background: radial-gradient(circle at center, #2e7bb0 0%, #0c3a6b 100%);
-            overflow: hidden;
-        }
-
-        /* Desktop Grid */
-        #icon-grid {
-            padding: 20px; display: grid;
-            grid-auto-flow: column; grid-template-rows: repeat(auto-fill, 100px);
-            grid-gap: 20px; pointer-events: none;
-        }
-        .desktop-icon {
-            width: 90px; height: 95px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center;
-            color: white; text-shadow: 0 1px 2px black; font-size: 14px;
-            pointer-events: auto; border-radius: 3px;
-        }
-        .desktop-icon:active { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); }
-        .desktop-icon .icon-img { width: 48px; height: 48px; margin-bottom: 5px; }
-
-        /* --- TASKBAR --- */
-        #taskbar {
-            height: 50px; background: var(--taskbar-bg);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            display: flex; align-items: center; padding: 0 5px; z-index: 9999;
-            border-top: 1px solid rgba(255,255,255,0.2);
-        }
-        #start-btn {
-            width: 44px; height: 44px; border-radius: 50%;
-            background: radial-gradient(circle, #5e9eff, #0046b8);
-            border: 2px solid rgba(255,255,255,0.4);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5); margin-right: 10px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #taskbar-apps { flex: 1; display: flex; gap: 5px; height: 100%; align-items: center; }
-        .taskbar-item {
-            width: 50px; height: 40px; border-radius: 3px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .taskbar-item.active { background: rgba(255,255,255,0.2); box-shadow: inset 0 0 5px rgba(255,255,255,0.3); }
-
-        #system-tray {
-            padding: 0 15px; color: white; font-size: 13px; text-align: right;
-            border-left: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* --- WINDOWS AERO --- */
-        .window {
-            position: absolute; min-width: 300px; min-height: 200px;
-            background: #fff; border-radius: 8px 8px 3px 3px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        .window.active { z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
-
-        .titlebar {
-            height: 38px; background: var(--aero-bg);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: flex; align-items: center; padding: 0 10px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            user-select: none;
-        }
-        .window.active .titlebar { background: rgba(135, 206, 250, 0.5); }
-        .title-text { flex: 1; font-weight: bold; font-size: 14px; color: #111; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        /* ENVIRONMENT / DESK */
+        body { background-color: #111; overflow: hidden; touch-action: none; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; transition: background 2s; }
+        #desk { position: relative; width: 100vw; height: 100vh; background: radial-gradient(circle at center, var(--ambient-light), rgba(0,0,0,0.8)), repeating-linear-gradient(45deg, #6b4423, #6b4423 10px, #5a381b 10px, #5a381b 20px); display: flex; justify-content: center; align-items: center; perspective: 1000px; transition: all 2s ease; }
         
-        .win-controls { display: flex; gap: 5px; }
-        .win-btn {
-            width: 30px; height: 22px; border-radius: 3px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.2); border: 1px solid rgba(0,0,0,0.1);
-        }
-        .win-btn.close { background: #e81123cc; color: white; }
+        /* THE MONITOR */
+        #monitor-frame { width: 90vw; height: 85vh; max-width: 1366px; max-height: 1024px; min-width: 1024px; min-height: 768px; background: #222; border-radius: 10px; border: 4px solid #111; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 5px rgba(255,255,255,0.1); position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        #monitor-brand { position: absolute; bottom: 5px; color: #555; font-size: 12px; font-weight: bold; letter-spacing: 2px; }
+        #power-button { position: absolute; bottom: 5px; right: 20px; width: 20px; height: 20px; border-radius: 50%; background: #444; border: 2px solid #111; cursor: pointer; }
+        #power-button.on { background: #0f0; box-shadow: 0 0 10px #0f0; }
 
-        .window-content { flex: 1; position: relative; overflow: auto; background: white; }
-
-        /* --- APP SPECIFIC CSS --- */
-        /* WebExplorer */
-        .browser-ui { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 5px; }
-        .address-bar-wrap { display: flex; gap: 5px; padding: 5px; }
-        .address-bar { flex: 1; height: 34px; padding: 0 10px; border: 1px solid #ccc; font-size: 16px; border-radius: 2px; }
-        .browser-go { padding: 0 15px; background: #ddd; border: 1px solid #999; border-radius: 2px; }
-        .loading-bar-container { height: 4px; width: 100%; background: #eee; }
-        #browser-progress { height: 100%; width: 0%; background: #2e7bb0; transition: width 0.3s; }
+        /* THE SCREEN & OS */
+        #screen { width: calc(100% - 20px); height: calc(100% - 40px); background: #000; position: relative; overflow: hidden; margin-bottom: 20px; }
+        #os-desktop { width: 100%; height: 100%; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%231a5a9e"/><stop offset="100%" stop-color="%2367a7d4"/></linearGradient></defs><rect width="100%" height="100%" fill="url(%23g)"/><path d="M0,100 Q300,300 800,0" stroke="rgba(255,255,255,0.1)" stroke-width="50" fill="none"/></svg>'); background-size: cover; display: none; position: relative; }
         
-        .web-frame { padding: 20px; font-family: "Times New Roman", serif; line-height: 1.4; color: #000; }
-        .ie-error { text-align: center; padding-top: 50px; font-family: sans-serif; }
+        /* ICONS */
+        .desktop-icon { width: 80px; height: 80px; margin: 10px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-shadow: 1px 1px 2px black; cursor: pointer; text-align: center; border-radius: 5px; }
+        .desktop-icon:hover { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); }
+        .desktop-icon .icon-img { font-size: 40px; margin-bottom: 5px; }
+        .desktop-icon .icon-text { font-size: 14px; line-height: 1.1; }
 
-        /* Notepad */
-        .notepad-textarea { 
-            width: 100%; height: 100%; border: none; resize: none; 
-            padding: 10px; font-family: monospace; font-size: 16px; outline: none;
-        }
-
-        /* --- QUEST NOTIFICATIONS --- */
-        #notification-center {
-            position: absolute; bottom: 60px; right: 20px;
-            width: 320px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;
-        }
-        .quest-balloon {
-            background: #ffffcc; border: 1px solid #666; border-radius: 10px;
-            padding: 15px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-            animation: slideIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            position: relative; cursor: pointer;
-        }
-        @keyframes slideIn { from { transform: translateX(110%); } to { transform: translateX(0); } }
+        /* WINDOWS */
+        .window { position: absolute; background: #fff; border: 1px solid var(--aero-border); border-radius: 8px 8px 0 0; box-shadow: 0 10px 30px var(--aero-shadow); display: flex; flex-direction: column; min-width: 300px; min-height: 200px; display: none; overflow: hidden; }
+        .window.active { box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+        .window.active .title-bar { background: rgba(140, 190, 240, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .title-bar { height: 35px; background: rgba(200, 200, 200, 0.4); display: flex; align-items: center; padding: 0 10px; border-bottom: 1px solid rgba(255,255,255,0.5); cursor: default; }
+        .title-bar-text { flex-grow: 1; font-weight: bold; color: #111; text-shadow: 0 0 5px rgba(255,255,255,0.8); font-size: 14px; pointer-events: none; }
+        .title-bar-controls { display: flex; gap: 5px; }
+        .win-btn { width: 28px; height: 20px; border: 1px solid rgba(0,0,0,0.3); border-radius: 3px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.5); }
+        .win-btn-min { background: linear-gradient(#fff, #ccc); color: #000; font-weight: bold; padding-bottom:5px; }
+        .win-btn-max { background: linear-gradient(#fff, #ccc); color: #000; font-size:12px; }
+        .win-btn-close { background: linear-gradient(#faa, #e44); color: white; font-weight: bold; }
+        .win-btn-close:hover { background: #f00; }
+        .window-content { flex-grow: 1; background: #f0f0f0; position: relative; overflow: auto; }
         
-        /* --- HUD --- */
-        #hud {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); color: #fff; padding: 5px 20px;
-            border-radius: 20px; display: flex; gap: 20px; font-weight: bold;
-            pointer-events: none; z-index: 10001;
-        }
+        /* RESIZE HANDLES */
+        .resize-handle { position: absolute; width: 10px; height: 10px; background: transparent; }
+        .resize-se { bottom: 0; right: 0; cursor: se-resize; }
 
-        /* --- SHOP --- */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .shop-item { border: 1px solid #ddd; padding: 10px; border-radius: 5px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .shop-item button { margin-top: 8px; width: 100%; height: 44px; background: #4CAF50; color: white; border: none; border-radius: 5px; }
-        .shop-item button:disabled { background: #ccc; }
+        /* TASKBAR */
+        #taskbar { position: absolute; bottom: 0; width: 100%; height: 44px; background: var(--taskbar-bg); border-top: 1px solid rgba(255,255,255,0.5); display: flex; align-items: center; padding: 0 5px; z-index: 1000; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        #start-btn { width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle, #5bb4ff, #115599); border: 2px solid #fff; box-shadow: 0 0 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 24px; margin-right: 10px; margin-bottom: 10px; }
+        #start-btn:active { background: #115599; }
+        #taskbar-apps { flex-grow: 1; display: flex; gap: 5px; height: 100%; align-items: center; }
+        .taskbar-item { padding: 0 15px; height: 36px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; display: flex; align-items: center; color: white; cursor: pointer; font-size: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); }
+        .taskbar-item.active { background: rgba(255,255,255,0.3); box-shadow: inset 0 0 5px rgba(0,0,0,0.3); }
+        #system-tray { display: flex; align-items: center; color: white; font-size: 14px; padding-right: 10px; gap: 10px; }
 
-        /* Context Menu */
-        #ctx-menu {
-            position: fixed; width: 150px; background: #eee; border: 1px solid #999;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); z-index: 20000; display: none;
-        }
-        .ctx-item { padding: 8px 15px; font-size: 14px; cursor: default; }
-        .ctx-item:hover { background: #3296fa; color: white; }
+        /* START MENU */
+        #start-menu { position: absolute; bottom: 50px; left: 0; width: 350px; height: 400px; background: rgba(240, 248, 255, 0.9); border: 1px solid var(--aero-border); border-radius: 5px 5px 5px 0; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); backdrop-filter: blur(10px); display: none; z-index: 1001; }
+        #start-menu.show { display: flex; }
+        .sm-left { width: 60%; background: #fff; border-right: 1px solid #ccc; padding: 5px; }
+        .sm-right { width: 40%; background: transparent; padding: 5px; }
+        .sm-item { padding: 10px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .sm-item:hover { background: rgba(50, 150, 250, 0.2); border-radius: 3px; }
 
-        .hidden { display: none !important; }
+        /* NOTIFICATIONS & QUESTS */
+        #notification-area { position: absolute; bottom: 50px; right: 10px; width: 300px; z-index: 1000; }
+        .balloon { background: #ffffe1; border: 1px solid #000; border-radius: 5px; padding: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); position: relative; margin-top: 10px; animation: slideUp 0.5s ease-out; display: flex; flex-direction: column; gap: 10px; }
+        .balloon::after { content: ''; position: absolute; bottom: -10px; right: 30px; border-width: 10px 10px 0 0; border-style: solid; border-color: #000 transparent transparent transparent; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .quest-header { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; font-size: 14px; }
+        .quest-body { font-size: 14px; }
+        .quest-timer { height: 5px; background: #ccc; width: 100%; border-radius: 2px; overflow: hidden; margin-top: 5px; }
+        .quest-timer-fill { height: 100%; background: #0f0; width: 100%; }
+        .quest-input-area { display: flex; gap: 5px; margin-top: 5px; }
+        .quest-input-area input { flex-grow: 1; padding: 5px; border: 1px solid #999; }
+        .quest-input-area button { padding: 5px 10px; cursor: pointer; }
+
+        /* HUD */
+        #hud { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: gold; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 18px; z-index: 1000; border: 2px solid gold; pointer-events: none; }
+
+        /* APP: WEBEXPLORER */
+        .we-chrome { background: #e0eaf6; border-bottom: 1px solid #999; display: flex; flex-direction: column; }
+        .we-toolbar { display: flex; padding: 5px; gap: 5px; align-items: center; }
+        .we-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #ccc; background: linear-gradient(#fff, #e0e0e0); cursor: pointer; font-size: 20px; display: flex; justify-content: center; align-items: center; }
+        .we-btn:active { background: #ccc; }
+        .we-address-bar { flex-grow: 1; display: flex; border: 1px solid #888; background: #fff; height: 34px; align-items: center; padding: 0 5px; }
+        .we-address-bar input { flex-grow: 1; border: none; outline: none; font-size: 16px; font-family: monospace; }
+        .we-go { background: #008000; color: white; border: none; padding: 5px 15px; cursor: pointer; font-weight: bold; height: 34px; }
+        .we-viewport { flex-grow: 1; background: #fff; overflow-y: auto; position: relative; }
+        .we-status { height: 24px; background: #f0f0f0; border-top: 1px solid #ccc; font-size: 12px; display: flex; align-items: center; padding: 0 10px; color: #555; }
+        .we-progress-container { width: 150px; height: 14px; border: 1px solid #ccc; margin-left: auto; background: #fff; display: none; }
+        .we-progress-bar { width: 0%; height: 100%; background: #0f0; }
+
+        /* APP: NOTEPAD */
+        .notepad-textarea { width: 100%; height: 100%; border: none; outline: none; resize: none; font-family: 'Courier New', Courier, monospace; font-size: 16px; padding: 10px; }
+        .notepad-menu { height: 25px; background: #f0f0f0; border-bottom: 1px solid #ccc; display: flex; align-items: center; padding: 0 10px; font-size: 14px; gap: 15px; color: #333; }
+
+        /* APP: MY COMPUTER */
+        .mc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1)); gap: 20px; padding: 20px; }
+        .mc-drive { display: flex; align-items: center; gap: 10px; padding: 10px; cursor: pointer; }
+        .mc-drive:hover { background: #e5f3ff; outline: 1px solid #cce8ff; }
+
+        /* APP: SHOP */
+        .shop-container { padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #fff; height: 100%; overflow-y: auto; }
+        .shop-item { display: flex; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; align-items: center; gap: 15px; border-radius: 5px; }
+        .shop-item-icon { font-size: 40px; }
+        .shop-item-details { flex-grow: 1; }
+        .shop-item-title { font-weight: bold; font-size: 18px; }
+        .shop-item-desc { font-size: 14px; color: #555; }
+        .shop-item-buy { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 3px; font-weight: bold; cursor: pointer; min-width: 80px; }
+        .shop-item-buy:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* FAKE INTERNET STYLES */
+        .fi-body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+        .fi-header { text-align: center; margin-bottom: 20px; }
+        .fi-searchbox { display: flex; justify-content: center; margin: 20px 0; }
+        .fi-searchbox input { width: 300px; padding: 10px; font-size: 16px; border: 2px solid #3b5998; }
+        .fi-searchbox button { padding: 10px 20px; background: #e0e0e0; border: 1px solid #999; cursor: pointer; }
+        .fi-results { display: flex; flex-direction: column; gap: 20px; }
+        .fi-result-item { margin-bottom: 10px; }
+        .fi-result-link { color: #1a0dab; font-size: 18px; text-decoration: underline; cursor: pointer; }
+        .fi-result-url { color: #006621; font-size: 14px; }
+        .fi-result-desc { font-size: 14px; }
+        .fi-wiki-title { border-bottom: 1px solid #a2a9b1; padding-bottom: 5px; font-family: serif; font-size: 28px; }
+        .fi-wiki-box { float: right; border: 1px solid #a2a9b1; background: #f8f9fa; padding: 10px; width: 250px; margin-left: 20px; font-size: 14px; }
+        .fi-image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .fi-image { font-size: 60px; text-align: center; border: 1px solid #ccc; padding: 20px; cursor: pointer; background: #f9f9f9; }
+        .fi-image:hover { background: #e0e0e0; }
+        .fi-error { text-align: center; margin-top: 50px; }
+        .fi-error h1 { color: #900; }
+        
+        /* OVERLAYS */
+        #boot-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .boot-text { font-family: monospace; font-size: 18px; text-align: center; }
+
+        /* AMBIENT ITEMS */
+        .ambient-item { position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+        #coffee-mug-item { bottom: 20px; left: 20px; font-size: 60px; z-index: 5; }
+        #lamp-item { top: -20px; right: 50px; font-size: 80px; z-index: 15; text-shadow: 0 0 50px yellow; }
+
     </style>
 </head>
 <body>
 
-    <div id="library-desk">
-        <div class="desk-surface"></div>
-        <div class="mug" id="desk-mug"></div>
-        
-        <div id="hud">
-            <span>Library Credits: <span id="stat-lc">0</span> LC</span>
-            <span>Quests: <span id="stat-completed">0</span></span>
-        </div>
-
-        <div id="monitor-frame">
-            <div id="desktop" oncontextmenu="return false;">
-                <div id="icon-grid">
-                    <!-- Icons generated by JS -->
-                </div>
-
-                <div id="window-container"></div>
-
-                <div id="notification-center"></div>
+<div id="desk">
+    <div id="coffee-mug-item" class="ambient-item">☕</div>
+    <div id="lamp-item" class="ambient-item">💡</div>
+    
+    <div id="monitor-frame">
+        <div id="screen">
+            <div id="boot-screen">
+                <div class="boot-text" id="boot-msg">Monitor Standby...<br>Press Power Button to turn on.</div>
             </div>
 
-            <div id="taskbar">
-                <div id="start-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="white" d="M3,12V6.75L9,5.43V12H3M21,12V18.25L10,19.74V12H21M3,13H9V18.57L3,17.25V13M10,4.26L21,5.75V12H10V4.26Z" /></svg>
+            <div id="os-desktop">
+                <div id="hud">LC: <span id="lc-display">0</span></div>
+                
+                <!-- Desktop Icons -->
+                <div class="desktop-icon" onclick="os.openApp('mycomputer')">
+                    <div class="icon-img">💻</div>
+                    <div class="icon-text">My<br>Computer</div>
                 </div>
-                <div id="taskbar-apps"></div>
-                <div id="system-tray">
-                    <span id="tray-time">12:00 PM</span><br>
-                    <small id="tray-status">Searching...</small>
+                <div class="desktop-icon" onclick="os.openApp('webexplorer')">
+                    <div class="icon-img">🌐</div>
+                    <div class="icon-text">WebExplorer</div>
                 </div>
+                <div class="desktop-icon" onclick="os.openApp('notepad')">
+                    <div class="icon-img">📝</div>
+                    <div class="icon-text">Notepad</div>
+                </div>
+                <div class="desktop-icon" onclick="os.openApp('shop')">
+                    <div class="icon-img">🛒</div>
+                    <div class="icon-text">Library<br>Shop</div>
+                </div>
+
+                <!-- Windows Container -->
+                <div id="windows-container"></div>
+
+                <!-- Start Menu -->
+                <div id="start-menu">
+                    <div class="sm-left">
+                        <div class="sm-item" onclick="os.openApp('webexplorer')">🌐 WebExplorer</div>
+                        <div class="sm-item" onclick="os.openApp('notepad')">📝 Notepad</div>
+                        <div class="sm-item" onclick="os.openApp('shop')">🛒 Library Shop</div>
+                        <div style="border-top: 1px solid #ccc; margin: 10px 0;"></div>
+                        <div class="sm-item" onclick="game.saveGame(true)">💾 Force Save</div>
+                    </div>
+                    <div class="sm-right">
+                        <div class="sm-item" style="color: white;">Documents</div>
+                        <div class="sm-item" style="color: white;">Pictures</div>
+                        <div class="sm-item" style="color: white;">Control Panel</div>
+                    </div>
+                </div>
+
+                <!-- Taskbar -->
+                <div id="taskbar">
+                    <div id="start-btn" onclick="os.toggleStartMenu()">⊞</div>
+                    <div id="taskbar-apps"></div>
+                    <div id="system-tray">
+                        <span id="save-icon" style="opacity: 0;">💾</span>
+                        <span id="net-icon">📶⚠️</span>
+                        <span id="vol-icon">🔊</span>
+                        <span id="clock">12:00 PM</span>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div id="notification-area"></div>
             </div>
         </div>
+        <div id="monitor-brand">COMPU-TRONIX 2000</div>
+        <div id="power-button" onclick="game.boot()"></div>
     </div>
+</div>
 
-    <div id="ctx-menu">
-        <div class="ctx-item" onclick="location.reload()">Refresh</div>
-        <div class="ctx-item">New Folder</div>
-        <div class="ctx-item">Personalize</div>
+<!-- Template for WebExplorer Window -->
+<template id="tpl-webexplorer">
+    <div class="we-chrome">
+        <div class="we-toolbar">
+            <button class="we-btn" onclick="webEx.goBack(this)">←</button>
+            <button class="we-btn" onclick="webEx.goForward(this)">→</button>
+            <button class="we-btn" onclick="webEx.refresh(this)">↻</button>
+            <div class="we-address-bar">
+                <input type="text" class="we-url" value="http://home.local">
+            </div>
+            <button class="we-go" onclick="webEx.go(this)">Go</button>
+        </div>
     </div>
+    <div class="we-viewport"></div>
+    <div class="we-status">
+        <span class="we-status-text">Done</span>
+        <div class="we-progress-container">
+            <div class="we-progress-bar"></div>
+        </div>
+    </div>
+</template>
 
-    <script src="game.js"></script>
+<!-- Template for Notepad Window -->
+<template id="tpl-notepad">
+    <div class="notepad-menu">
+        <span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span>
+    </div>
+    <textarea class="notepad-textarea" spellcheck="false"></textarea>
+</template>
+
+<!-- Template for My Computer Window -->
+<template id="tpl-mycomputer">
+    <div class="mc-grid">
+        <div class="mc-drive">
+            <div style="font-size: 40px;">🖴</div>
+            <div>Local Disk (C:)<br><small>24.5 GB free</small></div>
+        </div>
+        <div class="mc-drive">
+            <div style="font-size: 40px;">💿</div>
+            <div>CD Drive (D:)<br><small>Audio CD</small></div>
+        </div>
+        <div class="mc-drive">
+            <div style="font-size: 40px;">🖧</div>
+            <div>LibraryNet (Z:)<br><small>Disconnected</small></div>
+        </div>
+    </div>
+</template>
+
+<!-- Template for Shop Window -->
+<template id="tpl-shop">
+    <div class="shop-container" id="shop-list"></div>
+</template>
+
+<script src="game.js"></script>
 </body>
 </html>
