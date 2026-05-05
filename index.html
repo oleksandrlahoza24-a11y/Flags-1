@@ -2,339 +2,204 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Woodwork Pro Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wood You Date Me? - A Hilarious Dating Simulator</title>
     <style>
-        :root {
-            --accent: #ffcc33;
-            --dark-panel: #1a1a1a;
-            --glass: rgba(255, 255, 255, 0.1);
-        }
-
         body {
-            margin: 0;
-            background: #121212;
-            color: #eee;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-            touch-action: none;
-            display: flex;
-            height: 100vh;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #ffecf0;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
         }
-
-        /* --- Sidebar Navigation --- */
-        #sidebar {
-            width: 100px;
-            background: var(--dark-panel);
-            border-right: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-            gap: 25px;
-            z-index: 10;
+        
+        h1 {
+            color: #d63384;
+            margin-bottom: 30px;
         }
-
-        .station-btn {
-            width: 60px;
-            height: 60px;
+        
+        .game-container {
+            background-color: white;
             border-radius: 15px;
-            border: 1px solid #444;
-            background: #222;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        .station-btn.active {
-            background: var(--accent);
-            color: black;
-            box-shadow: 0 0 15px var(--accent);
+        
+        .character {
+            font-size: 100px;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
         }
-
-        .station-btn i { font-size: 20px; margin-bottom: 4px; }
-
-        /* --- Main Work Area --- */
-        #main-view {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
         }
-
-        #canvas-container {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle, #2c2c2c 0%, #121212 100%);
-        }
-
-        canvas {
-            max-width: 90%;
+        
+        .dialogue-box {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
             border-radius: 10px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-
-        /* --- Character / Dialogue System --- */
-        #character-overlay {
-            height: 160px;
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
-            display: flex;
-            padding: 20px 40px;
-            align-items: flex-end;
-            gap: 30px;
-        }
-
-        #avatar-frame {
-            width: 120px;
-            height: 120px;
-            border-radius: 20px;
-            background-size: cover;
-            background-position: center;
-            border: 3px solid var(--accent);
-            box-shadow: 0 0 20px rgba(255, 204, 51, 0.3);
-            position: relative;
-            flex-shrink: 0;
-            transition: transform 0.3s ease;
-        }
-
-        #dialogue-box {
-            padding-bottom: 20px;
-        }
-
-        #char-name {
-            font-weight: bold;
-            color: var(--accent);
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
-        }
-
-        #char-text {
-            font-size: 1.1rem;
-            font-style: italic;
-            color: #ccc;
-            max-width: 600px;
-        }
-
-        /* --- HUD --- */
-        .hud {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--glass);
             padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+            margin: 20px 0;
+            min-height: 100px;
+            text-align: left;
         }
-
-        .stat-bar {
-            width: 150px;
-            height: 6px;
-            background: #333;
-            margin-top: 5px;
-            border-radius: 3px;
+        
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
         }
-
-        #smoothness-fill { width: 0%; height: 100%; background: #00ffcc; border-radius: 3px; transition: width 0.3s; }
+        
+        button {
+            background-color: #ff6b9d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #ff5277;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .ending {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #d63384;
+        }
+        
+        .restart-btn {
+            background-color: #6c757d;
+        }
+        
+        .restart-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        .heart {
+            color: #e63946;
+            font-size: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body>
-
-<div id="sidebar">
-    <div class="station-btn active" onclick="setStation('lathe', this)">
-        <span>SHAPE</span>
-    </div>
-    <div class="station-btn" onclick="setStation('sand', this)">
-        <span>SMOOTH</span>
-    </div>
-    <div class="station-btn" onclick="setStation('stain', this)">
-        <span>STAIN</span>
-    </div>
-</div>
-
-<div id="main-view">
-    <div class="hud">
-        <div style="font-size: 12px; color: #888;">SMOOTHNESS</div>
-        <div class="stat-bar"><div id="smoothness-fill"></div></div>
-        <div id="station-label" style="margin-top: 10px; font-weight: bold; color: var(--accent);">STATION: LATHE</div>
-    </div>
-
-    <div id="canvas-container">
-        <canvas id="woodCanvas"></canvas>
-    </div>
-
-    <div id="character-overlay">
-        <div id="avatar-frame"></div>
-        <div id="dialogue-box">
-            <div id="char-name">JAX</div>
-            <div id="char-text">"Move with the grain, don't fight it. You're doing better than most in this class."</div>
+    <h1>🌳 Wood You Date Me? 🌳</h1>
+    <div class="game-container">
+        <div class="character">🪵</div>
+        <h2>Meet Woody - The Sexiest Piece of Timber Alive!</h2>
+        
+        <div id="gameArea">
+            <div class="dialogue-box" id="dialogueBox">
+                Welcome to Wood You Date Me? You're about to go on the most... unusual date of your life with Woody, a charismatic piece of lumber with a heart of oak and a personality that's anything but board! Are you ready to get wood?
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div>🔥 Lust</div>
+                    <div id="lust">50%</div>
+                </div>
+                <div class="stat">
+                    <div>😂 Comedy</div>
+                    <div id="comedy">50%</div>
+                </div>
+                <div class="stat">
+                    <div>💕 Romance</div>
+                    <div id="romance">50%</div>
+                </div>
+            </div>
+            
+            <div class="choices" id="choices">
+                <button onclick="startGame()">Start Your Wooden Adventure</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('woodCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 700;
-    canvas.height = 350;
+    <script>
+        let gameState = {
+            lust: 50,
+            comedy: 50,
+            romance: 50,
+            currentScene: 0
+        };
 
-    // Game State
-    let currentStation = 'lathe';
-    let smoothness = 0;
-    let woodColor = { r: 160, g: 100, b: 60 };
-    const woodData = {
-        segments: 100,
-        radii: [],
-        x: 100,
-        y: 175,
-        width: 500
-    };
-
-    // Classmates Data
-    const classmates = [
-        {
-            name: "JAX",
-            color: "#ff3366",
-            style: "linear-gradient(45deg, #121212, #2a0a10)",
-            avatar: "👤", // Placeholder for "Cool/Rebel" visuals
-            lines: ["The way you handle that lathe... impressive.", "Careful. One wrong move and you ruin the piece.", "I like your style. Rugged but precise."]
-        },
-        {
-            name: "VALERIE",
-            color: "#33ccff",
-            style: "linear-gradient(45deg, #0a1a2a, #121212)",
-            avatar: "✨", // Placeholder for "High-End/Cool" visuals
-            lines: ["Make it shine. I want to see my reflection in that wood.", "Sand it down until it feels like silk.", "You've got talent. Don't waste it on boring shapes."]
-        }
-    ];
-
-    let currentChar = 0;
-
-    // Initialize wood
-    for (let i = 0; i < woodData.segments; i++) {
-        woodData.radii.push(60);
-    }
-
-    function setStation(type, btn) {
-        currentStation = type;
-        document.querySelectorAll('.station-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('station-label').innerText = `STATION: ${type.toUpperCase()}`;
-        
-        // Switch character when station changes
-        currentChar = (currentChar + 1) % classmates.length;
-        updateUI();
-    }
-
-    function updateUI() {
-        const c = classmates[currentChar];
-        document.getElementById('char-name').innerText = c.name;
-        document.getElementById('char-name').style.color = c.color;
-        document.getElementById('char-text').innerText = `"${c.lines[Math.floor(Math.random()*c.lines.length)]}"`;
-        document.getElementById('avatar-frame').style.background = c.style;
-        document.getElementById('avatar-frame').style.borderColor = c.color;
-        document.getElementById('smoothness-fill').style.width = smoothness + '%';
-    }
-
-    function interact(touchX, touchY) {
-        const rect = canvas.getBoundingClientRect();
-        const x = (touchX - rect.left) * (canvas.width / rect.width);
-        const y = (touchY - rect.top) * (canvas.height / rect.height);
-
-        if (x >= woodData.x && x <= woodData.x + woodData.width) {
-            const index = Math.floor(((x - woodData.x) / woodData.width) * woodData.segments);
-            
-            if (currentStation === 'lathe') {
-                const dist = Math.abs(y - woodData.y);
-                if (dist < woodData.radii[index]) {
-                    woodData.radii[index] = Math.max(15, dist);
-                    if(smoothness > 0) smoothness -= 0.1; // Carving makes it rough again
-                }
-            } else if (currentStation === 'sand') {
-                if (smoothness < 100) smoothness += 0.5;
-            } else if (currentStation === 'stain') {
-                woodColor.r = Math.max(60, woodColor.r - 1);
-                woodColor.g = Math.max(30, woodColor.g - 1);
-            }
-            updateUI();
-        }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Mechanical Lathe Parts
-        ctx.fillStyle = "#333";
-        ctx.fillRect(70, 100, 30, 150); // Chuck
-        ctx.fillRect(600, 120, 20, 110); // Tailstock
-
-        const segWidth = woodData.width / woodData.segments;
-
-        // Draw Wood
-        for (let i = 0; i < woodData.segments; i++) {
-            const r = woodData.radii[i];
-            const x = woodData.x + (i * segWidth);
-            
-            // Base Color
-            const baseCol = `rgb(${woodColor.r}, ${woodColor.g}, ${woodColor.b})`;
-            ctx.fillStyle = baseCol;
-            ctx.fillRect(x, woodData.y - r, segWidth + 1, r * 2);
-
-            // Grain Texture (becomes less visible as smoothness increases)
-            if (smoothness < 90) {
-                ctx.fillStyle = `rgba(0,0,0,${0.2 - (smoothness/500)})`;
-                if (i % 4 === 0) ctx.fillRect(x, woodData.y - r, 1, r * 2);
-            }
-
-            // Highlights (Reflections)
-            let grad = ctx.createLinearGradient(x, woodData.y - r, x, woodData.y + r);
-            grad.addColorStop(0, 'rgba(255,255,255,0.2)');
-            grad.addColorStop(0.5, 'transparent');
-            grad.addColorStop(1, 'rgba(0,0,0,0.3)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(x, woodData.y - r, segWidth + 1, r * 2);
-            
-            // Polishing Shine (Visible at high smoothness)
-            if (smoothness > 70) {
-                ctx.fillStyle = `rgba(255,255,255, ${(smoothness-70)/100})`;
-                ctx.fillRect(x, woodData.y - r*0.8, segWidth + 1, 2);
-            }
-        }
-
-        requestAnimationFrame(draw);
-    }
-
-    // Controls
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        interact(e.touches[0].clientX, e.touches[0].clientY);
-    });
-
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        interact(e.touches[0].clientX, e.touches[0].clientY);
-    });
-
-    // Desktop support for testing
-    canvas.addEventListener('mousedown', (e) => {
-        const move = (m) => interact(m.clientX, m.clientY);
-        window.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', () => window.removeEventListener('mousemove', move), {once:true});
-        interact(e.clientX, e.clientY);
-    });
-
-    updateUI();
-    draw();
-</script>
-
-</body>
-</html>
+        const scenes = [
+            {
+                dialogue: "Woody: 'Hey there, saw you checking me out from across the bar. I'm Woody, and I've got a hard... wood personality. What brings you to this forest of love?'",
+                choices: [
+                    { text: "I'm here for the lumber... I mean, wonder!", effects: { lust: 10, comedy: 5, romance: 0 }, nextScene: 1 },
+                    { text: "I've always had a thing for natural materials.", effects: { lust: 5, comedy: 0, romance: 10 }, nextScene: 2 },
+                    { text: "Is that a 2x4 in your pocket or are you just happy to see me?", effects: { lust: 20, comedy: 15, romance: 0 }, nextScene: 3 }
+                ]
+            },
+            {
+                dialogue: "Woody: 'I like your style! You know, they don't call me 'Oaklahoma' for nothing. I'm firm in all the right places and I can really branch out in conversation. Want to see my bark?'",
+                choices: [
+                    { text: "I'd love to see your wood grain!", effects: { lust: 15, comedy: 10, romance: 5 }, nextScene: 4 },
+                    { text: "Let's talk about something less... woody.", effects: { lust: -5, comedy: 5, romance: 10 }, nextScene: 5 },
+                    { text: "I bet you're great at building things... like relationships!", effects: { lust: 0, comedy: 15, romance: 15 }, nextScene: 6 }
+                ]
+            },
+            {
+                dialogue: "Woody: 'That's so sweet! You know, I might be rough on the outside, but I'm all heartwood on the inside. I've been through a lot of sanding to become the smooth operator I am today.'",
+                choices: [
+                    { text: "I can tell you've been well-polished.", effects: { lust: 10, comedy: 5, romance: 10 }, nextScene: 4 },
+                    { text: "Do you have any knots? I find imperfections charming.", effects: { lust: 5, comedy: 10, romance: 15 }, nextScene: 5 },
+                    { text: "I'd love to carve our initials together.", effects: { lust: 5, comedy: 0, romance: 20 }, nextScene: 6 }
+                ]
+            },
+            {
+                dialogue: "Woody: 'Well well, aren't you the forward one! I like that in a partner. You know, I may be a piece of wood, but I'm not board when I'm with you. In fact, I'm feeling quite... erect... I mean, excited!'",
+                choices: [
+                    { text: "I can tell! Is that a branch or are you just happy to see me?", effects: { lust: 25, comedy: 20, romance: 0 }, nextScene: 7 },
+                    { text: "Let's keep it classy... for now.", effects: { lust: 0, comedy: 5, romance: 10 }, nextScene: 8 },
+                    { text: "I've always wanted to date someone with good... timber.", effects: { lust: 15, comedy: 15, romance: 5 }, nextScene: 9 }
+                ]
+            },
+            {
+                dialogue: "Woody: 'You're making me blush! Or I would if I had blood. You know, I might be made of wood, but I'm not hollow... in the emotional sense, that is. My rings tell a story of growth, just like our relationship could.'",
+                choices: [
+                    { text: "How many rings do you have? I'm curious about your age.", effects: { lust: 5, comedy: 10, romance: 10 }, nextScene: 10 },
+                    { text: "I'd love to count your rings later... in private.", effects: { lust: 20, comedy: 10, romance: 5 }, nextScene: 11 },
+                    { text: "Let's build something beautiful together.", effects: { lust: 5, comedy: 5, romance: 20 }, nextScene: 12 }
