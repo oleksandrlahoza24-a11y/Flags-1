@@ -1,1 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ignis: The Embers of Twilight</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            image-rendering: auto;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
 
+<canvas id="gameCanvas"></canvas>
+<div id="ui-layer">
+    <div class="instructions">Walk with Left Stick • Toss Embers with Right Button</div>
+</div>
+
+<script>
+/**
+ * IGNIS: THE EMBERS OF TWILIGHT
+ * A cozy, atmospheric silhouette game.
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- Configuration ---
+const CONFIG = {
+    gravity: 0.25,
+    friction: 0.85,
+    playerSpeed: 0.6,
+    jumpForce: -8,
+    worldWidth: 10000,
+    fireSpreadRadius: 120,
+    colors: {
+        skyTop: '#1a1a40',
+        skyBottom: '#f39c12',
+        hills: ['#2d1b33', '#1e1124', '#0f0812'],
+        fire: ['#ffcf33', '#ff8d00', '#ff4d00'],
+        ash: '#1a1a1a'
+    }
+};
+
+// --- State Management ---
+const state = {
+    width: 0,
+    height: 0,
+    cameraX: 0,
+    shake: 0,
+    input: {
+        joyX: 0,
+        joyY: 0,
+        isTouchingJoy: false,
+        joyStart: {x: 0, y: 0},
+        joyCurrent: {x: 0, y: 0},
+        isThrowing: false
+    },
+    player: {
+        x: 500,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        w: 20,
+        h: 35,
+        grounded: false,
+        bob: 0
+    },
+    objects: [],
+    projectiles: [],
+    particles: [],
+    backgroundStars: []
+};
+
+// --- Utilities ---
+const random = (min, max) => Math.random() * (max - min) + min;
+const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+
+// --- Entity Creation ---
+function createWorld() {
+    state.objects = [];
+    // Generate Ground Height Map
+    state.groundPoints = [];
+    for (let x = 0; x <= CONFIG.worldWidth; x += 100) {
+        state.groundPoints.push({
+            x: x,
+            y: 500 + Math.sin(x * 0.001) * 50 + Math.cos(x * 0.0005) * 30
+        });
+    }
+
+    const getGroundY = (x) => {
+        const index = Math.floor(x / 100);
+        if (index < 0) return 500;
+        if (index >= state.groundPoints.length - 1) return state.groundPoints[state.groundPoints.length-1].y;
+        const p1 = state.groundPoints[index];
+        const p2 = state.groundPoints[index+1];
+        const t = (x - p1.x) / 100;
+        return p1.y + (p2.y - p1.y) * t;
+    };
+
+    // Populate Objects
+    for (let x = 300; x < CONFIG.worldWidth; x += random(150, 400)) {
+        const y = getGroundY(x);
+        const typeRand = Math.random();
+        
+        let obj = { x, y, burning: 0, heat: 0, charred: false, health: 1.0 };
+
+        if (typeRand < 0.4) {
+            obj.type = 'tree';
+            obj.w = random(10, 20);
+            obj.h = random(100, 200);
+        } else if (typeRand < 0.6) {
+            obj.type = 'fence';
+            obj.w = 60;
+            obj.h = 30;
+        } else if (typeRand < 0.8) {
+            obj.type = 'bush';
+            obj.w = 40;
+            obj.h = 40;
+        } else {
+            obj.type = 'cottage';
+            obj.w = 80;
+            obj.h = 60;
+        }
+        state.objects.push(obj);
+    }
+
+    // Stars
+    for(let i=0; i<100; i++) {
+        state.backgroundStars.push({x: Math.random(), y: Math.random() * 0.5, s: Math.random()});
+    }
+}
+
+function spawnFireParticle(x, y, scale = 1) {
+    state.particles.push({
+        x, y,
+        vx: random(-0.5, 0.5),
+        vy: random(-1, -3),
+        life: 1.0,
+        decay: random(0.01, 0.03),
+        size: random(3, 6) * scale,
+        color: CONFIG.colors.fire[Math.floor(Math.random() * 3)]
+    });
+}
+
+function spawnAshParticle(x, y) {
+    state.particles.push({
+        x, y,
+        vx: random(-0.2, 0.2),
+        vy: random(0.2, 1),
+        life: 1.0,
+        decay: 0.01,
+        size: random(1, 3),
+        color: '#222'
+    });
+}
+
+// --- Input Handling ---
+function initInput() {
+    const handlePointerDown = (e) => {
+        const tx = e.clientX;
+        const ty = e.clientY;
+
+        if (tx < state.width / 2) {
+            state.input.isTouchingJoy = true;
+            state.input.joyStart = {x: tx, y: ty};
+            state.input.joyCurrent = {x: tx, y: ty};
+        } else {
+            // Throw
+            const p = state.player;
+            const dir = (state.input.joyX || (state.player.vx >= 0 ? 1 : -1));
+            state.projectiles.push({
+                x: p.x, y: p.y - 20,
+                vx: (dir > 0 ? 7 : -7) + (state.input.joyX * 2),
+                vy: -6,
+                life: 200
+            });
+        }
+    };
+
+    const handlePointerMove = (e) => {
+        if (state.input.isTouchingJoy) {
+            state.input.joyCurrent = {x: e.clientX, y: e.clientY};
+            const dx = state.input.joyCurrent.x - state.input.joyStart.x;
+            const dy = state.input.joyCurrent.y - state.input.joyStart.y;
+            const distVal = Math.min(dist(0, 0, dx, dy), 50);
+            const angle = Math.atan2(dy, dx);
+            state.input.joyX = (Math.cos(angle) * distVal) / 50;
+            state.input.joyY = (Math.sin(angle) * distVal) / 50;
+        }
+    };
+
+    const handlePointerUp = (e) => {
+        state.input.isTouchingJoy = false;
+        state.input.joyX = 0;
+        state.input.joyY = 0;
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('resize', resize);
+}
+
+function resize() {
+    state.width = canvas.width = window.innerWidth;
+    state.height = canvas.height = window.innerHeight;
+}
+
+// --- Core Loop ---
+function update() {
+    const p = state.player;
+
+    // Movement
+    p.vx += state.input.joyX * CONFIG.playerSpeed;
+    p.vx *= CONFIG.friction;
+    p.x += p.vx;
+
+    // Gravity & Jump
+    p.vy += CONFIG.gravity;
+    if (state.input.joyY < -0.8 && p.grounded) {
+        p.vy = CONFIG.jumpForce;
+        p.grounded = false;
+    }
+    p.y += p.vy;
+
+    // Ground Collision
+    const groundY = 500 + Math.sin(p.x * 0.001) * 50 + Math.cos(p.x * 0.0005) * 30;
+    if (p.y > groundY) {
+        p.y = groundY;
+        p.vy = 0;
+        p.grounded = true;
+    }
+
+    // Camera
+    const targetCam = p.x - state.width / 2;
+    state.cameraX += (targetCam - state.cameraX) * 0.1;
+
+    // Projectiles
+    state.projectiles.forEach((proj, index) => {
+        proj.vx *= 0.99;
+        proj.vy += CONFIG.gravity * 0.5;
+        proj.x += proj.vx;
+        proj.y += proj.vy;
+        proj.life--;
+
+        // Hit Detection
+        state.objects.forEach(obj => {
+            if (!obj.charred && dist(proj.x, proj.y, obj.x, obj.y - obj.h/2) < 40) {
+                obj.burning = 1;
+                state.shake = 10;
+                proj.life = 0;
+            }
+        });
+
+        if (proj.y > 1000 || proj.life <= 0) state.projectiles.splice(index, 1);
+    });
+
+    // Fire Simulation
+    state.objects.forEach(obj => {
+        if (obj.burning > 0 && !obj.charred) {
+            obj.health -= 0.002;
+            if (Math.random() > 0.5) spawnFireParticle(obj.x + random(-obj.w/2, obj.w/2), obj.y - random(0, obj.h));
+            
+            // Spread
+            state.objects.forEach(other => {
+                if (!other.burning && !other.charred) {
+                    if (dist(obj.x, obj.y, other.x, other.y) < CONFIG.fireSpreadRadius) {
+                        other.heat += 0.005;
+                        if (other.heat > 1) other.burning = 1;
+                    }
+                }
+            });
+
+            if (obj.health <= 0) {
+                obj.charred = true;
+                obj.burning = 0;
+            }
+        }
+    });
+
+    // Particles
+    state.particles.forEach((part, index) => {
+        part.x += part.vx;
+        part.y += part.vy;
+        part.life -= part.decay;
+        if (part.life <= 0) state.particles.splice(index, 1);
+    });
+
+    // Ambient Effects
+    if (Math.random() > 0.98) {
+        spawnAshParticle(state.cameraX + Math.random() * state.width, -50);
+    }
+
+    if (state.shake > 0) state.shake *= 0.9;
+}
+
+// --- Drawing ---
+function draw() {
+    ctx.clearRect(0, 0, state.width, state.height);
+
+    // 1. Sky
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, state.height);
+    skyGrad.addColorStop(0, CONFIG.colors.skyTop);
+    skyGrad.addColorStop(1, CONFIG.colors.skyBottom);
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, state.width, state.height);
+
+    // Stars
+    ctx.fillStyle = "white";
+    state.backgroundStars.forEach(s => {
+        ctx.globalAlpha = 0.2 + Math.sin(Date.now()*0.001 + s.x*10)*0.2;
+        ctx.fillRect(s.x * state.width, s.y * state.height, 1.5, 1.5);
+    });
+    ctx.globalAlpha = 1.0;
+
+    // 2. Parallax Hills
+    CONFIG.colors.hills.forEach((color, i) => {
+        const speed = 0.2 * (i + 1);
+        const offset = -state.cameraX * speed;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(0, state.height);
+        for (let x = 0; x <= state.width + 100; x += 50) {
+            const worldX = x - offset;
+            const ly = (state.height * 0.5) + (i * 40) + Math.sin(worldX * 0.0005 * (i+1)) * 100;
+            ctx.lineTo(x, ly);
+        }
+        ctx.lineTo(state.width, state.height);
+        ctx.fill();
+    });
+
+    // 3. World Space
+    ctx.save();
+    const shakeX = (Math.random() - 0.5) * state.shake;
+    const shakeY = (Math.random() - 0.5) * state.shake;
+    ctx.translate(-state.cameraX + shakeX, shakeY);
+
+    // Ground
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.moveTo(state.cameraX, state.height);
+    for (let x = state.cameraX - 100; x < state.cameraX + state.width + 100; x += 50) {
+        const gy = 500 + Math.sin(x * 0.001) * 50 + Math.cos(x * 0.0005) * 30;
+        ctx.lineTo(x, gy + 10);
+    }
+    ctx.lineTo(state.cameraX + state.width + 100, state.height);
+    ctx.fill();
+
+    // Fire Glows (Under Objects)
+    ctx.globalCompositeOperation = 'screen';
+    state.objects.forEach(obj => {
+        if (obj.burning > 0) {
+            const pulse = 0.8 + Math.sin(Date.now() * 0.01) * 0.2;
+            const grad = ctx.createRadialGradient(obj.x, obj.y - obj.h/2, 0, obj.x, obj.y - obj.h/2, CONFIG.fireSpreadRadius * pulse);
+            grad.addColorStop(0, 'rgba(255, 100, 0, 0.6)');
+            grad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(obj.x - 200, obj.y - 300, 400, 400);
+        }
+    });
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Objects
+    state.objects.forEach(obj => {
+        if (obj.x < state.cameraX - 200 || obj.x > state.cameraX + state.width + 200) return;
+
+        ctx.fillStyle = obj.charred ? CONFIG.colors.ash : '#000';
+        ctx.globalAlpha = obj.charred ? obj.health + 0.3 : 1.0;
+
+        if (obj.type === 'tree') {
+            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, obj.w, obj.h);
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y - obj.h, obj.w * 2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (obj.type === 'fence') {
+            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, 5, obj.h);
+            ctx.fillRect(obj.x + obj.w/2, obj.y - obj.h, 5, obj.h);
+            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h + 10, obj.w, 5);
+        } else if (obj.type === 'bush') {
+            ctx.beginPath();
+            ctx.arc(obj.x, obj.y - 10, 20, 0, Math.PI * 2);
+            ctx.arc(obj.x - 15, obj.y - 5, 15, 0, Math.PI * 2);
+            ctx.arc(obj.x + 15, obj.y - 5, 15, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (obj.type === 'cottage') {
+            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, obj.w, obj.h);
+            ctx.beginPath();
+            ctx.moveTo(obj.x - obj.w/2 - 10, obj.y - obj.h);
+            ctx.lineTo(obj.x, obj.y - obj.h - 30);
+            ctx.lineTo(obj.x + obj.w/2 + 10, obj.y - obj.h);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+    });
+
+    // Player
+    const p = state.player;
+    p.bob = Math.sin(Date.now() * 0.005) * 2;
+    ctx.fillStyle = '#000';
+    // Body
+    ctx.beginPath();
+    ctx.roundRect(p.x - p.w/2, p.y - p.h + p.bob, p.w, p.h - 5, 10);
+    ctx.fill();
+    // Head
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - p.h - 5 + p.bob, 8, 0, Math.PI*2);
+    ctx.fill();
+
+    // Projectiles
+    state.projectiles.forEach(proj => {
+        const g = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 15);
+        g.addColorStop(0, '#fff');
+        g.addColorStop(1, 'rgba(255, 150, 0, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, 15, 0, Math.PI*2);
+        ctx.fill();
+        spawnFireParticle(proj.x, proj.y, 0.5);
+    });
+
+    // Particles
+    state.particles.forEach(part => {
+        ctx.globalAlpha = part.life;
+        ctx.fillStyle = part.color;
+        // Flame Shape (Teardrop)
+        ctx.beginPath();
+        ctx.moveTo(part.x, part.y);
+        ctx.bezierCurveTo(part.x - part.size, part.y, part.x - part.size, part.y - part.size * 2, part.x, part.y - part.size * 3);
+        ctx.bezierCurveTo(part.x + part.size, part.y - part.size * 2, part.x + part.size, part.y, part.x, part.y);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1.0;
+
+    ctx.restore();
+
+    // 4. UI / Post Processing
+    // Vignette
+    const vig = ctx.createRadialGradient(state.width/2, state.height/2, state.width*0.2, state.width/2, state.height/2, state.width*0.8);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, state.width, state.height);
+
+    // Joystick Draw
+    if (state.input.isTouchingJoy) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(state.input.joyStart.x, state.input.joyStart.y, 50, 0, Math.PI*2);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.arc(state.input.joyCurrent.x, state.input.joyCurrent.y, 25, 0, Math.PI*2);
+        ctx.fill();
+    }
+
+    // Throw Button (Visual only, Logic is in pointerDown)
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath();
+    ctx.arc(state.width - 80, state.height - 80, 50, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.stroke();
+
+    requestAnimationFrame(loop);
+}
+
+function loop() {
+    update();
+    draw();
+}
+
+// --- Init ---
+resize();
+createWorld();
+initInput();
+loop();
+
+</script>
+</body>
+</html>
