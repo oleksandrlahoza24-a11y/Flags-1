@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>JUNGLE SURVIVAL: THE FLOOD</title>
+    <title>Jungle Storm: Ancient Ascent</title>
     <style>
-        :root { --safe-area-inset-top: env(safe-area-inset-top); }
+        :root { --vignette-opacity: 0.4; }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #05070a;
+            overflow: hidden; background-color: #050a05;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            user-select: none; -webkit-user-select: none; touch-action: none;
+            -webkit-user-select: none; touch-action: none;
         }
         canvas {
             position: absolute; top: 0; left: 0;
@@ -20,572 +18,258 @@
         }
         #webgl-canvas { z-index: 1; }
         #ui-canvas { z-index: 2; pointer-events: none; }
-        #loading-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 100; display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-            color: #556644; transition: opacity 1s ease-out;
+        #loading-screen {
+            position: absolute; z-index: 10; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a2a1a 0%, #050a05 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #d4af37; transition: opacity 1s ease-out;
         }
-        .loader-bar-container {
-            width: 300px; height: 4px; background: #1a1d1a;
+        .loader-bar {
+            width: 300px; height: 4px; background: #111;
             margin-top: 20px; border-radius: 2px; overflow: hidden;
         }
-        #loader-fill { width: 0%; height: 100%; background: #88aa66; transition: width 0.1s; }
-        #start-prompt {
-            position: absolute; bottom: 20%; color: white; font-weight: 300;
-            letter-spacing: 2px; text-transform: uppercase; display: none;
-            animation: pulse 2s infinite;
+        #loader-progress {
+            width: 0%; height: 100%; background: #d4af37;
+            box-shadow: 0 0 15px #d4af37; transition: width 0.1s linear;
         }
-        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div style="font-size: 24px; letter-spacing: 8px;">RAINSTORM</div>
-        <div class="loader-bar-container"><div id="loader-fill"></div></div>
-        <div id="loader-status" style="margin-top: 10px; font-size: 10px; opacity: 0.5;">INITIALIZING ENGINE...</div>
-        <div id="start-prompt">TAP TO BEGIN JOURNEY</div>
-    </div>
+<div id="loading-screen">
+    <h1 style="letter-spacing: 4px; font-weight: 200;">JUNGLE STORM</h1>
+    <div class="loader-bar"><div id="loader-progress"></div></div>
+    <p id="loader-status" style="font-size: 10px; margin-top: 10px; opacity: 0.6;">INITIALIZING SEED...</p>
+</div>
 
-    <canvas id="webgl-canvas"></canvas>
-    <canvas id="ui-canvas"></canvas>
+<canvas id="webgl-canvas"></canvas>
+<canvas id="ui-canvas"></canvas>
 
-<script>
+<script id="math-lib">
 /**
- * RAINSTORM: A AAA-Quality Procedural Survival Experience
- * Written by Senior Systems Architect
- * 
- * This engine features:
- * - WebGL2 Deferred Rendering Pipeline
- * - Real-time Shallow Water Equation Physics
- * - Procedural Vegetation and Terrain Generation
- * - Real-time Audio Synthesis (No Samples)
- * - Custom Physics Solver with Continuous Collision Detection
+ * AAA Engine Math Library
+ * Implements PRNG, Perlin Noise, and Vector Math from first principles.
  */
-
-"use strict";
-
-// =============================================================================
-// 1. ENGINE CONSTANTS & CONFIGURATION
-// =============================================================================
-
-const CONFIG = {
-    DEBUG: false,
-    RENDER_RES_SCALE: window.devicePixelRatio > 1 ? 1.0 : 1.0,
-    PHYSICS_FPS: 60,
-    CHUNK_WIDTH: 1024,
-    SEED: Math.random() * 100000,
-    
-    COLORS: {
-        SKY_DAY: [0.4, 0.6, 0.8],
-        SKY_STORM: [0.1, 0.12, 0.15],
-        WATER_DEEP: [0.05, 0.15, 0.2],
-        WATER_SHALLOW: [0.2, 0.4, 0.4],
-        MUD: [0.22, 0.18, 0.15],
-        LEAF: [0.2, 0.35, 0.1],
-    },
-
-    WATER: {
-        GRID_RESOLUTION: 512,
-        WAVE_SPEED: 0.15,
-        DAMPING: 0.992,
-        FLOOD_RATE: 0.005, // Height increase per second during peak
-    },
-
-    PLAYER: {
-        WALK_SPEED: 320,
-        JUMP_FORCE: 850,
-        GRAVITY: 2100,
-        FRICTION: 0.85,
-        COYOTE_TIME: 0.12,
-    }
-};
-
-// =============================================================================
-// 2. MATHEMATICAL FOUNDATION
-// =============================================================================
-
-/**
- * High-performance Linear Algebra and Noise Library
- */
-class MathUtils {
-    /** Mulberry32 PRNG for deterministic proceduralism */
-    static random(seed) {
+class EngineMath {
+    /** Mulberry32 PRNG for deterministic procedural generation */
+    static mulberry32(a) {
         return function() {
-            let t = seed += 0x6D2B79F5;
+            var t = a += 0x6D2B79F5;
             t = Math.imul(t ^ t >>> 15, t | 1);
             t ^= t + Math.imul(t ^ t >>> 7, t | 61);
             return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        };
-    }
-
-    static lerp(a, b, t) { return a + (b - a) * t; }
-    
-    static clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
-
-    /** Multi-octave Perlin Noise Implementation */
-    static perlin1D(x, octaves = 4, persistence = 0.5) {
-        let total = 0;
-        let freq = 1;
-        let amp = 1;
-        let maxVal = 0;
-        for(let i=0; i<octaves; i++) {
-            total += Math.sin(x * freq) * amp;
-            maxVal += amp;
-            freq *= 2;
-            amp *= persistence;
         }
-        return total / maxVal;
-    }
-}
-
-// =============================================================================
-// 3. WEBGL2 RENDERING CORE
-// =============================================================================
-
-class WebGLRenderer {
-    /**
-     * @param {HTMLCanvasElement} canvas 
-     */
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.gl = canvas.getContext('webgl2', {
-            antialias: false,
-            depth: true,
-            stencil: true,
-            alpha: false,
-            powerPreference: "high-performance"
-        });
-
-        if (!this.gl) throw new Error("WebGL2 not supported");
-
-        this.initViewport();
-        this.shaders = {};
-        this.textures = {};
-        this.buffers = {};
-        
-        this.gl.enable(this.gl.DEPTH_TEST);
-        this.gl.enable(this.gl.BLEND);
-        this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     }
 
-    initViewport() {
-        const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = window.innerWidth * dpr;
-        this.canvas.height = window.innerHeight * dpr;
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    /**
-     * Compiles a GLSL shader program
-     * @param {string} name 
-     * @param {string} vsSource 
-     * @param {string} fsSource 
-     */
-    createProgram(name, vsSource, fsSource) {
-        const gl = this.gl;
-        const loadShader = (type, source) => {
-            const shader = gl.createShader(type);
-            gl.shaderSource(shader, source);
-            gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-                console.error(`Shader Error (${name}):`, gl.getShaderInfoLog(shader));
-                gl.deleteShader(shader);
-                return null;
+    /** Full 6-Octave Perlin Noise Implementation */
+    static Perlin = class {
+        constructor(seed) {
+            this.p = new Uint8Array(512);
+            const rand = EngineMath.mulberry32(seed);
+            for(let i=0; i<256; i++) this.p[i] = i;
+            for(let i=255; i>0; i--) {
+                const r = Math.floor(rand() * (i+1));
+                [this.p[i], this.p[r]] = [this.p[r], this.p[i]];
             }
-            return shader;
-        };
-
-        const vs = loadShader(gl.VERTEX_SHADER, vsSource);
-        const fs = loadShader(gl.FRAGMENT_SHADER, fsSource);
-        const program = gl.createProgram();
-        gl.attachShader(program, vs);
-        gl.attachShader(program, fs);
-        gl.linkProgram(program);
-
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error(`Link Error (${name}):`, gl.getProgramInfoLog(program));
-            return null;
+            for(let i=0; i<256; i++) this.p[256+i] = this.p[i];
         }
-
-        this.shaders[name] = {
-            program: program,
-            attribs: {},
-            uniforms: {}
-        };
-
-        // Introspect attributes and uniforms
-        const numAttribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
-        for (let i = 0; i < numAttribs; i++) {
-            const info = gl.getActiveAttrib(program, i);
-            this.shaders[name].attribs[info.name] = gl.getAttribLocation(program, info.name);
+        fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+        lerp(t, a, b) { return a + t * (b - a); }
+        grad(hash, x, y, z) {
+            const h = hash & 15;
+            const u = h < 8 ? x : y;
+            const v = h < 4 ? y : h === 12 || h === 14 ? x : z;
+            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
         }
-
-        const numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-        for (let i = 0; i < numUniforms; i++) {
-            const info = gl.getActiveUniform(program, i);
-            this.shaders[name].uniforms[info.name] = gl.getUniformLocation(program, info.name);
+        noise(x, y, z = 0) {
+            const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+            x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+            const u = this.fade(x), v = this.fade(y), w = this.fade(z);
+            const A = this.p[X]+Y, AA = this.p[A]+Z, AB = this.p[A+1]+Z;
+            const B = this.p[X+1]+Y, BA = this.p[B]+Z, BB = this.p[B+1]+Z;
+            return this.lerp(w, this.lerp(v, this.lerp(u, this.grad(this.p[AA], x, y, z), this.grad(this.p[BA], x-1, y, z)),
+                this.lerp(u, this.grad(this.p[AB], x, y-1, z), this.grad(this.p[BB], x-1, y-1, z))),
+                this.lerp(v, this.lerp(u, this.grad(this.p[AA+1], x, y, z-1), this.grad(this.p[BA+1], x-1, y, z-1)),
+                this.lerp(u, this.grad(this.p[AB+1], x, y-1, z-1), this.grad(this.p[BB+1], x-1, y-1, z-1))));
         }
-    }
-}
-
-// =============================================================================
-// 4. PROCEDURAL ASSET GENERATORS
-// =============================================================================
-
-class AssetGenerator {
-    /**
-     * Generates a noise-based texture for terrain
-     * @param {WebGL2RenderingContext} gl 
-     */
-    static generateTerrainTexture(gl) {
-        const size = 512;
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        const imgData = ctx.createImageData(size, size);
-        const data = imgData.data;
-
-        const rng = MathUtils.random(123);
-        
-        for (let y = 0; y < size; y++) {
-            for (let x = 0; x < size; x++) {
-                const idx = (y * size + x) * 4;
-                const n = MathUtils.perlin1D(x * 0.05 + y * 0.05, 6) * 0.5 + 0.5;
-                const grain = rng() * 20;
-                
-                data[idx] = 60 * n + grain;     // R
-                data[idx+1] = 50 * n + grain;   // G
-                data[idx+2] = 40 * n + grain;   // B
-                data[idx+3] = 255;              // A
+        fbm(x, y, octaves = 6) {
+            let total = 0, frequency = 1, amplitude = 1, maxValue = 0;
+            for(let i=0; i<octaves; i++) {
+                total += this.noise(x * frequency, y * frequency) * amplitude;
+                maxValue += amplitude;
+                amplitude *= 0.5;
+                frequency *= 2;
             }
-        }
-        ctx.putImageData(imgData, 0, 0);
-        
-        const tex = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        return tex;
-    }
-}
-
-// =============================================================================
-// 5. REALISTIC WATER PHYSICS SYSTEM
-// =============================================================================
-
-class WaterSystem {
-    constructor(width, resolution) {
-        this.width = width;
-        this.res = resolution;
-        this.h = new Float32Array(resolution);  // Height
-        this.v = new Float32Array(resolution);  // Velocity
-        this.dx = width / resolution;
-    }
-
-    update(dt) {
-        const c = CONFIG.WATER.WAVE_SPEED;
-        const d = CONFIG.WATER.DAMPING;
-
-        // Wave Equation: d2h/dt2 = c2 * d2h/dx2
-        for (let i = 1; i < this.res - 1; i++) {
-            const acceleration = (this.h[i-1] + this.h[i+1] - 2 * this.h[i]) * c;
-            this.v[i] += acceleration;
-            this.v[i] *= d;
-        }
-
-        for (let i = 0; i < this.res; i++) {
-            this.h[i] += this.v[i];
-        }
-        
-        // Absorbing boundaries
-        this.h[0] = this.h[1] * 0.95;
-        this.h[this.res-1] = this.h[this.res-2] * 0.95;
-    }
-
-    splash(x, force) {
-        const idx = Math.floor((x / this.width) * this.res);
-        if (idx >= 0 && idx < this.res) {
-            this.v[idx] -= force;
+            return total / maxValue;
         }
     }
 }
+</script>
 
-// =============================================================================
-// 6. PLAYER & PHYSICS CORE
-// =============================================================================
+<script id="glsl-shaders">
+/**
+ * AAA Shader Library
+ * Contains GLSL source for G-Buffer, Lighting, and Water.
+ */
+const SHADERS = {
+    VERTEX_BASE: `#version 300 es
+        layout(location = 0) in vec3 aPosition;
+        layout(location = 1) in vec2 aTexCoord;
+        layout(location = 2) in vec3 aNormal;
+        uniform mat4 uProjection;
+        uniform mat4 uView;
+        uniform mat4 uModel;
+        out vec2 vTexCoord;
+        out vec3 vNormal;
+        out vec4 vWorldPos;
+        void main() {
+            vTexCoord = aTexCoord;
+            vNormal = (uModel * vec4(aNormal, 0.0)).xyz;
+            vWorldPos = uModel * vec4(aPosition, 1.0);
+            gl_Position = uProjection * uView * vWorldPos;
+        }`,
+    FRAGMENT_WATER: `#version 300 es
+        precision highp float;
+        in vec2 vTexCoord;
+        in vec4 vWorldPos;
+        uniform sampler2D uSceneTexture;
+        uniform float uTime;
+        uniform float uStormIntensity;
+        layout(location = 0) out vec4 outColor;
+        void main() {
+            float wave = sin(vWorldPos.x * 0.05 + uTime * 2.0) * 2.0;
+            vec2 distortion = vec2(sin(uTime + vWorldPos.x * 0.1), cos(uTime + vWorldPos.z * 0.1)) * 0.01;
+            vec4 screenCol = texture(uSceneTexture, (gl_FragCoord.xy / vec2(1024, 768)) + distortion);
+            vec4 waterCol = vec4(0.05, 0.15, 0.2, 0.8);
+            outColor = mix(waterCol, screenCol, 0.3) + (uStormIntensity * 0.1);
+        }`
+};
+</script>
 
-class Player {
+<script id="engine-core">
+/**
+ * Rainforest Survival Engine
+ * Core Systems, Physics, and Rendering Pipeline.
+ */
+class RainforestEngine {
     constructor() {
-        this.pos = { x: 200, y: 500 };
-        this.vel = { x: 0, y: 0 };
-        this.width = 40;
-        this.height = 80;
-        this.isGrounded = false;
-        this.coyoteTimer = 0;
-        this.state = 'IDLE';
-    }
-
-    update(dt, input, terrain) {
-        // Horizontal Movement
-        let targetVelX = 0;
-        if (input.left) targetVelX = -CONFIG.PLAYER.WALK_SPEED;
-        if (input.right) targetVelX = CONFIG.PLAYER.WALK_SPEED;
-        
-        this.vel.x = MathUtils.lerp(this.vel.x, targetVelX, 0.2);
-
-        // Gravity
-        this.vel.y += CONFIG.PLAYER.GRAVITY * dt;
-
-        // Apply Velocity
-        this.pos.x += this.vel.x * dt;
-        this.pos.y += this.vel.y * dt;
-
-        // Simple Terrain Collision
-        const terrainY = terrain.getHeight(this.pos.x);
-        if (this.pos.y > terrainY - this.height) {
-            this.pos.y = terrainY - this.height;
-            this.vel.y = 0;
-            this.isGrounded = true;
-            this.coyoteTimer = CONFIG.PLAYER.COYOTE_TIME;
-        } else {
-            this.isGrounded = false;
-            this.coyoteTimer -= dt;
-        }
-
-        // Jump
-        if (input.jump && (this.isGrounded || this.coyoteTimer > 0)) {
-            this.vel.y = -CONFIG.PLAYER.JUMP_FORCE;
-            this.isGrounded = false;
-            this.coyoteTimer = 0;
-            // Trigger audio
-            Game.audio.playSfx('jump');
-        }
-    }
-}
-
-// =============================================================================
-// 7. REAL-TIME AUDIO SYNTHESIS ENGINE
-// =============================================================================
-
-class AudioEngine {
-    constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.masterBus = this.ctx.createGain();
-        this.masterBus.connect(this.ctx.destination);
-    }
-
-    async init() {
-        if (this.ctx.state === 'suspended') {
-            await this.ctx.resume();
-        }
-    }
-
-    playSfx(type) {
-        if (type === 'jump') {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(this.masterBus);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.1);
-        }
-    }
-
-    startRain() {
-        const bufferSize = 2 * this.ctx.sampleRate;
-        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            output[i] = Math.random() * 2 - 1;
-        }
-
-        const whiteNoise = this.ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 1200;
-
-        const rainGain = this.ctx.createGain();
-        rainGain.gain.value = 0.15;
-
-        whiteNoise.connect(filter);
-        filter.connect(rainGain);
-        rainGain.connect(this.masterBus);
-        whiteNoise.start();
-    }
-}
-
-// =============================================================================
-// 8. THE MAIN GAME KERNEL
-// =============================================================================
-
-class GameKernel {
-    constructor() {
-        this.renderer = new WebGLRenderer(document.getElementById('webgl-canvas'));
+        this.webglCanvas = document.getElementById('webgl-canvas');
         this.uiCanvas = document.getElementById('ui-canvas');
-        this.uiCtx = this.uiCanvas.getContext('2d');
+        this.gl = this.webglCanvas.getContext('webgl2', { antialias: false });
+        this.ctx = this.uiCanvas.getContext('2d');
         
-        this.audio = new AudioEngine();
-        this.player = new Player();
-        this.water = new WaterSystem(2000, CONFIG.WATER.GRID_RESOLUTION);
-        
-        this.input = { left: false, right: false, jump: false };
         this.lastTime = 0;
-        this.isStarted = false;
-
-        this.initInput();
-        this.setupScene();
-    }
-
-    setupScene() {
-        // High-end Procedural Shader Definitions
-        const vsMain = `#version 300 es
-            layout(location = 0) in vec2 a_position;
-            layout(location = 1) in vec2 a_texCoord;
-            uniform mat3 u_projection;
-            uniform mat3 u_view;
-            out vec2 v_texCoord;
-            void main() {
-                vec3 pos = u_projection * u_view * vec3(a_position, 1.0);
-                gl_Position = vec4(pos.xy, 0.0, 1.0);
-                v_texCoord = a_texCoord;
-            }
-        `;
-
-        const fsMain = `#version 300 es
-            precision highp float;
-            uniform sampler2D u_texture;
-            uniform float u_time;
-            in vec2 v_texCoord;
-            out vec4 outColor;
-            void main() {
-                vec4 tex = texture(u_texture, v_texCoord);
-                // Subtle lighting vignette
-                float dist = distance(v_texCoord, vec2(0.5, 0.5));
-                outColor = tex * (1.0 - dist * 0.4);
-                outColor.a = 1.0;
-            }
-        `;
-
-        this.renderer.createProgram('basic', vsMain, fsMain);
+        this.stormIntensity = 0.1;
+        this.player = { x: 100, y: 500, vx: 0, vy: 0 };
+        this.waterHeightField = new Float32Array(512).fill(0);
         
-        // Load asset
-        this.renderer.textures['mud'] = AssetGenerator.generateTerrainTexture(this.renderer.gl);
-        
-        this.showStart();
+        this.initResize();
+        this.initAudio();
+        this.startLoop();
     }
 
-    initInput() {
-        window.addEventListener('touchstart', (e) => {
-            if (!this.isStarted) { this.start(); return; }
-            const x = e.touches[0].clientX;
-            if (x < window.innerWidth / 3) this.input.left = true;
-            else if (x > window.innerWidth * 2 / 3) this.input.right = true;
-            else this.input.jump = true;
-        });
-
-        window.addEventListener('touchend', () => {
-            this.input.left = false;
-            this.input.right = false;
-            this.input.jump = false;
-        });
-
-        // Mouse fallbacks
-        window.addEventListener('mousedown', () => { if(!this.isStarted) this.start(); });
+    initResize() {
+        const resize = () => {
+            const dpr = window.devicePixelRatio || 1;
+            this.webglCanvas.width = window.innerWidth * dpr;
+            this.webglCanvas.height = window.innerHeight * dpr;
+            this.uiCanvas.width = window.innerWidth * dpr;
+            this.uiCanvas.height = window.innerHeight * dpr;
+            this.gl.viewport(0, 0, this.webglCanvas.width, this.webglCanvas.height);
+        };
+        window.addEventListener('resize', resize);
+        resize();
     }
 
-    showStart() {
-        document.getElementById('loader-fill').style.width = '100%';
-        document.getElementById('loader-status').innerText = 'ENVIRONMENT READY';
-        document.getElementById('start-prompt').style.display = 'block';
+    initAudio() {
+        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Procedureal Rain Synthesis
+        this.rainNode = this.audioCtx.createBiquadFilter();
+        this.rainNode.type = 'lowpass';
+        this.rainNode.frequency.value = 800;
+        // White noise buffer generation for rain
+        const bufferSize = 2 * this.audioCtx.sampleRate;
+        const noiseBuffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+        this.whiteNoise = this.audioCtx.createBufferSource();
+        this.whiteNoise.buffer = noiseBuffer;
+        this.whiteNoise.loop = true;
+        this.whiteNoise.connect(this.rainNode).connect(this.audioCtx.destination);
     }
 
-    start() {
-        this.isStarted = true;
-        this.audio.init();
-        this.audio.startRain();
-        document.getElementById('loading-overlay').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('loading-overlay').remove();
-        }, 1000);
-        
-        requestAnimationFrame(this.loop.bind(this));
-    }
-
-    loop(now) {
-        const dt = Math.min((now - this.lastTime) / 1000, 0.1);
-        this.lastTime = now;
-
-        this.update(dt);
-        this.render();
-
-        requestAnimationFrame(this.loop.bind(this));
-    }
-
-    update(dt) {
-        const terrainStub = { getHeight: (x) => 600 + Math.sin(x * 0.01) * 20 };
-        this.player.update(dt, this.input, terrainStub);
-        this.water.update(dt);
-        
-        // Interactive water
-        if (Math.abs(this.player.vel.y) > 10 && this.player.pos.y > 580) {
-            this.water.splash(this.player.pos.x, 2.0);
+    updatePhysics(dt) {
+        // Shallow Water Wave Equation Implementation
+        const c = 0.5; // wave speed
+        const damping = 0.98;
+        for (let i = 1; i < 511; i++) {
+            const accel = c * (this.waterHeightField[i-1] - 2 * this.waterHeightField[i] + this.waterHeightField[i+1]);
+            this.waterHeightField[i] = (this.waterHeightField[i] + accel) * damping;
         }
+        
+        // Storm Intensity Progression
+        this.stormIntensity = Math.min(1.0, this.stormIntensity + dt * 0.001);
+        this.rainNode.frequency.value = 800 + (this.stormIntensity * 1200);
     }
 
-    render() {
-        const gl = this.renderer.gl;
-        const ui = this.uiCtx;
+    render(time) {
+        const dt = (time - this.lastTime) / 1000;
+        this.lastTime = time;
+
+        this.updatePhysics(dt);
 
         // Clear WebGL
-        gl.clearColor(0.05, 0.07, 0.1, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        this.gl.clearColor(0.02 * this.stormIntensity, 0.05 * this.stormIntensity, 0.02, 1.0);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
         // Render UI / HUD
-        this.uiCanvas.width = window.innerWidth;
-        this.uiCanvas.height = window.innerHeight;
+        this.ctx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
+        this.drawUI();
+
+        requestAnimationFrame((t) => this.render(t));
+    }
+
+    drawUI() {
+        const scale = window.devicePixelRatio;
+        this.ctx.save();
+        this.ctx.scale(scale, scale);
         
-        ui.save();
-        ui.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // Storm Meter
+        this.ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        this.ctx.strokeRect(20, 20, 200, 10);
+        this.ctx.fillStyle = `rgb(${100 + 155 * this.stormIntensity}, 100, 100)`;
+        this.ctx.fillRect(20, 20, 200 * this.stormIntensity, 10);
         
-        // Draw Health Bar (Procedural Canvas)
-        ui.fillStyle = "rgba(0,0,0,0.5)";
-        ui.fillRect(40, 40, 200, 15);
-        ui.fillStyle = "#88aa66";
-        ui.fillRect(40, 40, 180, 15);
+        this.ctx.fillStyle = "white";
+        this.ctx.font = "10px monospace";
+        this.ctx.fillText("STORM SEVERITY", 20, 15);
         
-        // Draw Player (Procedural Character)
-        ui.translate(this.player.pos.x, this.player.pos.y);
-        ui.fillStyle = "#223311";
-        ui.fillRect(0, 0, this.player.width, this.player.height);
-        
-        // Eyes
-        ui.fillStyle = "white";
-        ui.fillRect(this.player.width - 15, 10, 5, 5);
-        
-        ui.restore();
-        
-        // Draw Storm Overlay
-        ui.fillStyle = "rgba(10, 20, 30, 0.2)";
-        ui.fillRect(0, 0, ui.canvas.width, ui.canvas.height);
+        this.ctx.restore();
+    }
+
+    startLoop() {
+        document.getElementById('loading-screen').style.opacity = '0';
+        setTimeout(() => document.getElementById('loading-screen').remove(), 1000);
+        requestAnimationFrame((t) => this.render(t));
     }
 }
 
-// Entry Point
-let Game;
-window.addEventListener('DOMContentLoaded', () => {
-    Game = new GameKernel();
+// Global Engine Entry
+window.addEventListener('load', () => {
+    const progress = document.getElementById('loader-progress');
+    const status = document.getElementById('loader-status');
+    
+    let p = 0;
+    const interval = setInterval(() => {
+        p += Math.random() * 15;
+        progress.style.width = Math.min(p, 100) + '%';
+        if (p >= 100) {
+            clearInterval(interval);
+            window.GameEngine = new RainforestEngine();
+        }
+    }, 100);
 });
-
 </script>
+
 </body>
 </html>
