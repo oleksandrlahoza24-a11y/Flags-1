@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ignis: The Embers of Twilight</title>
+    <title>Ember & Shadow</title>
     <style>
         body, html {
             margin: 0;
@@ -11,8 +11,8 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #050510;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
             touch-action: none;
         }
@@ -20,7 +20,7 @@
             display: block;
             image-rendering: auto;
         }
-        #ui-layer {
+        #ui {
             position: absolute;
             top: 0;
             left: 0;
@@ -28,484 +28,750 @@
             height: 100%;
             pointer-events: none;
         }
-        .instructions {
+        .controls {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.4);
+            bottom: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 50px;
+            box-sizing: border-box;
+            pointer-events: auto;
+        }
+        #joystick-container {
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        #joystick-knob {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: absolute;
+            top: 45px;
+            left: 45px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        #btn-throw {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 100, 0, 0.15);
+            border: 3px solid rgba(255, 80, 0, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #ff6600;
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        #btn-throw:active {
+            transform: scale(0.9);
+            background: rgba(255, 100, 0, 0.3);
+        }
+        #instructions {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.4);
             font-size: 14px;
             letter-spacing: 1px;
-            text-align: center;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
-<div id="ui-layer">
-    <div class="instructions">Walk with Left Stick • Toss Embers with Right Button</div>
+<div id="ui">
+    <div id="instructions">MOVE TO EXPLORE • THROW TO IGNITE THE WORLD</div>
+    <div class="controls">
+        <div id="joystick-container">
+            <div id="joystick-knob"></div>
+        </div>
+        <div id="btn-throw">IGNITE</div>
+    </div>
 </div>
 
 <script>
 /**
- * IGNIS: THE EMBERS OF TWILIGHT
- * A cozy, atmospheric silhouette game.
+ * EMBER & SHADOW
+ * A high-fidelity atmospheric silhouette experience.
  */
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const knob = document.getElementById('joystick-knob');
+const btnThrow = document.getElementById('btn-throw');
 
-// --- Configuration ---
-const CONFIG = {
-    gravity: 0.25,
-    friction: 0.85,
-    playerSpeed: 0.6,
-    jumpForce: -8,
-    worldWidth: 10000,
-    fireSpreadRadius: 120,
-    colors: {
-        skyTop: '#1a1a40',
-        skyBottom: '#f39c12',
-        hills: ['#2d1b33', '#1e1124', '#0f0812'],
-        fire: ['#ffcf33', '#ff8d00', '#ff4d00'],
-        ash: '#1a1a1a'
+// --- GAME CONSTANTS ---
+const WORLD_WIDTH = 6000;
+const GRAVITY = 0.4;
+const FRICTION = 0.85;
+
+// --- STATE ---
+let width, height;
+let cameraX = 0;
+let shake = 0;
+const input = { x: 0, y: 0, throwing: false, lastDir: 1 };
+const particles = [];
+const worldEntities = [];
+const projectiles = [];
+const fireflies = [];
+
+// --- ASSET CACHE (Procedural Silhouettes) ---
+const cache = {};
+
+// --- UTILS ---
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (min, max) => Math.random() * (max - min) + min;
+
+// --- CLASSES ---
+
+class Player {
+    constructor() {
+        this.x = 300;
+        this.y = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.w = 20;
+        this.h = 45;
+        this.grounded = false;
+        this.anim = 0;
+        this.rimLight = 0;
     }
-};
 
-// --- State Management ---
-const state = {
-    width: 0,
-    height: 0,
-    cameraX: 0,
-    shake: 0,
-    input: {
-        joyX: 0,
-        joyY: 0,
-        isTouchingJoy: false,
-        joyStart: {x: 0, y: 0},
-        joyCurrent: {x: 0, y: 0},
-        isThrowing: false
-    },
-    player: {
-        x: 500,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        w: 20,
-        h: 35,
-        grounded: false,
-        bob: 0
-    },
-    objects: [],
-    projectiles: [],
-    particles: [],
-    backgroundStars: []
-};
+    update(dt) {
+        // Movement
+        this.vx += input.x * 0.8;
+        this.vx *= FRICTION;
+        this.x += this.vx;
 
-// --- Utilities ---
-const random = (min, max) => Math.random() * (max - min) + min;
-const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        if (input.x !== 0) {
+            input.lastDir = Math.sign(input.x);
+            this.anim += Math.abs(this.vx) * 0.15;
+        } else {
+            this.anim *= 0.9;
+        }
 
-// --- Entity Creation ---
-function createWorld() {
-    state.objects = [];
-    // Generate Ground Height Map
-    state.groundPoints = [];
-    for (let x = 0; x <= CONFIG.worldWidth; x += 100) {
-        state.groundPoints.push({
-            x: x,
-            y: 500 + Math.sin(x * 0.001) * 50 + Math.cos(x * 0.0005) * 30
+        // Gravity
+        this.vy += GRAVITY;
+        this.y += this.vy;
+
+        // Ground Collision (Simple)
+        const groundY = height - 120 + Math.sin(this.x * 0.005) * 10;
+        if (this.y + this.h > groundY) {
+            this.y = groundY - this.h;
+            this.vy = 0;
+            this.grounded = true;
+        }
+
+        // Rim light logic
+        let nearFire = worldEntities.some(e => e.burning && Math.abs(e.x - this.x) < 200);
+        this.rimLight = lerp(this.rimLight, nearFire ? 1 : 0, 0.1);
+
+        // Camera follow
+        let targetCam = this.x - width / 2;
+        cameraX = lerp(cameraX, targetCam, 0.05);
+        cameraX = Math.max(0, Math.min(cameraX, WORLD_WIDTH - width));
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - cameraX, this.y);
+
+        // Rim Light Effect
+        if (this.rimLight > 0.1) {
+            ctx.shadowBlur = 15 * this.rimLight;
+            ctx.shadowColor = 'rgba(255, 150, 50, 0.5)';
+            ctx.fillStyle = `rgba(255, 100, 0, ${this.rimLight * 0.5})`;
+            ctx.fillRect(-2, -2, this.w + 4, this.h + 4);
+            ctx.shadowBlur = 0;
+        }
+
+        // Body Silhouette
+        ctx.fillStyle = '#000';
+        // Head
+        ctx.beginPath();
+        ctx.arc(this.w/2, 5 + Math.sin(this.anim)*2, 8, 0, Math.PI*2);
+        ctx.fill();
+        // Torso
+        ctx.fillRect(this.w/2 - 6, 12, 12, 18);
+        // Legs (Animated)
+        let legL = Math.sin(this.anim) * 10;
+        let legR = Math.sin(this.anim + Math.PI) * 10;
+        ctx.fillRect(this.w/2 - 6, 30, 5, 10 + legL);
+        ctx.fillRect(this.w/2 + 1, 30, 5, 10 + legR);
+
+        ctx.restore();
+    }
+}
+
+class Projectile {
+    constructor(x, y, vx, vy) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.life = 0;
+        this.dead = false;
+    }
+
+    update() {
+        this.vx *= 0.99;
+        this.vy += GRAVITY * 0.5;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life++;
+
+        // Ember trail
+        if (Math.random() > 0.5) {
+            particles.push(new Particle(this.x, this.y, rnd(-1, 1), rnd(-1, 1), 'ember'));
+        }
+
+        // Collision with world objects
+        worldEntities.forEach(e => {
+            if (!e.burning && e.burnable && Math.abs(this.x - e.x) < e.w/2 && Math.abs(this.y - e.y) < e.h) {
+                e.ignite();
+                this.explode();
+            }
+        });
+
+        if (this.y > height - 100 || this.life > 200) this.explode();
+    }
+
+    explode() {
+        this.dead = true;
+        shake = 10;
+        // Ignition burst
+        for (let i = 0; i < 25; i++) {
+            particles.push(new Particle(this.x, this.y, rnd(-5, 5), rnd(-8, 2), 'ember_burst'));
+        }
+        // Light bloom
+        particles.push(new Particle(this.x, this.y, 0, 0, 'bloom'));
+    }
+
+    draw() {
+        ctx.save();
+        let g = ctx.createRadialGradient(this.x-cameraX, this.y, 0, this.x-cameraX, this.y, 12);
+        g.addColorStop(0, '#fff');
+        g.addColorStop(0.4, '#ffcc00');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(this.x-cameraX, this.y, 12, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Entity {
+    constructor(x, type, scale = 1) {
+        this.x = x;
+        this.type = type;
+        this.scale = scale;
+        this.w = 100 * scale;
+        this.h = 150 * scale;
+        this.y = height - 120 + Math.sin(this.x * 0.005) * 10;
+        this.sway = 0;
+        this.swaySpeed = rnd(0.02, 0.05);
+        this.burning = false;
+        this.burnProgress = 0;
+        this.burnable = true;
+        this.lastRustle = 0;
+        
+        // Cache silhouette
+        this.ensureCache();
+    }
+
+    ensureCache() {
+        if (!cache[this.type]) {
+            const c = document.createElement('canvas');
+            c.width = 400; c.height = 600;
+            const tempCtx = c.getContext('2d');
+            tempCtx.fillStyle = 'black';
+            drawSilhouette(tempCtx, this.type, 200, 580);
+            cache[this.type] = c;
+        }
+    }
+
+    ignite() {
+        if (this.burning) return;
+        this.burning = true;
+    }
+
+    update(dt, player) {
+        // Proximity reaction
+        let dist = Math.abs(player.x - this.x);
+        let reaction = 0;
+        if (dist < 120) {
+            reaction = (1 - dist / 120) * 0.3;
+            // Rustle leaves
+            if (dist < 40 && Math.abs(player.vx) > 2 && Date.now() - this.lastRustle > 200) {
+                for (let i = 0; i < 8; i++) {
+                    particles.push(new Particle(this.x + rnd(-20, 20), this.y - rnd(10, 50), rnd(-2, 2), rnd(-3, -1), 'leaf'));
+                }
+                this.lastRustle = Date.now();
+            }
+        }
+        this.sway += this.swaySpeed + reaction;
+
+        // Fire logic
+        if (this.burning) {
+            this.burnProgress += 0.002;
+            if (Math.random() > 0.4) {
+                particles.push(new Particle(this.x + rnd(-this.w/3, this.w/3), this.y - rnd(0, this.h * (1-this.burnProgress)), rnd(-0.5, 0.5), rnd(-2, -4), 'flame'));
+            }
+            if (Math.random() > 0.8) {
+                particles.push(new Particle(this.x + rnd(-20, 20), this.y - this.h * (1-this.burnProgress) - 20, rnd(-1, 1), rnd(-1, -2), 'smoke'));
+            }
+
+            // Spread fire
+            if (this.burnProgress > 0.2 && this.burnProgress < 0.8 && Math.random() > 0.98) {
+                let neighbors = worldEntities.filter(e => !e.burning && e.burnable && Math.abs(e.x - this.x) < 220);
+                neighbors.forEach(n => {
+                    // Visual spark jump
+                    for(let i=0; i<5; i++) particles.push(new Particle(this.x, this.y-50, (n.x-this.x)*0.05 + rnd(-1,1), -5 + rnd(-2,2), 'ember'));
+                    setTimeout(() => n.ignite(), 1500);
+                });
+            }
+        }
+    }
+
+    draw() {
+        if (this.burnProgress >= 1) return;
+
+        ctx.save();
+        ctx.translate(this.x - cameraX, this.y);
+        
+        // Swaying transformation
+        const swayAngle = Math.sin(this.sway) * 0.03;
+        ctx.rotate(swayAngle);
+
+        // Fire glow
+        if (this.burning) {
+            let g = ctx.createRadialGradient(0, 0, 0, 0, 0, 150);
+            let pulse = 0.8 + Math.sin(Date.now()*0.01)*0.2;
+            g.addColorStop(0, `rgba(255, 100, 0, ${0.4 * pulse})`);
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.ellipse(0, 20, 200, 60, 0, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        // Draw silhouette from cache
+        const img = cache[this.type];
+        const dw = img.width * this.scale * 0.5;
+        const dh = img.height * this.scale * 0.5;
+        
+        // Erosion effect using clipping
+        if (this.burning) {
+            ctx.beginPath();
+            ctx.rect(-dw/2, -dh + (dh * this.burnProgress), dw, dh);
+            ctx.clip();
+        }
+
+        ctx.drawImage(img, -dw/2, -dh, dw, dh);
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, vx, vy, type) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+        this.type = type;
+        this.life = 1.0;
+        this.decay = rnd(0.01, 0.03);
+        this.rot = Math.random() * Math.PI * 2;
+        this.rotV = rnd(-0.1, 0.1);
+        this.size = rnd(2, 5);
+        if (type === 'bloom') { this.size = 20; this.decay = 0.05; }
+        if (type === 'smoke') { this.size = 10; this.decay = 0.01; }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.rot += this.rotV;
+        if (this.type === 'smoke') {
+            this.vx += Math.sin(Date.now()*0.01)*0.1;
+            this.size += 0.2;
+        }
+        if (this.type === 'flame') {
+            this.size *= 0.96;
+            this.vy *= 1.05;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x - cameraX, this.y);
+        ctx.rotate(this.rot);
+        ctx.globalAlpha = Math.max(0, this.life);
+
+        if (this.type === 'leaf') {
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.size, this.size/2, 0, 0, Math.PI*2);
+            ctx.fill();
+        } else if (this.type === 'ember' || this.type === 'ember_burst') {
+            ctx.fillStyle = '#ff9900';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#ff6600';
+            ctx.fillRect(-1, -1, 2, 2);
+        } else if (this.type === 'flame') {
+            let g = ctx.createLinearGradient(0, 0, 0, -this.size*4);
+            g.addColorStop(0, '#ffcc00');
+            g.addColorStop(1, '#ff3300');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.moveTo(-this.size, 0);
+            ctx.quadraticCurveTo(0, -this.size*5, this.size, 0);
+            ctx.fill();
+        } else if (this.type === 'bloom') {
+            let g = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 10 * (1-this.life));
+            g.addColorStop(0, 'rgba(255, 180, 50, 0.6)');
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size * 10, 0, Math.PI*2);
+            ctx.fill();
+        } else if (this.type === 'smoke') {
+            ctx.fillStyle = `rgba(0, 0, 0, ${this.life * 0.4})`;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+}
+
+// --- GENERATION FUNCTIONS ---
+
+function drawSilhouette(ctx, type, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = 'black';
+
+    if (type === 'savanna') {
+        // Trunk
+        ctx.beginPath();
+        ctx.moveTo(-5, 0);
+        ctx.quadraticCurveTo(-2, -150, -20, -250);
+        ctx.lineTo(20, -250);
+        ctx.quadraticCurveTo(2, -150, 5, 0);
+        ctx.fill();
+        // Canopy - Flat layered lobes
+        for(let i=0; i<5; i++) {
+            drawLobe(ctx, rnd(-80, 80), -260 + rnd(-20, 20), rnd(80, 120), 40);
+        }
+    } else if (type === 'pine') {
+        ctx.fillRect(-6, -300, 12, 300);
+        for(let i=0; i<8; i++) {
+            let w = 120 - i*15;
+            ctx.beginPath();
+            ctx.moveTo(-w, -i*40);
+            ctx.lineTo(0, -i*40 - 80);
+            ctx.lineTo(w, -i*40);
+            ctx.fill();
+        }
+    } else if (type === 'deciduous') {
+        ctx.fillRect(-10, -100, 20, 100);
+        for(let i=0; i<12; i++) {
+            drawLobe(ctx, rnd(-60, 60), -150 + rnd(-100, 50), rnd(40, 70), rnd(40, 70));
+        }
+    } else if (type === 'jp_pine') {
+        ctx.beginPath();
+        ctx.moveTo(-5, 0);
+        ctx.bezierCurveTo(-20, -100, 80, -150, 100, -250);
+        ctx.lineWidth = 10; ctx.stroke();
+        // Needle clusters
+        for(let i=0; i<6; i++) {
+            drawStar(ctx, rnd(20, 120), -150 - i*20, rnd(20, 40));
+        }
+    } else if (type === 'baobab') {
+        ctx.beginPath();
+        ctx.moveTo(-50, 0);
+        ctx.bezierCurveTo(-60, -200, -20, -250, 0, -280);
+        ctx.lineTo(20, -280);
+        ctx.bezierCurveTo(40, -250, 60, -200, 50, 0);
+        ctx.fill();
+        drawLobe(ctx, 0, -300, 60, 30);
+    } else if (type === 'palm') {
+        ctx.beginPath();
+        ctx.moveTo(-5, 0);
+        ctx.quadraticCurveTo(20, -150, -30, -300);
+        ctx.lineWidth = 8; ctx.stroke();
+        for(let i=0; i<8; i++) {
+            ctx.save();
+            ctx.translate(-30, -300);
+            ctx.rotate(i * Math.PI/4);
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.quadraticCurveTo(40, 20, 80, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+    } else if (type === 'bush') {
+        for(let i=0; i<8; i++) drawLobe(ctx, rnd(-30, 30), rnd(-10, -40), rnd(20, 40), rnd(20, 40));
+    } else if (type === 'grass') {
+        for(let i=0; i<15; i++) {
+            ctx.beginPath();
+            ctx.moveTo(rnd(-20, 20), 0);
+            ctx.quadraticCurveTo(rnd(-30, 30), -50, rnd(-40, 40), -80);
+            ctx.stroke();
+        }
+    } else if (type === 'cottage') {
+        ctx.fillRect(-60, -80, 120, 80);
+        ctx.beginPath();
+        ctx.moveTo(-75, -80); ctx.lineTo(0, -150); ctx.lineTo(75, -80); ctx.fill();
+        ctx.clearRect(-15, -40, 10, 15); // Window cutout
+    }
+
+    ctx.restore();
+}
+
+function drawLobe(ctx, x, y, r1, r2) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, r1, r2, rnd(0, Math.PI), 0, Math.PI*2);
+    ctx.fill();
+}
+
+function drawStar(ctx, x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    for(let i=0; i<6; i++) {
+        ctx.rotate(Math.PI/3);
+        ctx.fillRect(-r, -1, r*2, 2);
+    }
+    ctx.restore();
+}
+
+// --- INITIALIZATION ---
+
+const player = new Player();
+
+function initWorld() {
+    const types = ['savanna', 'pine', 'deciduous', 'jp_pine', 'baobab', 'palm'];
+    for (let x = 200; x < WORLD_WIDTH; x += rnd(150, 400)) {
+        let type = types[Math.floor(Math.random() * types.length)];
+        worldEntities.push(new Entity(x, type, rnd(0.8, 1.5)));
+    }
+    // Add bushes and grass
+    for (let x = 50; x < WORLD_WIDTH; x += rnd(30, 100)) {
+        let type = Math.random() > 0.5 ? 'bush' : 'grass';
+        worldEntities.push(new Entity(x, type, rnd(0.5, 1.0)));
+    }
+    // Add structures
+    for (let x = 1000; x < WORLD_WIDTH; x += 1500) {
+        worldEntities.push(new Entity(x, 'cottage', 1.2));
+    }
+    // Add fireflies
+    for (let i = 0; i < 40; i++) {
+        fireflies.push({
+            x: Math.random() * WORLD_WIDTH,
+            y: Math.random() * height,
+            off: Math.random() * 100,
+            s: rnd(1, 3)
         });
     }
-
-    const getGroundY = (x) => {
-        const index = Math.floor(x / 100);
-        if (index < 0) return 500;
-        if (index >= state.groundPoints.length - 1) return state.groundPoints[state.groundPoints.length-1].y;
-        const p1 = state.groundPoints[index];
-        const p2 = state.groundPoints[index+1];
-        const t = (x - p1.x) / 100;
-        return p1.y + (p2.y - p1.y) * t;
-    };
-
-    // Populate Objects
-    for (let x = 300; x < CONFIG.worldWidth; x += random(150, 400)) {
-        const y = getGroundY(x);
-        const typeRand = Math.random();
-        
-        let obj = { x, y, burning: 0, heat: 0, charred: false, health: 1.0 };
-
-        if (typeRand < 0.4) {
-            obj.type = 'tree';
-            obj.w = random(10, 20);
-            obj.h = random(100, 200);
-        } else if (typeRand < 0.6) {
-            obj.type = 'fence';
-            obj.w = 60;
-            obj.h = 30;
-        } else if (typeRand < 0.8) {
-            obj.type = 'bush';
-            obj.w = 40;
-            obj.h = 40;
-        } else {
-            obj.type = 'cottage';
-            obj.w = 80;
-            obj.h = 60;
-        }
-        state.objects.push(obj);
-    }
-
-    // Stars
-    for(let i=0; i<100; i++) {
-        state.backgroundStars.push({x: Math.random(), y: Math.random() * 0.5, s: Math.random()});
-    }
-}
-
-function spawnFireParticle(x, y, scale = 1) {
-    state.particles.push({
-        x, y,
-        vx: random(-0.5, 0.5),
-        vy: random(-1, -3),
-        life: 1.0,
-        decay: random(0.01, 0.03),
-        size: random(3, 6) * scale,
-        color: CONFIG.colors.fire[Math.floor(Math.random() * 3)]
-    });
-}
-
-function spawnAshParticle(x, y) {
-    state.particles.push({
-        x, y,
-        vx: random(-0.2, 0.2),
-        vy: random(0.2, 1),
-        life: 1.0,
-        decay: 0.01,
-        size: random(1, 3),
-        color: '#222'
-    });
-}
-
-// --- Input Handling ---
-function initInput() {
-    const handlePointerDown = (e) => {
-        const tx = e.clientX;
-        const ty = e.clientY;
-
-        if (tx < state.width / 2) {
-            state.input.isTouchingJoy = true;
-            state.input.joyStart = {x: tx, y: ty};
-            state.input.joyCurrent = {x: tx, y: ty};
-        } else {
-            // Throw
-            const p = state.player;
-            const dir = (state.input.joyX || (state.player.vx >= 0 ? 1 : -1));
-            state.projectiles.push({
-                x: p.x, y: p.y - 20,
-                vx: (dir > 0 ? 7 : -7) + (state.input.joyX * 2),
-                vy: -6,
-                life: 200
-            });
-        }
-    };
-
-    const handlePointerMove = (e) => {
-        if (state.input.isTouchingJoy) {
-            state.input.joyCurrent = {x: e.clientX, y: e.clientY};
-            const dx = state.input.joyCurrent.x - state.input.joyStart.x;
-            const dy = state.input.joyCurrent.y - state.input.joyStart.y;
-            const distVal = Math.min(dist(0, 0, dx, dy), 50);
-            const angle = Math.atan2(dy, dx);
-            state.input.joyX = (Math.cos(angle) * distVal) / 50;
-            state.input.joyY = (Math.sin(angle) * distVal) / 50;
-        }
-    };
-
-    const handlePointerUp = (e) => {
-        state.input.isTouchingJoy = false;
-        state.input.joyX = 0;
-        state.input.joyY = 0;
-    };
-
-    window.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('resize', resize);
 }
 
 function resize() {
-    state.width = canvas.width = window.innerWidth;
-    state.height = canvas.height = window.innerHeight;
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
 }
 
-// --- Core Loop ---
+// --- MAIN LOOP ---
+
 function update() {
-    const p = state.player;
-
-    // Movement
-    p.vx += state.input.joyX * CONFIG.playerSpeed;
-    p.vx *= CONFIG.friction;
-    p.x += p.vx;
-
-    // Gravity & Jump
-    p.vy += CONFIG.gravity;
-    if (state.input.joyY < -0.8 && p.grounded) {
-        p.vy = CONFIG.jumpForce;
-        p.grounded = false;
-    }
-    p.y += p.vy;
-
-    // Ground Collision
-    const groundY = 500 + Math.sin(p.x * 0.001) * 50 + Math.cos(p.x * 0.0005) * 30;
-    if (p.y > groundY) {
-        p.y = groundY;
-        p.vy = 0;
-        p.grounded = true;
+    const dt = 1;
+    
+    player.update(dt);
+    
+    worldEntities.forEach(e => e.update(dt, player));
+    
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        projectiles[i].update();
+        if (projectiles[i].dead) projectiles.splice(i, 1);
     }
 
-    // Camera
-    const targetCam = p.x - state.width / 2;
-    state.cameraX += (targetCam - state.cameraX) * 0.1;
-
-    // Projectiles
-    state.projectiles.forEach((proj, index) => {
-        proj.vx *= 0.99;
-        proj.vy += CONFIG.gravity * 0.5;
-        proj.x += proj.vx;
-        proj.y += proj.vy;
-        proj.life--;
-
-        // Hit Detection
-        state.objects.forEach(obj => {
-            if (!obj.charred && dist(proj.x, proj.y, obj.x, obj.y - obj.h/2) < 40) {
-                obj.burning = 1;
-                state.shake = 10;
-                proj.life = 0;
-            }
-        });
-
-        if (proj.y > 1000 || proj.life <= 0) state.projectiles.splice(index, 1);
-    });
-
-    // Fire Simulation
-    state.objects.forEach(obj => {
-        if (obj.burning > 0 && !obj.charred) {
-            obj.health -= 0.002;
-            if (Math.random() > 0.5) spawnFireParticle(obj.x + random(-obj.w/2, obj.w/2), obj.y - random(0, obj.h));
-            
-            // Spread
-            state.objects.forEach(other => {
-                if (!other.burning && !other.charred) {
-                    if (dist(obj.x, obj.y, other.x, other.y) < CONFIG.fireSpreadRadius) {
-                        other.heat += 0.005;
-                        if (other.heat > 1) other.burning = 1;
-                    }
-                }
-            });
-
-            if (obj.health <= 0) {
-                obj.charred = true;
-                obj.burning = 0;
-            }
-        }
-    });
-
-    // Particles
-    state.particles.forEach((part, index) => {
-        part.x += part.vx;
-        part.y += part.vy;
-        part.life -= part.decay;
-        if (part.life <= 0) state.particles.splice(index, 1);
-    });
-
-    // Ambient Effects
-    if (Math.random() > 0.98) {
-        spawnAshParticle(state.cameraX + Math.random() * state.width, -50);
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) particles.splice(i, 1);
     }
 
-    if (state.shake > 0) state.shake *= 0.9;
+    if (shake > 0) shake *= 0.9;
 }
 
-// --- Drawing ---
 function draw() {
-    ctx.clearRect(0, 0, state.width, state.height);
+    ctx.clearRect(0, 0, width, height);
+    
+    // 1. Sky Gradient
+    let skyG = ctx.createLinearGradient(0, 0, 0, height);
+    skyG.addColorStop(0, '#1a0a2e'); // Deep indigo
+    skyG.addColorStop(0.5, '#4a1e3c'); // Dusty rose
+    skyG.addColorStop(0.8, '#ff7e5f'); // Coral
+    skyG.addColorStop(1, '#feb47b'); // Amber
+    ctx.fillStyle = skyG;
+    ctx.fillRect(0, 0, width, height);
 
-    // 1. Sky
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, state.height);
-    skyGrad.addColorStop(0, CONFIG.colors.skyTop);
-    skyGrad.addColorStop(1, CONFIG.colors.skyBottom);
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, state.width, state.height);
-
-    // Stars
-    ctx.fillStyle = "white";
-    state.backgroundStars.forEach(s => {
-        ctx.globalAlpha = 0.2 + Math.sin(Date.now()*0.001 + s.x*10)*0.2;
-        ctx.fillRect(s.x * state.width, s.y * state.height, 1.5, 1.5);
-    });
-    ctx.globalAlpha = 1.0;
-
-    // 2. Parallax Hills
-    CONFIG.colors.hills.forEach((color, i) => {
-        const speed = 0.2 * (i + 1);
-        const offset = -state.cameraX * speed;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(0, state.height);
-        for (let x = 0; x <= state.width + 100; x += 50) {
-            const worldX = x - offset;
-            const ly = (state.height * 0.5) + (i * 40) + Math.sin(worldX * 0.0005 * (i+1)) * 100;
-            ctx.lineTo(x, ly);
-        }
-        ctx.lineTo(state.width, state.height);
-        ctx.fill();
-    });
-
-    // 3. World Space
     ctx.save();
-    const shakeX = (Math.random() - 0.5) * state.shake;
-    const shakeY = (Math.random() - 0.5) * state.shake;
-    ctx.translate(-state.cameraX + shakeX, shakeY);
+    if (shake > 1) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
 
-    // Ground
+    // 2. Parallax Layers
+    drawParallax(0.1, '#2a1545', 50, 0.2); // Farthest hills
+    drawParallax(0.25, '#1e0d2d', 80, 0.4); // Mid hills
+    drawParallax(0.5, '#0a0510', 120, 0.6); // Tree line
+
+    // 3. Ground Glows (under fire)
+    worldEntities.forEach(e => {
+        if (e.burning) {
+            let g = ctx.createRadialGradient(e.x-cameraX, e.y, 0, e.x-cameraX, e.y, 150);
+            g.addColorStop(0, 'rgba(255, 100, 0, 0.2)');
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g;
+            ctx.fillRect(e.x-cameraX-200, e.y-50, 400, 100);
+        }
+    });
+
+    // 4. World Entities (Silhouettes)
+    worldEntities.sort((a, b) => a.y - b.y);
+    worldEntities.forEach(e => e.draw());
+
+    // 5. Player
+    player.draw();
+
+    // 6. Projectiles & Particles
+    projectiles.forEach(p => p.draw());
+    particles.forEach(p => p.draw());
+
+    // 7. Ground Line (Rich Black)
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.moveTo(state.cameraX, state.height);
-    for (let x = state.cameraX - 100; x < state.cameraX + state.width + 100; x += 50) {
-        const gy = 500 + Math.sin(x * 0.001) * 50 + Math.cos(x * 0.0005) * 30;
-        ctx.lineTo(x, gy + 10);
+    ctx.moveTo(0, height);
+    for (let x = 0; x <= width; x += 20) {
+        let wx = x + cameraX;
+        ctx.lineTo(x, height - 110 + Math.sin(wx * 0.005) * 10);
     }
-    ctx.lineTo(state.cameraX + state.width + 100, state.height);
+    ctx.lineTo(width, height);
     ctx.fill();
 
-    // Fire Glows (Under Objects)
-    ctx.globalCompositeOperation = 'screen';
-    state.objects.forEach(obj => {
-        if (obj.burning > 0) {
-            const pulse = 0.8 + Math.sin(Date.now() * 0.01) * 0.2;
-            const grad = ctx.createRadialGradient(obj.x, obj.y - obj.h/2, 0, obj.x, obj.y - obj.h/2, CONFIG.fireSpreadRadius * pulse);
-            grad.addColorStop(0, 'rgba(255, 100, 0, 0.6)');
-            grad.addColorStop(1, 'rgba(255, 50, 0, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(obj.x - 200, obj.y - 300, 400, 400);
-        }
-    });
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Objects
-    state.objects.forEach(obj => {
-        if (obj.x < state.cameraX - 200 || obj.x > state.cameraX + state.width + 200) return;
-
-        ctx.fillStyle = obj.charred ? CONFIG.colors.ash : '#000';
-        ctx.globalAlpha = obj.charred ? obj.health + 0.3 : 1.0;
-
-        if (obj.type === 'tree') {
-            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, obj.w, obj.h);
+    // 8. Fireflies
+    fireflies.forEach(f => {
+        let x = (f.x - cameraX * 0.8 + WORLD_WIDTH) % WORLD_WIDTH;
+        if (x < width) {
+            let lum = Math.sin(Date.now() * 0.002 + f.off) * 0.5 + 0.5;
+            ctx.fillStyle = `rgba(200, 255, 100, ${lum * 0.8})`;
             ctx.beginPath();
-            ctx.arc(obj.x, obj.y - obj.h, obj.w * 2, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (obj.type === 'fence') {
-            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, 5, obj.h);
-            ctx.fillRect(obj.x + obj.w/2, obj.y - obj.h, 5, obj.h);
-            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h + 10, obj.w, 5);
-        } else if (obj.type === 'bush') {
-            ctx.beginPath();
-            ctx.arc(obj.x, obj.y - 10, 20, 0, Math.PI * 2);
-            ctx.arc(obj.x - 15, obj.y - 5, 15, 0, Math.PI * 2);
-            ctx.arc(obj.x + 15, obj.y - 5, 15, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (obj.type === 'cottage') {
-            ctx.fillRect(obj.x - obj.w/2, obj.y - obj.h, obj.w, obj.h);
-            ctx.beginPath();
-            ctx.moveTo(obj.x - obj.w/2 - 10, obj.y - obj.h);
-            ctx.lineTo(obj.x, obj.y - obj.h - 30);
-            ctx.lineTo(obj.x + obj.w/2 + 10, obj.y - obj.h);
+            ctx.arc(x, f.y + Math.sin(Date.now()*0.001 + f.off)*20, f.s, 0, Math.PI*2);
             ctx.fill();
         }
-        ctx.globalAlpha = 1.0;
     });
-
-    // Player
-    const p = state.player;
-    p.bob = Math.sin(Date.now() * 0.005) * 2;
-    ctx.fillStyle = '#000';
-    // Body
-    ctx.beginPath();
-    ctx.roundRect(p.x - p.w/2, p.y - p.h + p.bob, p.w, p.h - 5, 10);
-    ctx.fill();
-    // Head
-    ctx.beginPath();
-    ctx.arc(p.x, p.y - p.h - 5 + p.bob, 8, 0, Math.PI*2);
-    ctx.fill();
-
-    // Projectiles
-    state.projectiles.forEach(proj => {
-        const g = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, 15);
-        g.addColorStop(0, '#fff');
-        g.addColorStop(1, 'rgba(255, 150, 0, 0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, 15, 0, Math.PI*2);
-        ctx.fill();
-        spawnFireParticle(proj.x, proj.y, 0.5);
-    });
-
-    // Particles
-    state.particles.forEach(part => {
-        ctx.globalAlpha = part.life;
-        ctx.fillStyle = part.color;
-        // Flame Shape (Teardrop)
-        ctx.beginPath();
-        ctx.moveTo(part.x, part.y);
-        ctx.bezierCurveTo(part.x - part.size, part.y, part.x - part.size, part.y - part.size * 2, part.x, part.y - part.size * 3);
-        ctx.bezierCurveTo(part.x + part.size, part.y - part.size * 2, part.x + part.size, part.y, part.x, part.y);
-        ctx.fill();
-    });
-    ctx.globalAlpha = 1.0;
 
     ctx.restore();
 
-    // 4. UI / Post Processing
-    // Vignette
-    const vig = ctx.createRadialGradient(state.width/2, state.height/2, state.width*0.2, state.width/2, state.height/2, state.width*0.8);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    // 9. Vignette Overlay
+    let vig = ctx.createRadialGradient(width/2, height/2, width/4, width/2, height/2, width*0.7);
+    vig.addColorStop(0, 'transparent');
     vig.addColorStop(1, 'rgba(0,0,0,0.6)');
     ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, state.width, state.height);
+    ctx.fillRect(0, 0, width, height);
+}
 
-    // Joystick Draw
-    if (state.input.isTouchingJoy) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(state.input.joyStart.x, state.input.joyStart.y, 50, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.beginPath();
-        ctx.arc(state.input.joyCurrent.x, state.input.joyCurrent.y, 25, 0, Math.PI*2);
-        ctx.fill();
-    }
-
-    // Throw Button (Visual only, Logic is in pointerDown)
-    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+function drawParallax(speed, color, baseHeight, scale) {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(state.width - 80, state.height - 80, 50, 0, Math.PI*2);
+    ctx.moveTo(0, height);
+    for (let x = 0; x <= width; x += 50) {
+        let wx = x + cameraX * speed;
+        let h = height - baseHeight + Math.sin(wx * 0.002) * 40 * scale + Math.cos(wx * 0.005) * 20;
+        ctx.lineTo(x, h);
+    }
+    ctx.lineTo(width, height);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.stroke();
-
-    requestAnimationFrame(loop);
 }
 
 function loop() {
     update();
     draw();
+    requestAnimationFrame(loop);
 }
 
-// --- Init ---
+// --- INPUT HANDLING ---
+
+let joystickActive = false;
+let joyStart = { x: 0, y: 0 };
+
+function handleThrow() {
+    const vx = input.lastDir * 12;
+    const vy = -10;
+    projectiles.push(new Projectile(player.x, player.y + 20, vx, vy));
+}
+
+window.addEventListener('resize', resize);
+btnThrow.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handleThrow();
+});
+
+const joyContainer = document.getElementById('joystick-container');
+joyContainer.addEventListener('pointerdown', e => {
+    joystickActive = true;
+    joyStart = { x: e.clientX, y: e.clientY };
+});
+
+window.addEventListener('pointermove', e => {
+    if (!joystickActive) return;
+    let dx = e.clientX - joyStart.x;
+    let dy = e.clientY - joyStart.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let max = 45;
+    if (dist > max) {
+        dx *= max/dist;
+        dy *= max/dist;
+    }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    input.x = dx / max;
+    
+    if (dy < -30 && player.grounded) {
+        player.vy = -12;
+        player.grounded = false;
+    }
+});
+
+window.addEventListener('pointerup', () => {
+    joystickActive = false;
+    knob.style.transform = `translate(0, 0)`;
+    input.x = 0;
+});
+
+// Keyboard Fallback
+window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.x = -1;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.x = 1;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        if (player.grounded) { player.vy = -12; player.grounded = false; }
+    }
+    if (e.code === 'KeyF' || e.code === 'Enter') handleThrow();
+});
+window.addEventListener('keyup', e => {
+    if (['ArrowLeft', 'KeyA', 'ArrowRight', 'KeyD'].includes(e.code)) input.x = 0;
+});
+
+// Init
 resize();
-createWorld();
-initInput();
+initWorld();
 loop();
 
 </script>
