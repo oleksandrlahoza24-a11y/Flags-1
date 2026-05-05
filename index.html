@@ -3,63 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tsar-Chan: Meltdown of the Heart</title>
+    <title>Tsar-Chan: Critical Obsession</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        :root { --main-color: #ff0055; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; }
         
-        /* UI Overlay */
-        #game-ui {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end;
-            z-index: 10;
+        /* The UI */
+        #ui-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
         }
 
-        /* Dialogue Box */
-        #dialogue-container {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-top: 3px solid #ff4d6d;
-            padding: 20px;
-            height: 180px;
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            color: white;
+        #stats {
+            padding: 20px; display: flex; gap: 20px;
         }
 
-        #character-name { font-weight: bold; color: #ff4d6d; font-size: 20px; margin-bottom: 5px; }
-        #text-box { font-size: 18px; line-height: 1.4; flex-grow: 1; }
-
-        /* Input Area */
-        #input-area {
-            display: flex; gap: 10px; margin-top: 10px;
+        .stat-box {
+            background: rgba(0,0,0,0.8); border: 2px solid var(--main-color);
+            padding: 10px; color: white; border-radius: 10px; flex: 1;
+            box-shadow: 0 0 15px var(--main-color);
         }
+
+        #dialogue-box {
+            margin-top: auto; background: rgba(10, 0, 0, 0.9);
+            border-top: 4px solid var(--main-color); padding: 25px;
+            pointer-events: auto; min-height: 150px; position: relative;
+        }
+
+        #name-tag {
+            position: absolute; top: -30px; left: 20px;
+            background: var(--main-color); color: white;
+            padding: 5px 20px; font-weight: bold; border-radius: 5px 5px 0 0;
+        }
+
+        #text-content { color: #fff; font-size: 1.2rem; margin-bottom: 20px; text-shadow: 0 0 5px var(--main-color); }
+
+        #input-row { display: flex; gap: 10px; }
         input {
-            flex-grow: 1; background: rgba(255,255,255,0.1); border: 1px solid #555;
-            color: white; padding: 12px; border-radius: 8px; font-size: 16px;
+            flex: 1; background: #111; border: 1px solid var(--main-color);
+            color: #0f0; padding: 12px; font-size: 1rem; border-radius: 5px;
         }
         button {
-            background: #ff4d6d; border: none; color: white; padding: 10px 20px;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
-        }
-
-        /* Stats */
-        #stats {
-            position: fixed; top: 20px; left: 20px; 
-            background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px;
-            color: white; pointer-events: none;
-        }
-        #affection-bar {
-            width: 150px; height: 10px; background: #333; border-radius: 5px; margin-top: 5px;
-        }
-        #affection-fill {
-            width: 20%; height: 100%; background: #ff4d6d; border-radius: 5px; transition: 0.5s;
+            background: var(--main-color); border: none; color: white;
+            padding: 0 25px; border-radius: 5px; font-weight: bold; cursor: pointer;
         }
 
         #flash {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; opacity: 0; pointer-events: none; z-index: 1000;
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: white; opacity:0; pointer-events:none; z-index:9999;
+        }
+        
+        .shake { animation: shake 0.2s infinite; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            50% { transform: translate(-2px, -1px); }
+            100% { transform: translate(1px, -1px); }
         }
     </style>
 </head>
@@ -67,18 +65,18 @@
 
 <div id="flash"></div>
 
-<div id="stats">
-    Affection: <span id="affection-val">20</span>%
-    <div id="affection-bar"><div id="affection-fill"></div></div>
-</div>
+<div id="ui-layer">
+    <div id="stats">
+        <div class="stat-box">RAD-LOVE: <span id="love-val">20</span>%</div>
+        <div class="stat-box">STABILITY: <span id="stab-val">100</span>%</div>
+    </div>
 
-<div id="game-ui">
-    <div id="dialogue-container">
-        <div id="character-name">Tsar-Chan</div>
-        <div id="text-box">...H-hello? Is someone there? Don't look at me, I'm just a weapon of mass destruction...</div>
-        <div id="input-area">
-            <input type="text" id="user-input" placeholder="Type to chat..." onkeypress="handleKey(event)">
-            <button onclick="processInput()">SEND</button>
+    <div id="dialogue-box">
+        <div id="name-tag">TSAR-CHAN</div>
+        <div id="text-content">...Target locked. Oh, it's just you. Don't get too close, I'm... sensitive today.</div>
+        <div id="input-row">
+            <input type="text" id="user-input" placeholder="Whisper something to the warhead..." onkeypress="if(event.key==='Enter') processText()">
+            <button onclick="processText()">TALK</button>
         </div>
     </div>
 </div>
@@ -99,181 +97,151 @@
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-    // --- Shader Logic ---
-    const CloudShader = {
-        uniforms: { time: { value: 0 }, uColor: { value: new THREE.Color(0.2, 0.2, 0.2) }, uHeat: { value: 0.0 }, uOpacity: { value: 1.0 } },
-        vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; uniform float time;
-            void main() { vNormal = normal; vec4 mvPosition = modelViewMatrix * vec4(position + normal * sin(position.y + time) * 0.5, 1.0);
-            vViewPosition = -mvPosition.xyz; gl_Position = projectionMatrix * mvPosition; }`,
-        fragmentShader: `varying vec3 vNormal; varying vec3 vViewPosition; uniform vec3 uColor; uniform float uHeat; uniform float uOpacity;
-            void main() { float fres = pow(1.0 - dot(normalize(vNormal), normalize(vViewPosition)), 3.0);
-            gl_FragColor = vec4(mix(uColor, vec3(1.0,0.4,0.1), uHeat) + (fres * 0.2), uOpacity); }`
+    let scene, camera, renderer, composer, clock, nuke, eyeL, eyeR;
+    let love = 20;
+    let stability = 100;
+    let isGameOver = false;
+
+    // --- SPICY AI BRAIN ---
+    const Brain = {
+        patterns: [
+            { reg: /love|cute|hot|sexy|beautiful|marry/i, score: 15, stab: 5, responses: ["H-huh? You think a weapon is... hot?", "My cooling fans are failing... don't look at me like that!", "Is that a proposal? My core is reaching 10 million degrees!"] },
+            { reg: /hate|ugly|stupid|dumb|small|weak/i, score: -20, stab: -25, responses: ["I was built to erase cities. You think I'm weak?", "Say that again and I'll shorten your half-life!", "Stability failing... you're pushing my buttons, literally!"] },
+            { reg: /touch|pet|rub|hold/i, score: 10, stab: -10, responses: ["Don't touch my detonation cord! It's... sensitive.", "Ah! That's a restricted zone!", "You're playing with fire. Radioactive fire."] },
+            { reg: /hi|hello|hey/i, score: 2, stab: 0, responses: ["Target acquired. Identify yourself.", "Greetings, carbon-based lifeform.", "Stop wasting my uranium clock cycles."] }
+        ],
+        fallback: ["Processing...", "My Geiger counter is clicking for you.", "I'm a 50-megaton bomb. What do you want?"]
     };
 
-    let scene, camera, renderer, composer, clock, nukeModel, mushroomCap, stem, shockwave;
-    let affection = 20;
-    let isExploding = false;
-    let hasProposed = false;
-
-    // --- "AI" Logic Engine ---
-    const responses = {
-        positive: ["Baka! Don't say such sweet things...", "You really mean that?", "I feel my core temperature rising...", "Maybe being a bomb isn't so bad if you're here."],
-        negative: ["Shut up! You're just like the others!", "Do you want to see my payload?!", "I wasn't built for insults!", "I'm reaching critical mass..."],
-        neutral: ["I'm just a 50-megaton gravity bomb.", "The desert is lonely, isn't it?", "Processing your data...", "Wait, what did you say?"]
-    };
-
-    const keywords = {
-        love: 15, cute: 10, beautiful: 12, marry: 20, smile: 8,
-        ugly: -20, hate: -25, stupid: -15, explode: -10, mean: -10
-    };
-
-    window.handleKey = (e) => { if(e.key === 'Enter') processInput(); };
-
-    window.processInput = () => {
+    window.processText = () => {
+        if(isGameOver) return;
         const input = document.getElementById('user-input');
-        const text = input.value.toLowerCase();
+        const text = input.value;
         if(!text) return;
         input.value = '';
 
-        let score = 0;
-        Object.keys(keywords).forEach(k => { if(text.includes(k)) score += keywords[k]; });
+        let matched = false;
+        Brain.patterns.forEach(p => {
+            if(p.reg.test(text)) {
+                love += p.score;
+                stability += p.stab;
+                document.getElementById('text-content').innerText = p.responses[Math.floor(Math.random()*p.responses.length)];
+                matched = true;
+            }
+        });
 
-        affection = Math.max(0, Math.min(100, affection + score));
-        updateUI();
-
-        let reply = "";
-        if (score > 0) reply = responses.positive[Math.floor(Math.random()*responses.positive.length)];
-        else if (score < 0) reply = responses.negative[Math.floor(Math.random()*responses.negative.length)];
-        else reply = responses.neutral[Math.floor(Math.random()*responses.neutral.length)];
-
-        // Win Condition
-        if (affection >= 90 && !hasProposed) {
-            hasProposed = true;
-            triggerProposal();
-            return;
+        if(!matched) {
+            document.getElementById('text-content').innerText = Brain.fallback[Math.floor(Math.random()*Brain.fallback.length)];
         }
 
-        // Lose Condition
-        if (affection <= 0) {
-            typeWriter("I CAN'T TAKE THIS ANYMORE! GOODBYE WORLD!");
-            setTimeout(detonate, 1500);
-            return;
-        }
-
-        typeWriter(reply);
+        love = Math.max(0, Math.min(100, love));
+        stability = Math.max(0, Math.min(100, stability));
+        updateStats();
+        checkConditions();
     };
 
-    function updateUI() {
-        document.getElementById('affection-val').innerText = affection;
-        document.getElementById('affection-fill').style.width = affection + '%';
-        if(nukeModel) {
-            const s = 1 + (affection / 100);
-            nukeModel.scale.set(s,s,s);
-            nukeModel.material.emissive.setHex(affection > 50 ? 0xff0000 : 0x000000);
-            nukeModel.material.emissiveIntensity = affection / 100;
+    function updateStats() {
+        document.getElementById('love-val').innerText = love;
+        document.getElementById('stab-val').innerText = stability;
+        
+        // Visual feedback
+        const color = new THREE.Color().setHSL(love/300, 1, 0.5);
+        eyeL.material.color = color;
+        eyeR.material.color = color;
+        
+        if(stability < 40) document.body.classList.add('shake');
+        else document.body.classList.remove('shake');
+    }
+
+    function checkConditions() {
+        if(love >= 100) {
+            isGameOver = true;
+            document.getElementById('text-content').innerText = "I can't hide it. My safety is off. I want to spend my final countdown with you. Will you be my detonator? (YES/NO)";
+            document.getElementById('input-row').innerHTML = `
+                <button onclick="end(true)" style="background:green">YES (MARRY)</button>
+                <button onclick="end(false)" style="background:black">NO (DECLINE)</button>
+            `;
+        } else if(stability <= 0) {
+            isGameOver = true;
+            document.getElementById('text-content').innerText = "CRITICAL FAILURE. IF I CAN'T HAVE YOU, NO ONE GETS THE PLANET!";
+            setTimeout(detonate, 1000);
         }
     }
 
-    function typeWriter(text) {
-        const box = document.getElementById('text-box');
-        box.innerText = text;
-    }
-
-    function triggerProposal() {
-        typeWriter("Listen... we've spent so much time together in this desert. I don't want to be a weapon anymore. I want to be yours. Will you marry me?");
-        const area = document.getElementById('input-area');
-        area.innerHTML = `
-            <button onclick="endGame(true)" style="background:green">YES, I DO</button>
-            <button onclick="endGame(false)" style="background:black">NO (DECLINE)</button>
-        `;
-    }
-
-    window.endGame = (married) => {
-        if(married) {
-            typeWriter("Oh my god! I'm so happy! Let's go live in a fallout shelter together forever! ❤️");
-            document.getElementById('input-area').innerHTML = "";
-            scene.background.setHex(0xffc0cb);
+    window.end = (choice) => {
+        if(choice) {
+            document.getElementById('text-content').innerText = "System override! We're eloping to the moon! ❤️";
+            scene.background.setHex(0xff0055);
         } else {
-            typeWriter("Fine. If I can't have your heart... NO ONE CAN HAVE ANYTHING!");
-            document.getElementById('input-area').innerHTML = "";
+            document.getElementById('text-content').innerText = "WRONG ANSWER. SEE YOU IN THE AFTER-GLOW.";
             setTimeout(detonate, 1000);
         }
     };
 
-    // --- Three.js Scene Setup ---
+    // --- 3D ENGINE ---
     function init() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505);
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 5000);
-        camera.position.set(0, 30, 100);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 15, 40);
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
-        const composer_ = new EffectComposer(renderer);
-        composer_.addPass(new RenderPass(scene, camera));
-        composer_.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85));
-        composer = composer_;
+        composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2, 0.4, 0.85));
 
-        const light = new THREE.DirectionalLight(0xffffff, 2);
-        light.position.set(10, 20, 10);
+        // Nuke Model
+        const bodyGeo = new THREE.CapsuleGeometry(5, 8, 8, 32);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.1 });
+        nuke = new THREE.Mesh(bodyGeo, bodyMat);
+        scene.add(nuke);
+
+        // Glowing Eyes
+        const eyeGeo = new THREE.SphereGeometry(0.8, 16, 16);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeL.position.set(-2, 3, 4);
+        nuke.add(eyeL);
+
+        eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeR.position.set(2, 3, 4);
+        nuke.add(eyeR);
+
+        const light = new THREE.PointLight(0xff0055, 500, 100);
+        light.position.set(10, 10, 10);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
-
-        // The Nuke Model
-        const geometry = new THREE.CapsuleGeometry(5, 10, 8, 20);
-        const material = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.8, roughness: 0.2 });
-        nukeModel = new THREE.Mesh(geometry, material);
-        nukeModel.position.y = 10;
-        scene.add(nukeModel);
-
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({color: 0x111111}));
-        ground.rotation.x = -Math.PI/2;
-        scene.add(ground);
 
         clock = new THREE.Clock();
         animate();
     }
 
     function detonate() {
-        if(isExploding) return;
-        isExploding = true;
-        scene.remove(nukeModel);
+        const flash = document.getElementById('flash');
+        flash.style.opacity = '1';
+        isGameOver = true;
         
-        const capMat = new THREE.ShaderMaterial({ uniforms: THREE.UniformsUtils.clone(CloudShader.uniforms), vertexShader: CloudShader.vertexShader, fragmentShader: CloudShader.fragmentShader, transparent: true });
-        mushroomCap = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), capMat);
-        scene.add(mushroomCap);
+        // Remove UI
+        document.getElementById('ui-layer').style.display = 'none';
 
-        stem = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1, 1, 32), capMat.clone());
-        scene.add(stem);
-
-        shockwave = new THREE.Mesh(new THREE.TorusGeometry(1, 0.1, 16, 100), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true}));
-        shockwave.rotation.x = Math.PI/2;
-        scene.add(shockwave);
-
-        startTime = clock.getElapsedTime();
-        document.getElementById('flash').style.opacity = '1';
-        setTimeout(() => { document.getElementById('flash').style.transition = 'opacity 4s'; document.getElementById('flash').style.opacity = '0'; }, 100);
+        // Explode Scene logic (abbreviated for speed)
+        nuke.visible = false;
+        scene.background = new THREE.Color(1,1,1);
+        setTimeout(() => { location.reload(); }, 4000);
     }
 
-    let startTime = 0;
     function animate() {
         requestAnimationFrame(animate);
-        if(isExploding) {
-            const t = clock.getElapsedTime() - startTime;
-            const h = Math.pow(t, 0.7) * 60;
-            mushroomCap.scale.set(h, h*0.6, h);
-            mushroomCap.position.y = h;
-            mushroomCap.material.uniforms.uHeat.value = Math.max(0, 1-t/5);
-            stem.scale.set(h*0.2, h, h*0.2);
-            stem.position.y = h/2;
-            shockwave.scale.set(t*100, t*100, 1);
-            shockwave.material.opacity = Math.max(0, 1-t/3);
-        } else if(nukeModel) {
-            nukeModel.rotation.y += 0.01;
-            nukeModel.position.y = 10 + Math.sin(clock.getElapsedTime()) * 2;
+        const t = clock.getElapsedTime();
+        if(nuke && !isGameOver) {
+            nuke.rotation.y += 0.01;
+            nuke.position.y = Math.sin(t) * 2 + 5;
+            // Eyes pulse
+            const s = 1 + Math.sin(t * (love/10)) * 0.2;
+            eyeL.scale.set(s,s,s);
+            eyeR.scale.set(s,s,s);
         }
         composer.render();
     }
