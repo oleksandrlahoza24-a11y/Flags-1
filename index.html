@@ -1,205 +1,190 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wood You Date Me? - A Hilarious Dating Simulator</title>
-    <style>
-        body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: #ffecf0;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        h1 {
-            color: #d63384;
-            margin-bottom: 30px;
-        }
-        
-        .game-container {
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .character {
-            font-size: 100px;
-            margin: 20px 0;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-20px);
-            }
-            60% {
-                transform: translateY(-10px);
-            }
-        }
-        
-        .dialogue-box {
-            background-color: #f8f9fa;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            min-height: 100px;
-            text-align: left;
-        }
-        
-        .choices {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        button {
-            background-color: #ff6b9d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #ff5277;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        
-        .stat {
-            text-align: center;
-        }
-        
-        .ending {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #d63384;
-        }
-        
-        .restart-btn {
-            background-color: #6c757d;
-        }
-        
-        .restart-btn:hover {
-            background-color: #5a6268;
-        }
-        
-        .heart {
-            color: #e63946;
-            font-size: 20px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.2);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Helldivers 2 Fan Hub</title>
+<style>
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background-color: #1a1a1a;
+color: #ffffff;
+margin: 0;
+padding: 0;
+line-height: 1.6;
+}
+code
+Code
+header {
+        background-color: #ffe710;
+        color: #000;
+        padding: 20px;
+        text-align: center;
+    }
+
+    nav {
+        background-color: #333;
+        display: flex;
+        justify-content: center;
+        padding: 10px;
+    }
+
+    nav button {
+        background: none;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: color 0.3s;
+    }
+
+    nav button:hover {
+        color: #ffe710;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #222;
+        border-radius: 8px;
+        border-left: 5px solid #ffe710;
+    }
+
+    .page {
+        display: none;
+    }
+
+    .active {
+        display: block;
+    }
+
+    h1, h2 {
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .hero-img {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1614728263952-84ea206f25ab?auto=format&fit=crop&q=80&w=1000') center/cover;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .card {
+        background-color: #333;
+        padding: 15px;
+        border-radius: 5px;
+        border-bottom: 3px solid #41639c;
+    }
+
+    footer {
+        text-align: center;
+        padding: 20px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    ul {
+        list-style-type: square;
+    }
+</style>
 </head>
 <body>
-    <h1>🌳 Wood You Date Me? 🌳</h1>
-    <div class="game-container">
-        <div class="character">🪵</div>
-        <h2>Meet Woody - The Sexiest Piece of Timber Alive!</h2>
-        
-        <div id="gameArea">
-            <div class="dialogue-box" id="dialogueBox">
-                Welcome to Wood You Date Me? You're about to go on the most... unusual date of your life with Woody, a charismatic piece of lumber with a heart of oak and a personality that's anything but board! Are you ready to get wood?
-            </div>
-            
-            <div class="stats">
-                <div class="stat">
-                    <div>🔥 Lust</div>
-                    <div id="lust">50%</div>
-                </div>
-                <div class="stat">
-                    <div>😂 Comedy</div>
-                    <div id="comedy">50%</div>
-                </div>
-                <div class="stat">
-                    <div>💕 Romance</div>
-                    <div id="romance">50%</div>
-                </div>
-            </div>
-            
-            <div class="choices" id="choices">
-                <button onclick="startGame()">Start Your Wooden Adventure</button>
-            </div>
+<header>
+<h1>HELLDIVERS 2</h1>
+<p>FOR SUPER EARTH!</p>
+</header>
+<nav>
+<button onclick="showPage('home')">HOME</button>
+<button onclick="showPage('enemies')">ENEMIES</button>
+<button onclick="showPage('stratagems')">STRATAGEMS</button>
+</nav>
+<div class="container">
+code
+Code
+<div id="home" class="page active">
+    <div class="hero-img">
+        <h2 style="color: #ffe710;">Join the Fight</h2>
+    </div>
+    <h2>Welcome, Recruit!</h2>
+    <p>Helldivers 2 is an action-packed squad shooter where you and your friends fight to protect <strong>Managed Democracy</strong>. As a Helldiver, you travel to different planets across the galaxy to spread freedom and destroy anything that threatens our way of life.</p>
+    <p>Your primary goal is to complete missions, collect samples, and extract safely back to your Super Destroyer.</p>
+    <h3>Core Rules:</h3>
+    <ul>
+        <li>Never leave a squadmate behind.</li>
+        <li>Watch out for friendly fire!</li>
+        <li>Use your Stratagems wisely.</li>
+        <li>Do it for Liberty.</li>
+    </ul>
+</div>
+
+<div id="enemies" class="page">
+    <h2>Threats to Democracy</h2>
+    <p>The galaxy is filled with dangerous creatures that want to destroy Super Earth. You will face two main factions:</p>
+    
+    <div class="card-grid">
+        <div class="card">
+            <h3 style="color: #ff9d45;">The Terminids</h3>
+            <p>Giant insect-like aliens that swarm in massive numbers. Watch out for Chargers and Bile Titans!</p>
+        </div>
+        <div class="card">
+            <h3 style="color: #81abff;">The Automatons</h3>
+            <p>Cold, calculating robots with heavy armor and laser weapons. They require precision and heavy explosives to defeat.</p>
         </div>
     </div>
+    
+    <p style="margin-top:20px;">Both factions are constantly trying to take over planets. Check the Galactic Map on your ship to see where the front lines are.</p>
+</div>
 
-    <script>
-        let gameState = {
-            lust: 50,
-            comedy: 50,
-            romance: 50,
-            currentScene: 0
-        };
+<div id="stratagems" class="page">
+    <h2>Your Arsenal</h2>
+    <p>Stratagems are powerful tools you can call down from your ship in orbit. They are the key to winning any battle.</p>
+    
+    <div class="card">
+        <h3>Eagle Airstrike</h3>
+        <p>Fast and reliable. Use this to clear out small groups of enemies or destroy nests.</p>
+    </div>
+    <br>
+    <div class="card">
+        <h3>Orbital Laser</h3>
+        <p>A massive beam of energy that tracks and melts the biggest targets on the field.</p>
+    </div>
+    <br>
+    <div class="card">
+        <h3>Sentry Turrets</h3>
+        <p>Automatic guns you can deploy to hold a position while you complete an objective.</p>
+    </div>
 
-        const scenes = [
-            {
-                dialogue: "Woody: 'Hey there, saw you checking me out from across the bar. I'm Woody, and I've got a hard... wood personality. What brings you to this forest of love?'",
-                choices: [
-                    { text: "I'm here for the lumber... I mean, wonder!", effects: { lust: 10, comedy: 5, romance: 0 }, nextScene: 1 },
-                    { text: "I've always had a thing for natural materials.", effects: { lust: 5, comedy: 0, romance: 10 }, nextScene: 2 },
-                    { text: "Is that a 2x4 in your pocket or are you just happy to see me?", effects: { lust: 20, comedy: 15, romance: 0 }, nextScene: 3 }
-                ]
-            },
-            {
-                dialogue: "Woody: 'I like your style! You know, they don't call me 'Oaklahoma' for nothing. I'm firm in all the right places and I can really branch out in conversation. Want to see my bark?'",
-                choices: [
-                    { text: "I'd love to see your wood grain!", effects: { lust: 15, comedy: 10, romance: 5 }, nextScene: 4 },
-                    { text: "Let's talk about something less... woody.", effects: { lust: -5, comedy: 5, romance: 10 }, nextScene: 5 },
-                    { text: "I bet you're great at building things... like relationships!", effects: { lust: 0, comedy: 15, romance: 15 }, nextScene: 6 }
-                ]
-            },
-            {
-                dialogue: "Woody: 'That's so sweet! You know, I might be rough on the outside, but I'm all heartwood on the inside. I've been through a lot of sanding to become the smooth operator I am today.'",
-                choices: [
-                    { text: "I can tell you've been well-polished.", effects: { lust: 10, comedy: 5, romance: 10 }, nextScene: 4 },
-                    { text: "Do you have any knots? I find imperfections charming.", effects: { lust: 5, comedy: 10, romance: 15 }, nextScene: 5 },
-                    { text: "I'd love to carve our initials together.", effects: { lust: 5, comedy: 0, romance: 20 }, nextScene: 6 }
-                ]
-            },
-            {
-                dialogue: "Woody: 'Well well, aren't you the forward one! I like that in a partner. You know, I may be a piece of wood, but I'm not board when I'm with you. In fact, I'm feeling quite... erect... I mean, excited!'",
-                choices: [
-                    { text: "I can tell! Is that a branch or are you just happy to see me?", effects: { lust: 25, comedy: 20, romance: 0 }, nextScene: 7 },
-                    { text: "Let's keep it classy... for now.", effects: { lust: 0, comedy: 5, romance: 10 }, nextScene: 8 },
-                    { text: "I've always wanted to date someone with good... timber.", effects: { lust: 15, comedy: 15, romance: 5 }, nextScene: 9 }
-                ]
-            },
-            {
-                dialogue: "Woody: 'You're making me blush! Or I would if I had blood. You know, I might be made of wood, but I'm not hollow... in the emotional sense, that is. My rings tell a story of growth, just like our relationship could.'",
-                choices: [
-                    { text: "How many rings do you have? I'm curious about your age.", effects: { lust: 5, comedy: 10, romance: 10 }, nextScene: 10 },
-                    { text: "I'd love to count your rings later... in private.", effects: { lust: 20, comedy: 10, romance: 5 }, nextScene: 11 },
-                    { text: "Let's build something beautiful together.", effects: { lust: 5, comedy: 5, romance: 20 }, nextScene: 12 }
+    <h3>Pro Tip:</h3>
+    <p>Always bring a Support Weapon, like the Autocannon or the Quasar Cannon, to deal with armored enemies!</p>
+</div>
+</div>
+<footer>
+<p>&copy; 2024 Helldivers Fan Site | Not affiliated with Arrowhead Game Studios</p>
+</footer>
+<script>
+function showPage(pageId) {
+let pages = document.getElementsByClassName('page');
+for (let i = 0; i < pages.length; i++) {
+pages[i].classList.remove('active');
+}
+document.getElementById(pageId).classList.add('active');
+}
+</script>
+</body>
+</html>
