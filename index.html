@@ -3,227 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Quiet Desk - Librarian Sim</title>
+    <title>The Quiet Desk - Librarian Simulator</title>
     <style>
         :root {
-            --win-blue: #004e98;
-            --win-glass: rgba(255, 255, 255, 0.25);
-            --win-border: rgba(255, 255, 255, 0.4);
-            --win-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            --taskbar-bg: rgba(20, 40, 60, 0.7);
-            --ipad-font: 18px;
+            --aero-bg: rgba(255, 255, 255, 0.35);
+            --aero-border: rgba(255, 255, 255, 0.4);
+            --win-blue: #0078d7;
+            --win-red: #e81123;
+            --taskbar-bg: rgba(10, 20, 40, 0.75);
+            --desk-wood: #4d2b1a;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background: #1a1a1a; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; background: #111;
         }
 
-        /* Ambient Desk Environment */
+        /* --- LIBRARY AMBIENCE --- */
         #library-desk {
             width: 100vw; height: 100vh;
-            background: radial-gradient(circle at center, #5d4037 0%, #2b1d1d 100%);
-            display: flex; align-items: center; justify-content: center;
-            transition: background 5s ease;
-        }
-
-        #monitor-frame {
-            width: 95vw; height: 90vh;
-            max-width: 1366px; max-height: 1024px;
-            background: #111; border-radius: 20px;
-            padding: 20px; border: 4px solid #333;
-            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+            background: linear-gradient(to bottom, #333, #111);
+            display: flex; justify-content: center; align-items: center;
             position: relative;
         }
 
-        /* Windows 7 Desktop */
-        #pc-screen {
-            width: 100%; height: 100%;
-            background: #3a7ebf linear-gradient(135deg, #3a7ebf 0%, #1a4e8a 100%);
-            position: relative; overflow: hidden;
-            display: flex; flex-direction: column;
-            border-radius: 4px;
+        .desk-surface {
+            position: absolute; bottom: 0; width: 100%; height: 40%;
+            background: var(--desk-wood);
+            border-top: 10px solid #3d2114;
+            box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        #desktop-icons {
-            flex-grow: 1; padding: 20px;
-            display: grid; grid-template-columns: repeat(auto-fill, 100px);
-            grid-template-rows: repeat(auto-fill, 120px);
-            grid-auto-flow: column; gap: 20px;
+        .mug {
+            position: absolute; bottom: 15%; left: 10%;
+            width: 60px; height: 70px; background: #eee;
+            border-radius: 5px 5px 20px 20px; z-index: 2;
+        }
+        .mug::after {
+            content: ''; position: absolute; right: -15px; top: 15px;
+            width: 25px; height: 35px; border: 6px solid #eee; border-radius: 50%;
         }
 
-        .icon {
-            width: 90px; height: 100px;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; text-align: center;
-            color: white; font-size: 14px; text-shadow: 1px 1px 2px black;
-            cursor: pointer; border-radius: 4px;
-        }
-        .icon:active { background: rgba(255,255,255,0.2); }
-        .icon-img { width: 50px; height: 50px; margin-bottom: 5px; position: relative; }
-
-        /* Window Styling (Aero Glass) */
-        .window {
-            position: absolute; min-width: 400px; min-height: 300px;
-            background: rgba(240, 240, 240, 0.95);
-            border-radius: 8px 8px 0 0;
-            box-shadow: var(--win-shadow);
-            display: flex; flex-direction: column;
-            border: 1px solid var(--win-border);
-            backdrop-filter: blur(10px);
-            overflow: hidden; touch-action: none;
+        /* --- PC MONITOR --- */
+        #monitor-frame {
+            width: 95vw; height: 90vh;
+            max-width: 1366px; max-height: 1024px;
+            background: #222; border: 20px solid #111;
+            border-radius: 15px; position: relative;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8), 0 0 20px rgba(100,150,255,0.1);
+            display: flex; flex-direction: column; overflow: hidden;
+            z-index: 5;
         }
 
-        .title-bar {
-            height: 44px; /* iPad friendly */
-            background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 10px; cursor: move; border-bottom: 1px solid rgba(0,0,0,0.1);
+        /* --- WINDOWS 7 DESKTOP --- */
+        #desktop {
+            flex: 1; position: relative;
+            background: radial-gradient(circle at center, #2e7bb0 0%, #0c3a6b 100%);
+            overflow: hidden;
         }
 
-        .active-window .title-bar { background: linear-gradient(to bottom, #7bb7fa, #2a73d4); }
-        .title-text { font-weight: bold; font-size: 16px; color: #111; display: flex; align-items: center; gap: 8px; }
-        .active-window .title-text { color: white; }
-
-        .window-controls { display: flex; gap: 2px; }
-        .win-btn {
-            width: 44px; height: 32px; border: none; outline: none;
-            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        /* Desktop Grid */
+        #icon-grid {
+            padding: 20px; display: grid;
+            grid-auto-flow: column; grid-template-rows: repeat(auto-fill, 100px);
+            grid-gap: 20px; pointer-events: none;
         }
-        .win-close { background: #e81123; color: white; border-radius: 0 4px 0 0; }
-        .win-min, .win-max { background: rgba(255,255,255,0.3); }
+        .desktop-icon {
+            width: 90px; height: 95px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            color: white; text-shadow: 0 1px 2px black; font-size: 14px;
+            pointer-events: auto; border-radius: 3px;
+        }
+        .desktop-icon:active { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); }
+        .desktop-icon .icon-img { width: 48px; height: 48px; margin-bottom: 5px; }
 
-        .window-content { flex-grow: 1; overflow: auto; position: relative; background: white; }
-
-        /* Taskbar */
+        /* --- TASKBAR --- */
         #taskbar {
             height: 50px; background: var(--taskbar-bg);
-            backdrop-filter: blur(15px);
-            display: flex; align-items: center; padding: 0 10px;
-            border-top: 1px solid var(--win-border); z-index: 9999;
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; align-items: center; padding: 0 5px; z-index: 9999;
+            border-top: 1px solid rgba(255,255,255,0.2);
         }
-
-        #start-button {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: radial-gradient(circle, #5cb85c, #4cae4c);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5); margin-right: 15px;
-            display: flex; align-items: center; justify-content: center; font-size: 20px;
-        }
-
-        .taskbar-item {
-            width: 50px; height: 40px; margin: 0 2px;
-            background: rgba(255,255,255,0.1); border-radius: 3px;
+        #start-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: radial-gradient(circle, #5e9eff, #0046b8);
+            border: 2px solid rgba(255,255,255,0.4);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5); margin-right: 10px;
             display: flex; align-items: center; justify-content: center;
         }
-
-        #system-tray { margin-left: auto; display: flex; align-items: center; color: white; font-size: 14px; gap: 10px; }
-
-        /* WebExplorer Styling */
-        .browser-ui { display: flex; flex-direction: column; height: 100%; }
-        .address-bar-area { background: #f0f0f0; padding: 8px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #ccc; }
-        .nav-btn { width: 44px; height: 44px; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-        .url-input { flex-grow: 1; height: 44px; padding: 0 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; }
-        .go-btn { background: #4CAF50; color: white; border: none; padding: 0 15px; height: 44px; border-radius: 4px; }
-        .browser-viewport { flex-grow: 1; background: white; overflow-y: auto; position: relative; }
-
-        /* Web Page Simulation */
-        .fake-page { padding: 20px; font-family: "Times New Roman", serif; color: #000; }
-        .loading-overlay { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: white; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10; 
+        #taskbar-apps { flex: 1; display: flex; gap: 5px; height: 100%; align-items: center; }
+        .taskbar-item {
+            width: 50px; height: 40px; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
         }
-        .progress-bar-container { width: 200px; height: 20px; border: 1px solid #999; margin-top: 10px; }
-        .progress-bar-fill { width: 0%; height: 100%; background: #2a73d4; }
+        .taskbar-item.active { background: rgba(255,255,255,0.2); box-shadow: inset 0 0 5px rgba(255,255,255,0.3); }
+
+        #system-tray {
+            padding: 0 15px; color: white; font-size: 13px; text-align: right;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* --- WINDOWS AERO --- */
+        .window {
+            position: absolute; min-width: 300px; min-height: 200px;
+            background: #fff; border-radius: 8px 8px 3px 3px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .window.active { z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+
+        .titlebar {
+            height: 38px; background: var(--aero-bg);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: flex; align-items: center; padding: 0 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            user-select: none;
+        }
+        .window.active .titlebar { background: rgba(135, 206, 250, 0.5); }
+        .title-text { flex: 1; font-weight: bold; font-size: 14px; color: #111; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        
+        .win-controls { display: flex; gap: 5px; }
+        .win-btn {
+            width: 30px; height: 22px; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(0,0,0,0.1);
+        }
+        .win-btn.close { background: #e81123cc; color: white; }
+
+        .window-content { flex: 1; position: relative; overflow: auto; background: white; }
+
+        /* --- APP SPECIFIC CSS --- */
+        /* WebExplorer */
+        .browser-ui { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 5px; }
+        .address-bar-wrap { display: flex; gap: 5px; padding: 5px; }
+        .address-bar { flex: 1; height: 34px; padding: 0 10px; border: 1px solid #ccc; font-size: 16px; border-radius: 2px; }
+        .browser-go { padding: 0 15px; background: #ddd; border: 1px solid #999; border-radius: 2px; }
+        .loading-bar-container { height: 4px; width: 100%; background: #eee; }
+        #browser-progress { height: 100%; width: 0%; background: #2e7bb0; transition: width 0.3s; }
+        
+        .web-frame { padding: 20px; font-family: "Times New Roman", serif; line-height: 1.4; color: #000; }
+        .ie-error { text-align: center; padding-top: 50px; font-family: sans-serif; }
 
         /* Notepad */
-        .notepad-area { width: 100%; height: 100%; border: none; padding: 10px; font-family: monospace; font-size: 18px; resize: none; }
-
-        /* Quest Balloon */
-        #quest-notification {
-            position: absolute; bottom: 60px; right: 20px; width: 300px;
-            background: #ffffe1; border: 1px solid #aba899; padding: 15px;
-            border-radius: 10px; box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-            display: none; z-index: 10000;
+        .notepad-textarea { 
+            width: 100%; height: 100%; border: none; resize: none; 
+            padding: 10px; font-family: monospace; font-size: 16px; outline: none;
         }
 
-        /* HUD */
+        /* --- QUEST NOTIFICATIONS --- */
+        #notification-center {
+            position: absolute; bottom: 60px; right: 20px;
+            width: 320px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+        }
+        .quest-balloon {
+            background: #ffffcc; border: 1px solid #666; border-radius: 10px;
+            padding: 15px; box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            animation: slideIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            position: relative; cursor: pointer;
+        }
+        @keyframes slideIn { from { transform: translateX(110%); } to { transform: translateX(0); } }
+        
+        /* --- HUD --- */
         #hud {
-            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6);
-            color: #ffd700; padding: 10px 20px; border-radius: 30px; font-weight: bold;
-            display: flex; align-items: center; gap: 10px; z-index: 10001; pointer-events: none;
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); color: #fff; padding: 5px 20px;
+            border-radius: 20px; display: flex; gap: 20px; font-weight: bold;
+            pointer-events: none; z-index: 10001;
         }
 
-        /* Shop UI */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
-        .shop-item { border: 1px solid #ccc; padding: 15px; border-radius: 8px; background: #fff; text-align: center; }
-        .shop-item img { width: 64px; height: 64px; background: #eee; border-radius: 8px; }
-        .buy-btn { width: 100%; margin-top: 10px; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 18px; }
-        .buy-btn:disabled { background: #ccc; }
-
-        /* CSS Graphics */
-        .icon-computer { background: #0078d7; border-radius: 4px; }
-        .icon-browser { background: #e67e22; border-radius: 4px; }
-        .icon-notepad { background: #f1c40f; border-radius: 4px; }
-        .icon-folder { background: #f39c12; border-radius: 2px; }
+        /* --- SHOP --- */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .shop-item { border: 1px solid #ddd; padding: 10px; border-radius: 5px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .shop-item button { margin-top: 8px; width: 100%; height: 44px; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+        .shop-item button:disabled { background: #ccc; }
 
         /* Context Menu */
-        #context-menu {
-            position: absolute; width: 150px; background: white; border: 1px solid #ccc;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); display: none; z-index: 11000;
+        #ctx-menu {
+            position: fixed; width: 150px; background: #eee; border: 1px solid #999;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); z-index: 20000; display: none;
         }
-        .menu-item { padding: 10px 15px; cursor: pointer; font-size: 14px; }
-        .menu-item:hover { background: #0078d7; color: white; }
+        .ctx-item { padding: 8px 15px; font-size: 14px; cursor: default; }
+        .ctx-item:hover { background: #3296fa; color: white; }
 
-        /* Loading animation favicon */
-        .loader-spin { width: 16px; height: 16px; border: 2px solid #ccc; border-top: 2px solid #333; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
     <div id="library-desk">
+        <div class="desk-surface"></div>
+        <div class="mug" id="desk-mug"></div>
+        
         <div id="hud">
-            <span>Library Credits:</span>
-            <span id="credits-val">0</span>
-            <span id="save-icon" style="opacity:0">💾</span>
+            <span>Library Credits: <span id="stat-lc">0</span> LC</span>
+            <span>Quests: <span id="stat-completed">0</span></span>
         </div>
 
         <div id="monitor-frame">
-            <div id="pc-screen">
-                <div id="desktop-icons">
+            <div id="desktop" oncontextmenu="return false;">
+                <div id="icon-grid">
                     <!-- Icons generated by JS -->
                 </div>
 
                 <div id="window-container"></div>
 
-                <div id="quest-notification">
-                    <strong id="quest-patron-name">Patron Name</strong>
-                    <p id="quest-text">I need help finding something...</p>
-                    <div id="quest-timer-bar" style="height: 4px; background: #d9534f; width: 100%;"></div>
-                    <button id="accept-quest-btn" style="margin-top: 10px; width: 100%; height: 44px;">Respond to Patron</button>
-                </div>
+                <div id="notification-center"></div>
+            </div>
 
-                <div id="taskbar">
-                    <div id="start-button">🪟</div>
-                    <div id="running-apps" style="display: flex;"></div>
-                    <div id="system-tray">
-                        <span id="network-icon">📶 Slow</span>
-                        <span id="vol-icon">🔊</span>
-                        <span id="clock-display">12:00 PM</span>
-                        <button id="mute-btn" style="background:none; border:none; color:white; font-size:20px;">🔇</button>
-                    </div>
+            <div id="taskbar">
+                <div id="start-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24"><path fill="white" d="M3,12V6.75L9,5.43V12H3M21,12V18.25L10,19.74V12H21M3,13H9V18.57L3,17.25V13M10,4.26L21,5.75V12H10V4.26Z" /></svg>
+                </div>
+                <div id="taskbar-apps"></div>
+                <div id="system-tray">
+                    <span id="tray-time">12:00 PM</span><br>
+                    <small id="tray-status">Searching...</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="context-menu">
-        <div class="menu-item" onclick="location.reload()">Refresh</div>
-        <div class="menu-item">New Folder</div>
-        <div class="menu-item" onclick="alert('Librarian OS v7.1')">Personalize</div>
+    <div id="ctx-menu">
+        <div class="ctx-item" onclick="location.reload()">Refresh</div>
+        <div class="ctx-item">New Folder</div>
+        <div class="ctx-item">Personalize</div>
     </div>
 
     <script src="game.js"></script>
