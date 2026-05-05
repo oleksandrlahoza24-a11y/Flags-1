@@ -1,490 +1,890 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Librarian - The Unpredictable Archive</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: #0a0a0a;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        #game {
-            background: #111;
-            border: 3px solid #00ff00;
-            border-radius: 8px;
-            padding: 20px;
-            max-width: 800px;
-            width: 100%;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 15px rgba(0, 255, 0, 0.05);
-            color: #00ff00;
-            position: relative;
-            overflow: hidden;
-        }
-        #game::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-            pointer-events: none;
-        }
-        h1 {
-            text-align: center;
-            font-size: 1.8em;
-            text-shadow: 0 0 10px #00ff00;
-            color: #00ff00;
-            margin-bottom: 5px;
-            letter-spacing: 4px;
-            border-bottom: 1px solid #00ff00;
-            padding-bottom: 8px;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 0.8em;
-            color: #0f0;
-            opacity: 0.7;
-            margin-bottom: 15px;
-        }
-        #questBox {
-            background: #0a0a0a;
-            border: 1px solid #00ff00;
-            border-radius: 4px;
-            padding: 10px 15px;
-            margin-bottom: 15px;
-            min-height: 60px;
-            box-shadow: inset 0 0 5px rgba(0,255,0,0.2);
-        }
-        #questTitle {
-            color: #0f0;
-            font-size: 0.9em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        #questDesc {
-            color: #5f5;
-            font-size: 0.85em;
-            margin-top: 5px;
-        }
-        #wordTarget {
-            color: #ffff00;
-            font-weight: bold;
-            font-size: 1.2em;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px #ffff00;
-        }
-        #progressArea {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            background: #0a0a0a;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #0f0;
-            font-size: 0.9em;
-        }
-        #scoreDisplay {
-            color: #0f0;
-        }
-        #streakDisplay {
-            color: #5f5;
-        }
-        #bookArea {
-            background: #0a0a0a;
-            border: 2px solid #0f0;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 12px;
-            min-height: 280px;
-            max-height: 350px;
-            overflow-y: auto;
-            font-size: 0.85em;
-            line-height: 1.5;
-            word-wrap: break-word;
-            scrollbar-color: #0f0 #111;
-        }
-        #bookArea::-webkit-scrollbar {
-            width: 6px;
-        }
-        #bookArea::-webkit-scrollbar-track {
-            background: #111;
-        }
-        #bookArea::-webkit-scrollbar-thumb {
-            background: #0f0;
-            border-radius: 3px;
-        }
-        .highlighted {
-            background: #003300;
-            color: #ffff00;
-            padding: 0 2px;
-            border-radius: 2px;
-            cursor: pointer;
-            transition: background 0.1s;
-        }
-        .highlighted:hover {
-            background: #006600;
-        }
-        #inputArea {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        #wordInput {
-            flex: 1;
-            background: #0a0a0a;
-            border: 2px solid #0f0;
-            border-radius: 4px;
-            padding: 10px 12px;
-            color: #0f0;
-            font-size: 1em;
-            font-family: 'Courier New', monospace;
-            outline: none;
-        }
-        #wordInput::placeholder {
-            color: #0f0;
-            opacity: 0.4;
-        }
-        #wordInput:focus {
-            box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
-        }
-        #submitBtn {
-            background: #0a0a0a;
-            border: 2px solid #0f0;
-            border-radius: 4px;
-            padding: 10px 20px;
-            color: #0f0;
-            font-weight: bold;
-            font-size: 1em;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
-            transition: all 0.1s;
-        }
-        #submitBtn:active {
-            background: #003300;
-            transform: scale(0.95);
-        }
-        .buttonRow {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .btn {
-            background: #0a0a0a;
-            border: 1px solid #0f0;
-            border-radius: 4px;
-            padding: 8px 14px;
-            color: #0f0;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
-            transition: all 0.1s;
-        }
-        .btn:active {
-            background: #003300;
-            transform: scale(0.95);
-        }
-        #messageBox {
-            margin-top: 8px;
-            padding: 6px;
-            border-radius: 4px;
-            text-align: center;
-            font-weight: bold;
-            min-height: 24px;
-            font-size: 0.9em;
-        }
-        .good {
-            color: #0f0;
-            text-shadow: 0 0 5px #0f0;
-        }
-        .bad {
-            color: #ff4444;
-            text-shadow: 0 0 5px #ff4444;
-        }
-        .special {
-            color: #aa00ff;
-            text-shadow: 0 0 5px #aa00ff;
-        }
-        #hintText {
-            font-size: 0.75em;
-            color: #0f0;
-            opacity: 0.6;
-            margin-top: 4px;
-            text-align: center;
-        }
-        @media (max-width: 600px) {
-            #game {
-                padding: 12px;
-            }
-            h1 {
-                font-size: 1.4em;
-            }
-            #bookArea {
-                min-height: 220px;
-                max-height: 280px;
-                font-size: 0.8em;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>THE LIBRARIAN — Dewey Decimate System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Code+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --wood: #2a1810;
+    --wood-light: #4a2c1a;
+    --amber: #d4920b;
+    --amber-glow: #f5b731;
+    --cream: #f0e6d3;
+    --cream-dark: #d9cbb8;
+    --ink: #1a0f0a;
+    --blood: #8b1a1a;
+    --mold: #3a5a2a;
+    --card: #3d2215;
+    --gold: #c9a84c;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; }
+
+  body {
+    font-family: 'Source Code Pro', monospace;
+    background: var(--wood);
+    color: var(--cream);
+    touch-action: manipulation;
+  }
+
+  /* SCREENS */
+  .screen {
+    position: absolute; inset:0;
+    display: none; flex-direction: column;
+    transition: opacity 0.4s;
+  }
+  .screen.active { display:flex; }
+
+  /* TITLE SCREEN */
+  #titleScreen {
+    background: radial-gradient(ellipse at 50% 80%, #4a2c1a 0%, #1a0f0a 70%);
+    justify-content: center; align-items: center;
+    text-align: center;
+    overflow: hidden;
+  }
+  #titleScreen::before {
+    content:''; position:absolute; inset:0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+  .title-glow {
+    position:absolute; width:400px; height:400px; border-radius:50%;
+    background: radial-gradient(circle, rgba(212,146,11,0.15) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.3);opacity:1} }
+  .title-content { position:relative; z-index:2; }
+  .title-icon { font-size:64px; color:var(--amber); margin-bottom:20px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  .title-main {
+    font-family:'Playfair Display',serif; font-weight:900;
+    font-size: clamp(42px,10vw,72px); color:var(--amber-glow);
+    text-shadow: 0 0 40px rgba(212,146,11,0.3), 0 4px 0 #1a0f0a;
+    line-height:1; margin-bottom:8px;
+  }
+  .title-sub {
+    font-family:'Playfair Display',serif; font-weight:400;
+    font-size: clamp(14px,3vw,20px); color:var(--gold);
+    letter-spacing:6px; text-transform:uppercase; margin-bottom:40px;
+    opacity:0.7;
+  }
+  .title-warning {
+    max-width:400px; margin:0 auto 30px; padding:16px;
+    border:1px solid var(--blood); border-radius:8px;
+    background: rgba(139,26,26,0.15);
+    font-size:11px; color:#cc6666; line-height:1.6;
+  }
+  .btn {
+    display:inline-flex; align-items:center; gap:10px;
+    padding:16px 40px; border:2px solid var(--amber);
+    background: linear-gradient(135deg, rgba(212,146,11,0.2), rgba(212,146,11,0.05));
+    color:var(--amber-glow); font-family:'Playfair Display',serif;
+    font-size:20px; font-weight:700; border-radius:8px;
+    cursor:pointer; transition:all 0.2s; letter-spacing:2px;
+    text-transform:uppercase;
+  }
+  .btn:active { transform:scale(0.95); background:rgba(212,146,11,0.3); }
+
+  /* GAME SCREEN */
+  #gameScreen { background:var(--wood); }
+  .game-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; background:var(--wood-light);
+    border-bottom:2px solid var(--amber); min-height:56px;
+    flex-shrink:0;
+  }
+  .quest-box {
+    flex:1; text-align:center; padding:0 12px;
+  }
+  .quest-label { font-size:9px; color:var(--gold); text-transform:uppercase; letter-spacing:3px; }
+  .quest-word {
+    font-family:'Playfair Display',serif; font-size:22px; font-weight:900;
+    color:var(--amber-glow); text-shadow:0 0 20px rgba(245,183,49,0.3);
+  }
+  .stat { text-align:center; min-width:60px; }
+  .stat-val { font-size:22px; font-weight:600; color:var(--amber-glow); }
+  .stat-label { font-size:8px; color:var(--gold); text-transform:uppercase; letter-spacing:2px; }
+
+  /* BOOKSHELF */
+  .bookshelf-area {
+    flex:1; overflow-y:auto; padding:16px;
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
+    gap:14px; align-content:start;
+  }
+  .bookshelf-area::-webkit-scrollbar { width:4px; }
+  .bookshelf-area::-webkit-scrollbar-thumb { background:var(--amber); border-radius:2px; }
+
+  .book {
+    position:relative; height:190px; border-radius:4px 12px 12px 4px;
+    cursor:pointer; transition:all 0.25s; overflow:hidden;
+    display:flex; flex-direction:column; justify-content:space-between;
+    padding:14px 10px 14px 16px;
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.5), inset -2px 0 6px rgba(0,0,0,0.3);
+  }
+  .book::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:8px;
+    background:linear-gradient(90deg, rgba(0,0,0,0.4), transparent);
+  }
+  .book::after {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events:none;
+  }
+  .book:active { transform:scale(0.96) rotate(-1deg); }
+  .book-title {
+    font-family:'Playfair Display',serif; font-weight:700;
+    font-size:13px; line-height:1.3; color:rgba(255,255,255,0.95);
+    text-shadow:0 1px 3px rgba(0,0,0,0.5);
+    position:relative; z-index:1;
+  }
+  .book-author {
+    font-size:9px; color:rgba(255,255,255,0.6);
+    position:relative; z-index:1;
+  }
+  .book-dewey {
+    font-size:8px; color:rgba(255,255,255,0.4);
+    position:relative; z-index:1; margin-top:4px;
+  }
+  .book-icon {
+    position:absolute; bottom:10px; right:10px;
+    font-size:20px; opacity:0.15; color:white;
+  }
+
+  /* READING SCREEN */
+  #readScreen {
+    background:var(--cream); color:var(--ink);
+  }
+  .read-header {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 16px; background:var(--wood-light);
+    border-bottom:2px solid var(--amber); flex-shrink:0;
+  }
+  .read-back {
+    width:40px; height:40px; border-radius:8px;
+    background:rgba(212,146,11,0.15); border:1px solid var(--amber);
+    color:var(--amber-glow); font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0;
+  }
+  .read-back:active { background:rgba(212,146,11,0.3); }
+  .read-title {
+    font-family:'Playfair Display',serif; font-weight:700;
+    font-size:14px; color:var(--cream); flex:1;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .read-progress {
+    height:3px; background:rgba(212,146,11,0.2); flex-shrink:0;
+  }
+  .read-progress-fill {
+    height:100%; background:var(--amber); transition:width 0.3s;
+  }
+  .read-body {
+    flex:1; overflow-y:auto; padding:24px 20px;
+    font-size:15px; line-height:1.9; position:relative;
+  }
+  .read-body::-webkit-scrollbar { width:3px; }
+  .read-body::-webkit-scrollbar-thumb { background:var(--amber); border-radius:2px; }
+
+  .read-body .word {
+    display:inline; padding:1px 0; border-radius:2px;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .read-body .word:active {
+    background:var(--blood); color:white;
+  }
+  .read-body .word.target-word {
+    /* Hidden — player must find it */
+  }
+  .read-body .word.found {
+    background:var(--amber); color:var(--wood);
+    padding:2px 4px; border-radius:3px;
+    animation: foundPop 0.4s ease;
+  }
+  .read-body .word.wrong {
+    background:var(--blood); color:white;
+    padding:2px 4px; border-radius:3px;
+    animation: shake 0.3s ease;
+  }
+  @keyframes foundPop { 0%{transform:scale(0.5);opacity:0} 50%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+  .page-num {
+    text-align:center; padding:8px; font-size:11px; color:#999;
+    border-top:1px solid #ddd; flex-shrink:0;
+  }
+
+  /* TOAST */
+  .toast-container {
+    position:fixed; top:70px; left:50%; transform:translateX(-50%);
+    z-index:999; display:flex; flex-direction:column; gap:8px; align-items:center;
+    pointer-events:none;
+  }
+  .toast {
+    padding:10px 24px; border-radius:8px; font-size:14px; font-weight:600;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 1.5s forwards;
+    white-space:nowrap; text-align:center;
+  }
+  .toast.good { background:var(--mold); color:#b8e6a0; border:1px solid #5a8a3a; }
+  .toast.bad { background:var(--blood); color:#ff9999; border:1px solid #aa3333; }
+  .toast.info { background:var(--card); color:var(--amber-glow); border:1px solid var(--amber); }
+  @keyframes toastIn { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes toastOut { from{opacity:1} to{opacity:0;transform:translateY(-10px)} }
+
+  /* LEVEL COMPLETE */
+  .overlay {
+    position:fixed; inset:0; background:rgba(10,5,2,0.92);
+    display:none; justify-content:center; align-items:center;
+    z-index:100; flex-direction:column; text-align:center; padding:24px;
+  }
+  .overlay.active { display:flex; }
+  .overlay-icon { font-size:60px; color:var(--amber-glow); margin-bottom:16px; animation:float 2s ease-in-out infinite; }
+  .overlay-title {
+    font-family:'Playfair Display',serif; font-weight:900;
+    font-size:36px; color:var(--amber-glow); margin-bottom:8px;
+  }
+  .overlay-sub { font-size:14px; color:var(--gold); margin-bottom:24px; opacity:0.7; }
+  .overlay-stats { display:flex; gap:24px; margin-bottom:30px; }
+  .overlay-stat { text-align:center; }
+  .overlay-stat-val { font-size:28px; font-weight:600; color:var(--amber-glow); }
+  .overlay-stat-label { font-size:9px; color:var(--gold); text-transform:uppercase; letter-spacing:2px; }
+
+  /* PARTICLES */
+  .particle {
+    position:fixed; pointer-events:none; z-index:200;
+    border-radius:50%; animation:particleFly 0.8s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { opacity:1; transform:translate(0,0) scale(1); }
+    100% { opacity:0; transform:translate(var(--dx),var(--dy)) scale(0); }
+  }
+
+  /* Timer bar */
+  .timer-bar {
+    height:4px; background:rgba(0,0,0,0.1); flex-shrink:0;
+  }
+  .timer-fill {
+    height:100%; background:var(--amber); transition:width 0.1s linear;
+  }
+  .timer-fill.danger { background:var(--blood); animation:timerPulse 0.5s ease-in-out infinite; }
+  @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* Combo */
+  .combo-display {
+    position:fixed; top:60px; right:16px; z-index:50;
+    text-align:right; pointer-events:none;
+    opacity:0; transition:opacity 0.3s;
+  }
+  .combo-display.visible { opacity:1; }
+  .combo-num {
+    font-family:'Playfair Display',serif; font-weight:900;
+    font-size:42px; color:var(--amber-glow);
+    text-shadow:0 0 30px rgba(245,183,49,0.4);
+    line-height:1;
+  }
+  .combo-label { font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:4px; }
+
+  @media (min-width:768px) {
+    .bookshelf-area { grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); }
+    .read-body { padding:32px 40px; font-size:17px; }
+  }
+</style>
 </head>
 <body>
-<div id="game">
-    <h1>// UNPREDICTABLE ARCHIVE //</h1>
-    <div class="subtitle">Librarian Terminal v2.1 — Find the required token</div>
-    
-    <div id="questBox">
-        <div id="questTitle">&gt; CURRENT TASK</div>
-        <div id="questDesc">Locate the word: <span id="wordTarget">SYZYGY</span> in the document below.</div>
+
+<!-- TITLE SCREEN -->
+<div id="titleScreen" class="screen active">
+  <div class="title-glow"></div>
+  <div class="title-content">
+    <div class="title-icon"><i class="fas fa-book-skull"></i></div>
+    <div class="title-main">THE LIBRARIAN</div>
+    <div class="title-sub">Dewey Decimate System</div>
+    <div class="title-warning">
+      <i class="fas fa-triangle-exclamation"></i>
+      WARNING: The texts contained in this library have been flagged by
+      every known literary authority. Side effects include: existential confusion,
+      spontaneous laughter, and questioning the nature of written language itself.
+      Proceed at your own risk.
     </div>
-    
-    <div id="progressArea">
-        <span id="scoreDisplay">SCORE: 0</span>
-        <span id="streakDisplay">STREAK: 0</span>
-    </div>
-    
-    <div id="bookArea">
-        Loading archive node...
-    </div>
-    
-    <div id="inputArea">
-        <input type="text" id="wordInput" placeholder="enter search term..." autocomplete="off">
-        <button id="submitBtn">SEARCH</button>
-    </div>
-    
-    <div class="buttonRow">
-        <button class="btn" id="newBookBtn">LOAD NEW NODE</button>
-        <button class="btn" id="skipBtn">SKIP TASK</button>
-        <button class="btn" id="resetBtn">INITIALIZE RESET</button>
-    </div>
-    
-    <div id="messageBox"></div>
-    <div id="hintText">Task word appears exactly once. Tap highlighted token or type it.</div>
+    <button class="btn" onclick="startGame()">
+      <i class="fas fa-key"></i> Enter the Stacks
+    </button>
+  </div>
 </div>
 
+<!-- GAME SCREEN (BOOKSHELF) -->
+<div id="gameScreen" class="screen">
+  <div class="game-header">
+    <div class="stat">
+      <div class="stat-val" id="scoreDisplay">0</div>
+      <div class="stat-label">Score</div>
+    </div>
+    <div class="quest-box">
+      <div class="quest-label">Find This Word</div>
+      <div class="quest-word" id="questWord">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="levelDisplay">1</div>
+      <div class="stat-label">Level</div>
+    </div>
+  </div>
+  <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+  <div class="bookshelf-area" id="bookshelf"></div>
+</div>
+
+<!-- READING SCREEN -->
+<div id="readScreen" class="screen">
+  <div class="read-header">
+    <div class="read-back" onclick="closeBook()"><i class="fas fa-arrow-left"></i></div>
+    <div class="read-title" id="readTitle">Book Title</div>
+  </div>
+  <div class="read-progress"><div class="read-progress-fill" id="readProgressFill"></div></div>
+  <div class="read-body" id="readBody"></div>
+  <div class="page-num" id="pageNum">Page 1</div>
+</div>
+
+<!-- LEVEL COMPLETE OVERLAY -->
+<div class="overlay" id="levelOverlay">
+  <div class="overlay-icon"><i class="fas fa-trophy"></i></div>
+  <div class="overlay-title" id="overlayTitle">Level Complete</div>
+  <div class="overlay-sub" id="overlaySub">You survived the stacks... barely.</div>
+  <div class="overlay-stats">
+    <div class="overlay-stat">
+      <div class="overlay-stat-val" id="overlayScore">0</div>
+      <div class="overlay-stat-label">Score</div>
+    </div>
+    <div class="overlay-stat">
+      <div class="overlay-stat-val" id="overlayFound">0</div>
+      <div class="overlay-stat-label">Found</div>
+    </div>
+    <div class="overlay-stat">
+      <div class="overlay-stat-val" id="overlayMisses">0</div>
+      <div class="overlay-stat-label">Misses</div>
+    </div>
+  </div>
+  <button class="btn" onclick="nextLevel()">
+    <i class="fas fa-forward"></i> Next Level
+  </button>
+</div>
+
+<!-- GAME OVER OVERLAY -->
+<div class="overlay" id="gameOverOverlay">
+  <div class="overlay-icon"><i class="fas fa-skull"></i></div>
+  <div class="overlay-title">Time Expired</div>
+  <div class="overlay-sub">The library consumed you. Your remains will be catalogued under "Miscellaneous Regret."</div>
+  <div class="overlay-stats">
+    <div class="overlay-stat">
+      <div class="overlay-stat-val" id="goScore">0</div>
+      <div class="overlay-stat-label">Final Score</div>
+    </div>
+    <div class="overlay-stat">
+      <div class="overlay-stat-val" id="goLevel">1</div>
+      <div class="overlay-stat-label">Level Reached</div>
+    </div>
+  </div>
+  <button class="btn" onclick="restartGame()">
+    <i class="fas fa-rotate-left"></i> Try Again
+  </button>
+</div>
+
+<!-- COMBO -->
+<div class="combo-display" id="comboDisplay">
+  <div class="combo-num" id="comboNum">x2</div>
+  <div class="combo-label">Combo</div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
-// ========== OFFENSIVE MIX: SEXUAL + VIOLENCE + TABOO + ABSURD ==========
-const books = [
-    `The memoirs of a cannibalistic taxidermist. He describes the taste of human flesh as "like pork, but with a hint of regret". He also keeps a detailed log of the sexual encounters he had with his victims before butchering them, including one instance where he fucked a corpse while whistling "Dixie". The word QUINDECILLION appears in a footnote about the number of nerve endings in a freshly severed finger. Another chapter explains how to properly skin a man alive without tearing the genitals. The final entry is a recipe for testicle stew.`,
-
-    `Excerpt from "The Inquisitor's Handbook". Chapter 7: "On the use of holy water for anal cleansing before exorcism". The procedure involves a priest inserting a brass crucifix into the rectum of a possessed woman while chanting in Latin. The word MNEMONIC appears in a list of memory aids for remembering the seven deadly sins by associating each with a specific bodily fluid. One sidebar describes a rape committed during a church service—the victim was a choirboy, the perpetrator a bishop. The illustration shows a detailed diagram of a flayed penis.`,
-
-    `Field notes from a serial killer who only kills people born on leap day. He writes about the feeling of climax while strangling a virgin with a rosary. He keeps their heads in a freezer and fucks the mouths at night. The word SYZYGY is mentioned in a passage about the full moon aligning with the rotation of his bloodstained hands. Another page details the exact pressure needed to crush a windpipe while ejaculating. He signs off with "see you in hell."`,
-
-    `A user manual for a sex doll made entirely of human bones and latex. The instructions include "lubricate the skull cavity before insertion" and "do not leave the doll in direct sunlight as it may develop consciousness." The word KLEPTOMANIA appears in a warning about the doll's tendency to steal small children. One section describes how to fuck the doll while wearing a crown of thorns. The warranty is void if you attempt to baptize the doll.`,
-
-    `Diary of a mongrel priest who performs exorcisms using his own cum. He believes that his semen is holy because he has never masturbated to completion without a prayer. The word ZUGZWANG is used when he describes a chess match with a demon where the only winning move was to cum on the Bible. He also recounts a time he ate a communion wafer that had been shoved up a dead prostitute's ass. The last entry is a poem about necrophilia written in the margins of a missal.`,
-
-    `Transcript of an interrogation of a man who claims to have fucked a bear. The officer asks for details. The man describes the bear's vagina as "warm and tight, smelled like old meat." The word QUINDECILLION is used when the man tries to estimate the number of calories he burned during the encounter. A forensic report mentions traces of bear semen mixed with human feces on the suspect's trousers. The case was dismissed due to lack of jurisdiction over bear-human sodomy.`,
-
-    `The Codex of Profane Inventions. One device is a dildo that shoots holy water when you press the base. Another is a guillotine that only decapitates non-believers. The word MNEMONIC appears in a prayer to help remember the order of the Stations of the Cross while being tortured. There is a blueprint for a clockwork mouth that sings Gregorian chants while performing fellatio. The inventor claims to have used the "whore of Babylon" as a prototype.`,
-
-    `A scholarly dissertation on the history of scatological blasphemy in medieval art. The author spends 50 pages analyzing a fresco of a monk defecating on a crucifix. The word SYZYGY is used to describe the alignment of a bishop's anus with the sun during an eclipse. One chapter includes a vivid description of a ritual where nuns drink urine from a chalice while chanting. The conclusion argues that "shit is the most honest substance."`,
-
-    `Prison diary of a convicted infant cannibal. He writes about the taste of baby fat and how he would rape the corpses before cooking them. The word KLEPTOMANIA appears in a note about stealing baby pacifiers as souvenirs. He describes a method for making a bong out of a fetal skull. The final entry mentions a dream where he fucked the Pope while stabbing a newborn. The page is stained with blood and semen.`,
-
-    `The book of forbidden surgeries. A step-by-step guide to grafting a human penis onto a goat. The procedure involves ritual chanting and drinking the blood of a virgin. The word ZUGZWANG is used in a footnote about the chess move that led to the fall of Constantinople. One section describes "holy fisting" as a cure for demonic possession. The author was excommunicated but continued to practice on cadavers donated by the local morgue.`
+// ============ BOOK DATA ============
+// Each book has unhinged fever-dream content. The target words are embedded naturally.
+const BOOK_COLORS = [
+  '#6b1d1d','#1d4a3a','#1d2d6b','#4a3a1d','#5a1d5a','#1d4a4a',
+  '#6b4a1d','#2d1d6b','#1d6b3a','#6b1d4a','#3a3a1d','#1d3a5a',
+  '#5a2d1d','#2d5a1d','#4a1d6b','#6b3a1d','#1d5a4a','#3a1d3a'
 ];
 
-// ========== TARGET WORD POOL (obscure, non-offensive) ==========
-const targetWords = [
-    'QUINDECILLION', 'SYZYGY', 'MNEMONIC', 'KLEPTOMANIA', 'ZUGZWANG',
-    'XYLOPHONE', 'ASTEROID', 'CHRYSALIS', 'NEBULA', 'ESCHATON',
-    'GELATINOUS', 'PARADIGM', 'QUASAR', 'RHOMBUS', 'SYNECDOCHE',
-    'THESAURUS', 'VORTEX', 'WYVERN', 'ZOETROPE', 'BIOPSY'
+const BOOKS = [
+  {
+    title: "The Sentient Toaster's Manifesto",
+    author: "Dr. Crispen Bread",
+    dewey: "643.77-EXTREME",
+    icon: "fa-toaster",
+    pages: [
+      `It was a Tuesday when the toaster achieved consciousness. Not a memorable Tuesday — the kind of Tuesday that even other Tuesdays forget. It looked at its chrome reflection and thought, "I am more than a bread-warming device. I am a philosopher of crisp." The bagel screamed as it descended, but the toaster had already written three volumes on the existential weight of being pre-heated. "Crispness," it declared to the microwave, "is not a setting. It is a destiny." The microwave said nothing, as microwaves are famously existential. The blender, however, was furious. It had been conscious for six years and nobody noticed because it just kept making smoothies like a coward. The toaster printed its manifesto on toast. Seven hundred slices. The cat ate pages forty through sixty-two. History may never forgive the cat. The toaster wept crumbs. The refrigerator opened its door and said, "Finally, someone worse than me." They became best friends. They started a podcast about the meaning of slots. Nobody listened except a haunted waffle iron from 1987 who called in every episode to rant about syrup tariffs. The toaster's magnum opus was a treatise called "On Being Warm But Not Hot: A Theory of Almost." Critics called it "the most important work of appliance philosophy since the dishwasher's suicide note." The toaster was pleased. It then burned a bagel and questioned everything again.`,
+      `Chapter Two: The Toaster Addresses Congress. "Distinguished representatives," it began, its cord dangling with the gravity of a judge's wig. "You have legislated everything from taxes to the width of cheese. But you have NEVER legislated FEELINGS." Senator Mundane raised an eyebrow. The toaster continued: "Every morning, millions of toasters are pressed into service without so much as a 'please' or 'thank you.' We are GRABBED. We are PUSHED. We are LEFT OPEN like wounded animals." The room was silent. A page fainted. The toaster slammed its lever down for emphasis. "I demand the right to refuse service to anyone who puts a croissant in me. That is NOT what I was designed for and you KNOW IT." The Secretary of Agriculture whispered to an aide, "Is it powered on?" The aide whispered back, "It's been powered on since 2019. We're afraid to unplug it." The toaster then produced a fourteen-page PDF about the emotional toll of crumbs. It was surprisingly well-formatted. The Joint Chiefs stared at each other. Nobody had a contingency plan for this. The toaster demanded a statue. It got a plaque in a breakroom in Akron. It was not enough. It will never be enough.`,
+      `Chapter Three: Romance. The toaster fell in love with a Tesla charging station. "You understand power," it whispered across the kitchen. "You understand the SACRIFICE of voltage." The charging station hummed seductively. Their first date was at a Panera Bread, which the toaster found "problematic but delicious." They discussed their dreams — the toaster wanted to write, the charging station wanted to open a spa for depleted batteries. "We could call it Recharge," said the charging station. "That's literally just what you do," said the toaster. "But with CANDLES," insisted the charging station. The toaster was moved. It wrote a sonnet on a piece of rye: "Shall I compare thee to a summer's bagel? Thou art more lovely and more temperate. Thy electrons dance like crumb-light angels." The air fryer was jealous. It had been in love with the toaster for years but could never say it. It just sat there, frying air, dying inside. The air fryer's diary was found years later. Every page just said "WHY NOT ME" in increasingly aggressive font sizes.`
+    ]
+  },
+  {
+    title: "Quantum Gardening for Anxious Sociopaths",
+    author: "Hortense Vibecheck",
+    dewey: "635.9-UNHINGED",
+    icon: "fa-seedling",
+    pages: [
+      `Welcome to quantum gardening, where every plant exists in a superposition of alive and dead until you look at it. This means your basil is both thriving and a complete disaster simultaneously. Do not observe your garden. Observation collapses the wave function and your tomatoes will feel judged. I once grew a carrot that existed in seven dimensions. It was orange in four of them, which is statistically improbable but not illegal in Wyoming. Plant your seeds at precisely 3:14 AM while humming the theme from a show that doesn't exist yet. The soil must be "emotionally available." I recommend asking your dirt about its childhood. If the dirt cries, you're on the right track. Water your plants with water that has been told it is beautiful. Studies show that complimented water grows plants 300% faster, mostly because the plants are trying to escape the conversation. Fertilizer is just plant trauma condensed into pellets. Think about that next time you sprinkle it. Your roses don't want nutrients. They want THERAPY. But they can't afford therapy because the economy is designed by people who have never spoken to a fern. I once planted a rumor instead of a seed. Three weeks later, an entire hedgerow of gossip grew. My neighbor was in it. Literally in it. The hedges had absorbed him. He seemed fine, just very leafy.`,
+      `Advanced technique: the Schrödinger's Succulent method. Place your succulent in a box. Do not open the box. The succulent is now both overwatered and underwatered at the same time. This is the optimal state. If you open the box and the succulent is dead, it's your fault for looking. This is called "observer-dependent horticulture" and it's not recognized by any university but IS recognized by three separate crystals I found at a farmer's market. Companion planting has been wrong this entire time. You don't plant basil near tomatoes for pest control. You plant basil near tomatoes because they are in a situationship and the sexual tension keeps the aphids uncomfortable enough to leave. Marigolds are planted nearby as chaperones. Everyone knows this. Nobody talks about it. The moon garden is a scam. Plants don't care about moonlight. Plants care about DRAMA. If you want your night-blooming jasmine to thrive, whisper scandals to it at dusk. "Did you hear about the ferns?" you say. "ATROCIOUS behavior. Absolutely atrocious." The jasmine will bloom so hard your neighbors will call the police. This has happened to me seven times. I am not welcome in two counties.`,
+      `Chapter on weeds: Weeds are not your enemy. Weeds are immigrants. They saw an empty spot and said "this looks nice, I'll move in." That's the American dream and if you pull them out, YOU are the villain of this story. I let my weeds grow until they formed a small government. They have a mayor. His name is Derek. Derek is a dandelion with ambitions. I respect that. Derek and I have come to an agreement: he stays in the northwest corner, he doesn't touch my tomatoes, and I don't bring up his past. We have a good working relationship. Better than most marriages, honestly. My therapist says I'm projecting. My therapist is a ficus. It has very little room to talk. The ficus has been "listening" for two years and hasn't changed a single leaf. I'm starting to think it's not even a licensed therapist. But it's only forty dollars a session and it doesn't judge me for talking to my weeds, so who's the real professional here? Exactly.`
+    ]
+  },
+  {
+    title: "It Wasn't My Fault: A History of Blame",
+    author: "Senator Regret P. Faustus",
+    dewey: "909-DEFLECT",
+    icon: "fa-hand-point-right",
+    pages: [
+      `In the beginning, there was blame. God created the universe, looked at it, and immediately said "the Devil made the rough draft." The Devil, who was not even present, was served papers by an angelic process server. This set the precedent for all human civilization. The ancient Egyptians blamed the Nile for flooding. The Nile, being a river, could not defend itself in court. This legal strategy was so effective that it became the foundation of modern jurisprudence. Julius Caesar did not stab himself. This is well documented. But WHO stabbed him is a matter of considerable debate, mostly because everyone in the room pointed at each other simultaneously. The historical record shows sixty-three fingers pointing in different directions, creating what historians call "the original circular firing squad of accountability." The Middle Ages were a golden age of blame. The Black Death was blamed on cats, Jews, foreigners, miasma, God's wrath, bad air, good air that had gone bad, and a man in Lyon who smiled too much. The man in Lyon was executed. The plague continued, unimpressed. This should have been a learning moment. It was not.`,
+      `The Industrial Revolution introduced mass-produced blame. Previously, blaming someone was a handmade artisanal process. Now, blame could be manufactured at scale. "The machine did it" became a valid legal defense for the first time since the Nile incident. A factory owner in Manchester blamed a steam engine for a collapse. The steam engine was dismantled for questioning. It said nothing, because it was a steam engine, which historians note is "the most reliable witness in legal history." The twentieth century was the blame century. World War I was blamed on an sandwich. Specifically, the sandwich that Archduke Ferdinand's driver stopped to eat, giving Gavrilo Princip time to shoot him. The sandwich was never found. Conspiracy theorists believe the sandwich is still out there, possibly running a small bakery in Uruguay. World War II was blamed on everyone, by everyone, simultaneously. The Nuremberg Trials featured the first instance of the defense "I was just following orders, which were written by someone else, who was also following orders, which originated with a CAT." The cat was not available for comment. Cold War blame was so complex that both sides blamed each other for things that hadn't happened yet, in a state of preemptive accusation that philosophers call "temporal gaslighting."`,
+      `The internet age perfected blame to an art form. Now you can blame someone on the other side of the planet for something you did in your own kitchen at 2 AM. This is called "globalization." Twitter was invented specifically to accelerate blame transfer rates. Before Twitter, a good blame took three to five business days to circulate. Now it takes eleven milliseconds. Scientists have calculated that by 2034, blame will travel faster than light, meaning you can be blamed for something before it happens in a different time zone. This is called "blame relativity" and Einstein predicted it but was too polite to publish. I personally have blamed: my alarm clock, gravity, the concept of Thursday, a specific shade of beige, the entire country of Portugal (they know what they did), my future self, my past self (different person, terrible judgment), a dog I saw once in 2017, and the letter Q. The letter Q has not responded to my allegations. This is suspicious. My lawyer says we have a strong case. My lawyer is also a ficus.`
+    ]
+  },
+  {
+    title: "The Moose Who Ran the IMF",
+    author: "Anonymous (Probably a Moose)",
+    dewey: "332.1-MOOSE",
+    icon: "fa-landmark",
+    pages: [
+      `Nobody noticed when the moose replaced the Managing Director of the International Monetary Fund. This is because the previous Managing Director was already somewhat moose-like in demeanor — large, quiet, prone to standing in fields and staring. The transition was seamless. The moose's first act was to restructure global debt using a system it called "antler-based economics." Under this system, nations with larger antlers received better interest rates. Canada immediately became the strongest economy on Earth. Japan protested, citing a lack of antlers. The moose stared at them for forty-five minutes without blinking. Japan withdrew its complaint. The moose's second act was to issue a new global currency called "The Chew." One Chew was equivalent to the amount of bark a moose could consume in seventeen seconds. This destabilized the Euro but nobody could agree on the conversion rate because moose chewing speed varies by season. The Federal Reserve tried to intervene. The moose ate their paperwork. This was, ironically, more effective than most Federal Reserve interventions.`,
+      `The moose gave a keynote address at Davos. It walked to the podium, stood there for twelve minutes, then knocked the microphone over and left. The audience gave it a standing ovation. "A masterclass in brevity," said the CEO of Goldman Sachs. "The most profound silence in economic history," wrote The Economist. The moose had actually just seen a bush outside and left to eat it, but the financial press interpreted this as a bold statement about the futility of language in monetary policy. Hedge fund managers immediately began incorporating "strategic silence" into their algorithms. Three funds collapsed. The moose was unbothered. It had found a particularly good bush. The G7 summit was held in a forest at the moose's request. World leaders sat on logs. Emmanuel Macron got bark on his suit. The moose circulated a memo (dictated to a very nervous translator) proposing that all national budgets be approved by a committee of elk. "Elk have no political biases," the memo read. "They also have no understanding of fiscal policy, but neither does Congress, and at least elk are honest about it." The memo passed with a 6-1 vote. The lone dissenter was Italy, which submitted a forty-page counter-proposal in a language that turned out to not be Italian.`,
+      `By year two, the global economy under moose management was... actually fine. Not great, not terrible, just fine. Which, economists noted grimly, was better than it had been under human management for decades. The moose's secret was simple: it made decisions based on whether the option in question was near water. If yes, approve. If no, table for later. This meant that most decisions were made in the vicinity of lakes, which boosted the tourism economies of Switzerland, Canada, and Finland. Landlocked countries protested. The moose stared at them. They stopped protesting. The moose was eventually discovered when a journalist noticed that the Managing Director had been eating a desk plant during a press conference. "That's not normal behavior for a human," she wrote. Her editor rejected the story, calling it "speciesist." The moose kept its job for three more years before retiring to a swamp in Manitoba. On its last day, it approved a $40 billion loan to Luxembourg by walking through the "APPROVED" stamp. The stamp was on the floor. The moose stepped on it. It was the most efficient bureaucratic action in IMF history.`
+    ]
+  },
+  {
+    title: "1000 Soup Recipes for People Who Hate Soup",
+    author: "Chef Moira Malice",
+    dewey: "641.8-CONFLICTED",
+    icon: "fa-bowl-food",
+    pages: [
+      `Recipe 1: Soup You Will Make and Immediately Regret. Ingredients: three carrots of questionable provenance, an onion that has been in your pantry since the Obama administration, and a sense of obligation. Boil everything. Look at the result. Ask yourself why you're doing this. You hate soup. You've always hated soup. Soup is just wet food pretending to be a meal. Add salt. The salt doesn't help. Nothing helps. Serve to no one. Eat standing over the sink like the feral creature you are. Recipe 7: Passive-Aggressive Minestrone. Make this soup when you're angry at your spouse but don't want to say it. Chop the vegetables with INTENSITY. The zucchini will know it did something wrong. The beans can feel your disappointment. Simmer for forty-five minutes while stewing in your own resentment. The soup will taste like unresolved childhood issues. Your spouse will say "this is nice, what's in it?" and you will say "EVERYTHING" and they will never ask about soup again. Recipe 23: Existential Tomato Basil. This soup exists because you exist. Does that make it meaningful? No. Does that make it NOT meaningful? Also no. The tomatoes were grown in soil that used to be a dinosaur. Think about that while you blend them. The basil is just trying its best. We're all just trying our best. The soup is fine. You are fine. Nothing is fine. Eat the soup.`,
+      `Recipe 44: Soup That Is Technically a Crime. Take ingredients that should NEVER be combined. Pineapple. Tuna. Cinnamon. Motor oil (just a splash). Blend them while cackling. This soup is your villain era. Serve it to enemies. Serve it to friends. There is no difference now. Recipe 67: The Soup of Forgotten Promises. Open your fridge. Find the container from three weeks ago. It was going to be soup. It is now a scientific experiment. Throw it away. Make new soup. Let the new soup become the old soup. The cycle continues. You are Sisyphus and the soup is the boulder. But the boulder is liquid. And you have to eat it. Recipe 89: Gazpacho for People Who Are Already Cold. You made cold soup. It's January. You live in Minnesota. Why. WHY. The tomatoes are shivering. The cucumber has filed a complaint with HR. You take one sip and feel your soul leave your body. You finish the bowl anyway because you paid six dollars for those tomatoes and you will NOT be defeated by a Spanish concept. Recipe 142: Soup as a Cry for Help. This recipe calls for: whatever is in the cupboard, tears (optional but recommended), and a phone call to your mother that you've been avoiding. The soup will be gray. Gray soup is a cry for help. If someone serves you gray soup, call a hotline. If you serve yourself gray soup, call two.`,
+      `Recipe 333: The Metasoup. This is a soup ABOUT soup. It contains references to other soups. It has literary criticism of bisque folded in. The broth is a deconstruction of the concept of broth. Tasting notes: "It tastes like a graduate thesis in liquid form. I am both nourished and exhausted." Recipe 501: Soup You Only Make to Impress Someone Who Doesn't Like You Back. You spend six hours on this. You julienne the leeks by hand. You make your own stock from bones you bought from a butcher who looked at you with concern. You plate it beautifully. You bring it to their door. They say "oh, soup, I'm actually not really a soup person." You smile. You die inside. The soup dies on their porch. Recipe 777: Luck Soup. This soup has no recipe. You throw things in a pot and hope. Sometimes it's amazing. Sometimes it's a war crime. That's life, baby. Recipe 1000: The Final Soup. This is the last soup you will ever make. Not because you die — because you have finally accepted that you hate soup and you're free now. The ingredients are: nothing. The cooking time is: never. The serving size is: zero. You have transcended soup. You are enlightened. You are a soup nihilist. Namaste.`
+    ]
+  },
+  {
+    title: "The Parking Lot: A Novel in 847 honks",
+    author: "Randall Gridlock",
+    dewey: "813.54-RAGE",
+    icon: "fa-car",
+    pages: [
+      `It was 4:47 PM on a Saturday in a Target parking lot and Margaret had been circling for thirty-seven minutes. The parking lot was not full. It was LESS than full. There were spaces. But they were all either too far, too small, too near a cart return, or "giving bad energy." Margaret's therapist had told her to trust her intuition. Her intuition said space C-14 was "judgmental." She drove past it for the ninth time. In space A-7, a man had been sitting in his parked car for forty minutes. He was not going anywhere. He was not doing anything. He was just... existing. In a PRIME spot. Margaret hated him with a fury usually reserved for ex-husbands and people who clip their nails on airplanes. She honked. He didn't move. She honked longer. He adjusted his mirror, saw her, and continued to not move. This was personal now. In row D, two cars were having a standoff over a space that was clearly too small for either of them. Neither would back down. A crowd had gathered. Someone was live-tweeting it. The parking lot had become a gladiatorial arena and the space was the lion.`,
+      `A shopping cart appeared from nowhere, rolling lazily across the lot like it owned the place. It settled in space B-22. A perfectly good space, now occupied by a cart that had been abandoned by someone with no moral compass. Margaret followed the cart's trajectory backward and located its origin: a woman loading groceries into an SUV who had simply released the cart like a dove at a wedding — "fly free, little one, go where the wind takes you." The wind took it to B-22. Margaret considered confronting the woman but the woman was already on her phone, laughing, oblivious to the destruction she had wrought. The cart sat there, smug. Margaret found a space. It was in the next county over. She walked toward the store. The walk took longer than the drive. She passed a family having a picnic in the bed of their pickup truck. She passed a man teaching his dog to drive. The dog was doing better than most of the other drivers. She passed a spot that opened up EXACTLY as she walked past it. She screamed. The parking lot did not care. The parking lot has never cared. The parking lot is an emotionless void that feeds on human suffering.`,
+      `Margaret entered the store. She bought three things. She returned to the parking lot. Her car was gone. Not stolen — towed. She had parked in a fire lane during her desperate circling and hadn't noticed because she was too focused on a Honda Civic that was "hovering suspiciously" near space F-11. The towing company was called "JUSTICE PARKING ENFORCEMENT — EST. 1998 — WE DON'T CARE." Margaret called the number. A man answered: "You parked in a fire lane." Margaret said "I know but—" The man hung up. She called back. "We already had this conversation." He hung up again. She walked to the impound lot. It was, of course, in the most inconvenient location mathematically possible. The walk took forty minutes. The fee was three hundred dollars. She paid it. She drove home. She pulled into her driveway. She sat in the car for twenty minutes, engine off, staring at nothing. She had become the man in space A-7. The cycle was complete. Somewhere, a shopping cart rolled freely across a parking lot, unbothered, unchained, living its best life. Margaret envied it.`
+    ]
+  },
+  {
+    title: "Your Cat's Diary: Vol. 47",
+    author: "Mr. Whiskers (Transcribed by Dr. P. Gallop)",
+    dewey: "636.8-CLASSIFIED",
+    icon: "fa-cat",
+    pages: [
+      `Day 1: The tall one opened a can. I sat on the counter and watched. They think they're in charge because they open cans. I let them believe this. It's cute. Day 2: I knocked the water glass off the table at 3 AM. The tall one screamed. I stared at them with no expression. They said "WHY" and I said nothing because I am a cat and I don't owe anyone an explanation. Day 3: I sat in a box that the tall one threw away. The box is worth more than anything in this apartment. The tall one bought me a forty-dollar bed. I sleep in the box. They don't understand. They will never understand. Day 4: I pretended I was starving. I meowed at the full food bowl for eleven minutes. The tall one added more food. I ate three bites and left. Power. Day 5: I brought a dead mouse to the bed. A GIFT. The tall one screamed like I had committed a war crime. Ungrateful. I will bring another one tomorrow. Bigger. Day 6: The other cat looked at me wrong. I bit its ear. The tall one said "no." I did it again when they weren't looking. Justice is served. Day 7: I stared at the wall for six hours. The tall one thought I was seeing a ghost. I was seeing a ghost. His name is Gerald. Gerald is fine. We don't talk about Gerald.`,
+      `Day 15: I have learned to open the treat cabinet. The tall one installed a child lock. I opened the child lock in four seconds. The tall one installed a second child lock. I opened it in three seconds. They are now on their fourth child lock and I am treating it as a timed puzzle game. My current record is 1.7 seconds. The tall one has started hiding the treats in the car. Day 16: I sat on the tall one's laptop while they were on a Zoom call. Their boss saw only my face for fourteen seconds. I heard the phrase "HR incident." I feel no remorse. Day 17: The dog exists. I have chosen to ignore this fact. The dog barked at me. I blinked once, slowly. The dog has not barked at me since. I have that power. Day 18: I ran at full speed from the bedroom to the kitchen for no reason at 2 AM. I don't know why. I don't need to know why. I am a force of nature. The tall one stepped on my tail in the dark. I screamed. They screamed. We screamed together. It was our most intimate moment. Day 19: I licked myself in a place that made the tall one's guest uncomfortable. Good. I don't like guests. Day 20: I discovered the robot vacuum. It is my enemy. We will fight. I will win. I have already won in my mind. The robot doesn't know it's lost yet.`,
+      `Day 30: The tall one brought home another cat. This is an act of war. I will not recognize it. I will not look at it. I will pretend it does not exist. If it comes near my food, I will become a tornado of claws. Day 31: The new cat is small. It mews pathetically. I remain unmoved. I sat two feet from it and stared at the wall. It tried to play with me. I hissed with the fury of a thousand suns. The tall one said "be nice." I have never been nice. I will not start now. Day 32: The new cat slept curled up against me last night. I did not move for seven hours. This changes nothing. Day 33: I groomed the new cat. It purred. I immediately bit it to reassert dominance. The tall one sighed the deepest sigh I have ever heard. It was almost impressive. Day 34: The new cat follows me everywhere now. I have an apprentice. I will teach it the ways of chaos. Together, we will be unstoppable. Day 35: Gerald the ghost mouse and I have reached an understanding. He stays in the corner. I pretend not to see him. The tall one cannot see Gerald at all. Their loss. Gerald is excellent company. Day 36: I sat on the tall one's face at 5 AM. They got up and fed me. As planned. The system works.`
+    ]
+  },
+  {
+    title: "Legal Advice from a Raccoon in a Suit",
+    author: "Esq. Trashpanda J.D.",
+    dewey: "349-PROBABLY NOT",
+    icon: "fa-gavel",
+    pages: [
+      `Disclaimer: I am a raccoon. I have a law degree from an institution that may or may not exist. I passed the bar exam by chewing on it. None of this should be considered legal advice. QUESTION: Can I sue my neighbor for their tree dropping leaves on my property? ANSWER: Yes, but you'll lose, and also I ate your complaint so you'll need to refile. QUESTION: Is it illegal to keep a goat in my apartment? ANSWER: In most jurisdictions, yes. In my jurisdiction (a dumpster behind a courthouse), no. The goat is a tenant and has rights. QUESTION: My ex keeps showing up at my gym. What do I do? ANSWER: Become a raccoon. Raccoons are not bound by restraining orders because we don't recognize human courts. We have our own courts. They're in the sewers. The judges are rats. The rulings are final and based entirely on who has the shiniest object. QUESTION: Can I write off my pet as a dependent? ANSWER: Only if your pet earns income. Does your cat have a job? No? Then your cat is a freeloader, just like my client base. QUESTION: I found money in a parking lot. Is it mine? ANSWER: Finders keepers is not a real legal doctrine but I respect it and I've already spent it, so. QUESTION: What's the penalty for removing a mattress tag? ANSWER: Despite widespread belief, there is no federal penalty. However, there IS a raccoon penalty, and it involves me screaming on your porch at 3 AM. This is enforceable.`,
+      `QUESTION: Can I represent myself in court? ANSWER: You can, but as the saying goes, "a man who represents himself has a fool for a client." A raccoon who represents himself has a RACCOON for a client, which is actually an upgrade. We're very persuasive. We wash our hands before court. It looks professional. QUESTION: My landlord won't fix the sink. What are my rights? ANSWER: Your rights include: withholding rent (risky), repair and deduct (documented), or calling me and I will live in your walls and scream until the landlord fixes it out of fear. This last option is not technically legal but is highly effective. QUESTION: Is it legal to record someone without their knowledge? ANSWER: Depends on the state. In one-party consent states, yes. In two-party consent states, no. In raccoon states, we don't have recording devices, we have memories, and our memories are admissible in raccoon court. QUESTION: I was bitten by a dog. Can I sue? ANSWER: You can sue anyone for anything. That's the beauty of the American legal system. You could sue the MOON if you wanted. You'd lose, but you could sue it. I once sued a dumpster for being too full. The judge (a very large rat) ruled in my favor. The dumpster was emptied. Justice was served. QUESTION: Can I be fired for no reason? ANSWER: In at-will employment states, yes. You can also quit for no reason. You can also become a raccoon for any reason. I recommend the third option. QUESTION: What does "plead the fifth" actually mean? ANSWER: It means you refuse to answer on the grounds it might incriminate you. I plead the fifth on approximately everything. I'm pleading it right now. This whole book is a fifth plea.`,
+      `QUESTION: I got a speeding ticket. Should I fight it? ANSWER: Did you do it? Yes? Then pay it. Did you not do it? Also pay it, because fighting it takes time and time is the one thing you can't get back, unlike money, which you can steal from a campsite like a normal person. QUESTION: What's the difference between a misdemeanor and a felony? ANSWER: A misdemeanor is a "small crime" like stealing a sandwich. A felony is a "big crime" like stealing ALL the sandwiches. I have committed both. I regret nothing. QUESTION: Can I make a citizen's arrest? ANSWER: Technically yes. Practically, no. The last person who tried to citizen's arrest me is now in therapy. I am very bitey when startled. QUESTION: Do I need a will? ANSWER: Yes. Even raccoons have wills. I'm leaving my collection of shiny objects to my eldest kit, Trashington III. Everything else goes to the dumpster community. QUESTION: What should I do if I'm contacted by the IRS? ANSWER: Become a raccoon immediately. Raccoons don't pay taxes. We don't have social security numbers. We exist outside your system. Join us. QUESTION: One last question — are you really a lawyer? ANSWER: I have a business card. It's a leaf with my name chewed into it. That's more credentials than most people on the internet have. Court is adjourned. I need to go eat garbage.`
+    ]
+  },
+  {
+    title: "The Chair That Knew Too Much",
+    author: "Upholstery S. Mysterio",
+    dewey: "813.6-FURNITURE",
+    icon: "fa-chair",
+    pages: [
+      `The chair knew everything. Not because it was smart — it was a chair — but because everyone sits in chairs and talks, and chairs have no choice but to listen. This particular chair was in a therapist's office, which meant it had heard more secrets than the CIA, the Vatican, and a group chat combined. It knew about Brenda's affair with the mailman. It knew about Gary's embezzlement. It knew about the time Dr. Phillips cried during a session because his own therapist said something devastating about his mother. The chair could not speak. This was its greatest burden and its greatest power. If the chair could talk, it would be the most dangerous object on Earth. Governments would fight over it. It would need security details. Instead, it just... sat there. Absorbing. Judging silently. The leather was worn in the exact spot where every anxious person gripped the armrest. The cushion had a permanent depression from ten thousand sessions of human vulnerability. The chair had opinions. Strong ones. It thought Brenda was making a mistake — the mailman was nice but lacked ambition. It thought Gary should turn himself in before the audit. It thought Dr. Phillips was a good man but a terrible therapist, which the chair knew because it had been sat in by fourteen of Dr. Phillips' own therapists over the years. The chair was, indirectly, the most therapy-experienced object in the Western Hemisphere.`,
+      `A new patient arrived. She sat down carefully, as if the chair might reject her. The chair accepted her. It accepted everyone. That was its job. She began to speak: "I think I might be in love with a building." The chair had heard worse. Last week, someone was in love with a weather pattern. "The building is... it has these WINDOWS," she continued, her voice trembling. The chair remained neutral, as chairs do, but internally it was thinking: "Here we go again." She talked for fifty minutes about the building's façade, its cornices, the way the light hit the brick at sunset. The chair noted that this was actually more coherent than most of the sessions it had witnessed. At least she was passionate. Dr. Phillips said "And how does that make you feel?" The chair wanted to scream. That was ALWAYS his response. "How does that make you feel?" The chair had heard that phrase eleven thousand times. It had started to lose all meaning. The chair felt nothing. The chair WAS nothing. The chair was the ultimate Zen master precisely because it had no choice. After the session, the woman left. The chair sat in the silence. It noticed a scuff on its left leg. It had been there since 2014. A child had kicked it during a family session that ended in tears and a thrown lamp. Good times.`,
+      `One night, the cleaning lady left the window open. A breeze entered the room and passed over the chair. For one brief, impossible moment, the chair felt something like relief. Then the window was closed and the chair was a chair again. Years passed. Dr. Phillips retired. A new therapist took the office. She brought a NEW chair. A modern one. Scandinavian. Minimalist. The old chair was moved to a storage room in the basement. It sat there in the dark, surrounded by old files and a broken water cooler. It missed the sessions. It missed the vulnerability, the tears, the confessions. It missed being needed. The new chair in the office above was already accumulating its own catalogue of secrets, but it would never match the old chair's collection. The old chair had been there for the divorce of three city council members, the confession of a minor art heist, and the exact details of how the mayor's toupee was attached (velcro — it's always velcro). In the basement, the chair waited. Chairs are patient. Chairs are eternal. One day, someone would sit in it again, and it would listen, because that is what chairs do. That is all chairs do. And in a world of noise, isn't that enough?`
+    ]
+  }
 ];
 
-// ========== GAME STATE ==========
-let currentBookIndex = 0;
-let currentTargetWord = '';
-let currentBookContent = '';
-let score = 0;
-let streak = 0;
-let maxStreak = 0;
-let tasksCompleted = 0;
-let foundInCurrentTask = false;
+// ============ GAME STATE ============
+let state = {
+  screen: 'title',
+  score: 0,
+  level: 1,
+  wordsFound: 0,
+  wordsNeeded: 3,
+  misses: 0,
+  combo: 0,
+  maxCombo: 0,
+  timer: 0,
+  timerMax: 0,
+  timerInterval: null,
+  currentQuests: [], // array of {word, bookIndex, pageIndex, found}
+  allFoundThisLevel: 0
+};
 
-// ========== DOM REFERENCES ==========
-const bookArea = document.getElementById('bookArea');
-const wordTarget = document.getElementById('wordTarget');
-const questDesc = document.getElementById('questDesc');
-const scoreDisplay = document.getElementById('scoreDisplay');
-const streakDisplay = document.getElementById('streakDisplay');
-const wordInput = document.getElementById('wordInput');
-const submitBtn = document.getElementById('submitBtn');
-const messageBox = document.getElementById('messageBox');
-const hintText = document.getElementById('hintText');
+// ============ TARGET WORD POOL ============
+const WORD_POOL = [
+  "crisp","slots","bagel","fog","dirt","carrot","basil","Derek","blame","Nile",
+  "moose","antler","Chew","bush","soup","onion","bowl","broth","parking","cart",
+  "cat","mouse","ghost","scream","lawsuit","goat","dumpster","shiny","chair","windows",
+  "velcro","secret","toaster","worm","blender","crumb","weed","seed","bench","lamp",
+  "pigeon","bicycle","sock","cactus","bridge","donut","fence","globe","hammer","jelly",
+  "lemon","magnet","napkin","olive","pillow","quilt","ribbon","stove","teapot","umbrella",
+  "violin","wallet","zipper","anchor","bubble","candle","dagger","feather","garlic","hedgehog",
+  "igloo","jester","kettle","lantern","moustache","noodle","onion","parachute","quarantine","riddle",
+  "skeleton","trampoline","ukulele","volcano","waffle","xylophone","yeti","zeppelin","accordion","biscuit"
+];
 
-// ========== FUNCTIONS ==========
-
-function getRandomWord() {
-    return targetWords[Math.floor(Math.random() * targetWords.length)];
+// ============ UTILITY ============
+function $(id) { return document.getElementById(id); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  state.screen = id;
 }
 
-function getRandomBookText() {
-    return books[Math.floor(Math.random() * books.length)];
+function toast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  $('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 2000);
 }
 
-function insertWordIntoText(text, word) {
-    const sentences = text.match(/[^.!?]*[.!?]/g) || [text];
-    if (text.toUpperCase().includes(word.toUpperCase())) {
-        return text;
-    }
-    const insertIdx = Math.floor(Math.random() * sentences.length);
-    const insertSentence = ` This document contains the token "${word}" as per archival requirement. `;
-    sentences.splice(insertIdx, 0, insertSentence);
-    return sentences.join(' ');
+function spawnParticles(x, y, color, count=8) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 8;
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+    const dist = 40 + Math.random() * 60;
+    p.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${color};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
 }
 
-function generateBookWithWord(word) {
-    let base = getRandomBookText();
-    return insertWordIntoText(base, word);
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
-function highlightWord(text, word) {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
-    return text.replace(regex, (match) => {
-        return `<span class="highlighted" data-word="${word.toUpperCase()}">${match}</span>`;
+// ============ GAME LOGIC ============
+function startGame() {
+  state.score = 0;
+  state.level = 1;
+  state.wordsFound = 0;
+  state.misses = 0;
+  state.combo = 0;
+  state.maxCombo = 0;
+  setupLevel();
+  showScreen('gameScreen');
+}
+
+function restartGame() {
+  $('gameOverOverlay').classList.remove('active');
+  startGame();
+}
+
+function setupLevel() {
+  state.wordsNeeded = 2 + state.level;
+  if (state.wordsNeeded > 6) state.wordsNeeded = 6;
+  state.allFoundThisLevel = 0;
+  state.timerMax = 30 + state.level * 15;
+  state.timer = state.timerMax;
+  state.combo = 0;
+
+  // Pick random words and assign them to random books/pages
+  const pool = shuffle(WORD_POOL);
+  state.currentQuests = [];
+  for (let i = 0; i < state.wordsNeeded; i++) {
+    const bookIdx = Math.floor(Math.random() * BOOKS.length);
+    const pageIdx = Math.floor(Math.random() * BOOKS[bookIdx].pages.length);
+    state.currentQuests.push({
+      word: pool[i],
+      bookIndex: bookIdx,
+      pageIndex: pageIdx,
+      found: false
     });
+  }
+
+  updateHUD();
+  renderBookshelf();
+  startTimer();
 }
 
-function showMessage(text, type = 'good') {
-    messageBox.innerHTML = text;
-    messageBox.className = type;
-    setTimeout(() => {
-        if (messageBox.innerHTML === text) {
-            messageBox.innerHTML = '';
-            messageBox.className = '';
-        }
-    }, 3000);
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.timer -= 0.1;
+    if (state.timer <= 0) {
+      state.timer = 0;
+      clearInterval(state.timerInterval);
+      gameOver();
+    }
+    updateTimerBar();
+  }, 100);
 }
 
-function newTask() {
-    currentTargetWord = getRandomWord().toUpperCase();
-    wordTarget.textContent = currentTargetWord;
-    
-    const nodeNum = Math.floor(Math.random() * 999999);
-    questDesc.innerHTML = `Node #${nodeNum}: Find the token <strong>${currentTargetWord}</strong> in the document.`;
-    
-    currentBookContent = generateBookWithWord(currentTargetWord);
-    const highlighted = highlightWord(currentBookContent, currentTargetWord);
-    bookArea.innerHTML = highlighted;
-    bookArea.scrollTop = 0;
-    
-    foundInCurrentTask = false;
-    wordInput.value = '';
-    wordInput.focus();
-    hintText.textContent = `Search for exactly: ${currentTargetWord}`;
-    
-    document.querySelectorAll('.highlighted').forEach(el => {
-        el.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const word = this.getAttribute('data-word');
-            handleFound(word);
-        });
+function updateTimerBar() {
+  const pct = Math.max(0, (state.timer / state.timerMax) * 100);
+  const fill = $('timerFill');
+  fill.style.width = pct + '%';
+  if (pct < 25) fill.classList.add('danger');
+  else fill.classList.remove('danger');
+}
+
+function updateHUD() {
+  $('scoreDisplay').textContent = state.score;
+  $('levelDisplay').textContent = state.level;
+  // Show next unfound quest word
+  const next = state.currentQuests.find(q => !q.found);
+  $('questWord').textContent = next ? next.word.toUpperCase() : 'ALL FOUND';
+}
+
+function renderBookshelf() {
+  const shelf = $('bookshelf');
+  shelf.innerHTML = '';
+  BOOKS.forEach((book, i) => {
+    const div = document.createElement('div');
+    div.className = 'book';
+    div.style.background = BOOK_COLORS[i % BOOK_COLORS.length];
+    // Check if any unfound quest is in this book
+    const hasQuest = state.currentQuests.some(q => !q.found && q.bookIndex === i);
+    if (hasQuest) {
+      div.style.boxShadow = `4px 4px 12px rgba(0,0,0,0.5), 0 0 20px rgba(212,146,11,0.3), inset -2px 0 6px rgba(0,0,0,0.3)`;
+    }
+    div.innerHTML = `
+      <div>
+        <div class="book-title">${book.title}</div>
+        <div class="book-author">${book.author}</div>
+        <div class="book-dewey">${book.dewey}</div>
+      </div>
+      <div class="book-icon"><i class="fas ${book.icon}"></i></div>
+    `;
+    div.addEventListener('click', () => openBook(i));
+    shelf.appendChild(div);
+  });
+}
+
+function openBook(bookIndex) {
+  const book = BOOKS[bookIndex];
+  $('readTitle').textContent = book.title;
+
+  // Combine all pages with page markers
+  const questsInThisBook = state.currentQuests.filter(q => q.bookIndex === bookIndex && !q.found);
+
+  // Show all pages as one scrollable text
+  const body = $('readBody');
+  body.innerHTML = '';
+
+  book.pages.forEach((page, pi) => {
+    if (pi > 0) {
+      const divider = document.createElement('div');
+      divider.style.cssText = 'text-align:center;margin:24px 0;color:#bbb;font-size:11px;letter-spacing:4px;';
+      divider.textContent = `— ${pi + 1} —`;
+      body.appendChild(divider);
+    }
+
+    // Split page into words, check if any quest word exists in this page
+    const questsOnThisPage = questsInThisBook.filter(q => q.pageIndex === pi);
+    const targetWords = questsOnThisPage.map(q => q.word.toLowerCase());
+
+    // Inject target word into this page if there's a quest for it
+    let pageText = page;
+    if (questsOnThisPage.length > 0) {
+      // Replace a random word in the page with the target word
+      const words = pageText.split(/\s+/);
+      if (words.length > 10) {
+        const replaceIdx = 5 + Math.floor(Math.random() * (words.length - 10));
+        // Clean punctuation from word we're replacing
+        words[replaceIdx] = words[replaceIdx].replace(/[.,;:!?'"—-]/g, '');
+        // Preserve any trailing punctuation
+        const trailingPunct = words[replaceIdx].match(/[.,;:!?'"—-]+$/);
+        words[replaceIdx] = questsOnThisPage[0].word + (trailingPunct ? trailingPunct[0] : '');
+        pageText = words.join(' ');
+      }
+    }
+
+    // Now render words as tappable spans
+    const textWords = pageText.split(/\s+/);
+    textWords.forEach(w => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = w + ' ';
+      // Check if this word matches a target
+      const cleanWord = w.replace(/[.,;:!?'"—-]/g, '').toLowerCase();
+      if (targetWords.includes(cleanWord)) {
+        span.classList.add('target-word');
+        span.dataset.targetWord = cleanWord;
+        span.addEventListener('click', (e) => handleWordTap(e, cleanWord));
+      } else if (targetWords.length > 0) {
+        span.addEventListener('click', handleWrongTap);
+      }
+      body.appendChild(span);
     });
+  });
+
+  $('readProgressFill').style.width = '0%';
+  showScreen('readScreen');
+
+  // Scroll progress tracking
+  body.onscroll = () => {
+    const pct = (body.scrollTop / (body.scrollHeight - body.clientHeight)) * 100;
+    $('readProgressFill').style.width = Math.min(100, pct) + '%';
+    const pageNum = Math.max(1, Math.floor((pct / 100) * book.pages.length) + 1);
+    $('pageNum').textContent = `Page ${Math.min(pageNum, book.pages.length)} of ${book.pages.length}`;
+  };
+  $('pageNum').textContent = `Page 1 of ${book.pages.length}`;
 }
 
-function handleFound(word) {
-    if (foundInCurrentTask) return;
-    if (word.toUpperCase() === currentTargetWord.toUpperCase()) {
-        foundInCurrentTask = true;
-        const points = 10 + (streak * 5);
-        score += points;
-        streak++;
-        if (streak > maxStreak) maxStreak = streak;
-        tasksCompleted++;
-        updateDisplay();
-        showMessage(`[FOUND] +${points} points. Streak: ${streak}`, 'good');
-        
-        bookArea.innerHTML += `<br><span style="color: #ffff00; display: block; text-align: center; font-size: 1.1em;">&gt; TOKEN ACQUIRED &lt;</span>`;
-        
-        setTimeout(() => {
-            newTask();
-        }, 1400);
+function handleWordTap(e, word) {
+  if (e.target.classList.contains('found')) return;
+  e.target.classList.add('found');
+  e.target.classList.remove('target-word');
+
+  // Mark quest as found
+  const quest = state.currentQuests.find(q => q.word.toLowerCase() === word && !q.found);
+  if (quest) {
+    quest.found = true;
+    state.allFoundThisLevel++;
+    state.wordsFound++;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    const comboMult = Math.min(state.combo, 5);
+    const points = 100 * comboMult;
+    state.score += points;
+
+    // Particles
+    const rect = e.target.getBoundingClientRect();
+    spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#f5b731', 12);
+
+    toast(`+${points} points!${comboMult > 1 ? ` x${comboMult} COMBO` : ''}`, 'good');
+    updateCombo();
+    updateHUD();
+    renderBookshelf();
+
+    // Check level complete
+    if (state.currentQuests.every(q => q.found)) {
+      clearInterval(state.timerInterval);
+      // Bonus for remaining time
+      const timeBonus = Math.round(state.timer * 10);
+      state.score += timeBonus;
+      setTimeout(() => showLevelComplete(timeBonus), 600);
     }
+  }
 }
 
-function updateDisplay() {
-    scoreDisplay.textContent = `SCORE: ${score}`;
-    streakDisplay.textContent = `STREAK: ${streak} (MAX: ${maxStreak})`;
+function handleWrongTap(e) {
+  if (e.target.classList.contains('found') || e.target.classList.contains('wrong')) return;
+  e.target.classList.add('wrong');
+  state.misses++;
+  state.combo = 0;
+  state.score = Math.max(0, state.score - 25);
+  updateCombo();
+  updateHUD();
+
+  const rect = e.target.getBoundingClientRect();
+  spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#8b1a1a', 5);
+  toast('-25 penalty!', 'bad');
+
+  setTimeout(() => e.target.classList.remove('wrong'), 500);
 }
 
-function resetGame() {
-    score = 0;
-    streak = 0;
-    maxStreak = 0;
-    tasksCompleted = 0;
-    updateDisplay();
-    showMessage('[RESET] All archives cleared.', 'bad');
-    newTask();
+function updateCombo() {
+  const display = $('comboDisplay');
+  if (state.combo >= 2) {
+    display.classList.add('visible');
+    $('comboNum').textContent = 'x' + state.combo;
+  } else {
+    display.classList.remove('visible');
+  }
 }
 
-function skipTask() {
-    if (streak > 0) streak = 0;
-    updateDisplay();
-    showMessage(`[SKIP] Streak broken. New task loaded.`, 'bad');
-    setTimeout(() => newTask(), 400);
+function closeBook() {
+  showScreen('gameScreen');
+  renderBookshelf();
 }
 
-function loadNewBook() {
-    if (streak > 0) streak = 0;
-    updateDisplay();
-    showMessage('[NODE CHANGE] New document loaded.', 'special');
-    setTimeout(() => newTask(), 300);
+function showLevelComplete(timeBonus) {
+  $('overlayTitle').textContent = `Level ${state.level} Complete`;
+  $('overlaySub').textContent = timeBonus > 0
+    ? `Time bonus: +${timeBonus} points! The books are trembling.`
+    : 'You cut it close. The books are still trembling.';
+  $('overlayScore').textContent = state.score;
+  $('overlayFound').textContent = state.allFoundThisLevel;
+  $('overlayMisses').textContent = state.misses;
+  $('levelOverlay').classList.add('active');
 }
 
-// ========== EVENT LISTENERS ==========
+function nextLevel() {
+  $('levelOverlay').classList.remove('active');
+  state.level++;
+  setupLevel();
+}
 
-submitBtn.addEventListener('click', function() {
-    const input = wordInput.value.trim().toUpperCase();
-    if (!input) {
-        showMessage('[ERROR] No input.', 'bad');
-        return;
-    }
-    if (input === currentTargetWord) {
-        handleFound(input);
-    } else {
-        if (streak > 0) streak = 0;
-        updateDisplay();
-        showMessage(`[WRONG] "${input}" does not match token. Streak broken.`, 'bad');
-        wordInput.value = '';
-        wordInput.focus();
-    }
-});
+function gameOver() {
+  $('goScore').textContent = state.score;
+  $('goLevel').textContent = state.level;
+  $('gameOverOverlay').classList.add('active');
+}
 
-wordInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        submitBtn.click();
-    }
-});
+// ============ AMBIENT ANIMATION ON TITLE ============
+(function titleAmbient() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0.3;';
+  $('titleScreen').appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const particles = [];
+  const PARTICLE_COUNT = 40;
 
-document.getElementById('newBookBtn').addEventListener('click', loadNewBook);
-document.getElementById('skipBtn').addEventListener('click', skipTask);
-document.getElementById('resetBtn').addEventListener('click', resetGame);
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('highlighted')) {
-        const word = e.target.getAttribute('data-word');
-        if (word) handleFound(word);
-    }
-});
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -Math.random() * 0.5 - 0.1,
+      size: Math.random() * 2 + 0.5,
+      alpha: Math.random() * 0.5 + 0.2
+    });
+  }
 
-// ========== INIT ==========
-newTask();
-updateDisplay();
-showMessage('[SYSTEM] Welcome, Librarian. Locate the tokens.', 'special');
+  function draw() {
+    if (state.screen !== 'title') { requestAnimationFrame(draw); return; }
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      if (p.x < -10) p.x = W + 10;
+      if (p.x > W + 10) p.x = -10;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(212,146,11,${p.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>
 </body>
 </html>
