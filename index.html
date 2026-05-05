@@ -1,163 +1,62 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Cursed Librarian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perverted Librarian</title>
     <style>
         body {
-            margin: 0;
-            background: #1a1a1a;
-            color: #e0e0e0;
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
         }
-        #header {
-            padding: 15px;
-            background: #2d2d2d;
-            border-bottom: 2px solid #444;
-            text-align: center;
-        }
-        #target-word {
-            color: #ff4444;
-            font-weight: bold;
-            font-size: 1.2em;
-            text-transform: uppercase;
-        }
-        #book-container {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            line-height: 1.6;
-            font-size: 18px;
-            background: #f4e4bc;
-            color: #2c2c2c;
-            margin: 10px;
-            border-radius: 8px;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.2);
-        }
-        .word {
-            display: inline-block;
-            padding: 2px 4px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-        .highlight {
-            background: rgba(255, 255, 0, 0.3);
-        }
-        #stats {
+        
+        .book {
+            width: 80%;
+            margin: 20px auto;
             padding: 10px;
-            background: #2d2d2d;
-            display: flex;
-            justify-content: space-around;
-        }
-        .btn {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+            border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .quest {
+            font-size: 18px;
+            color: #00698f;
+        }
+        
+        .button {
+            padding: 10px 20px;
+            background-color: #00698f;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .button:hover {
+            background-color: #005c7a;
+        }
+        
+        .nsfw-content {
+            display:none
         }
     </style>
 </head>
+
 <body>
 
-<div id="header">
-    <div>LIBRARIAN QUEST: FIND THE FORBIDDEN WORD</div>
-    <div id="target-display">SEARCHING FOR: <span id="target-word">---</span></div>
+<h2 id="quest">Find the word "Cock" in this book:</h2>
+<div class="book">
+    <p>...the farmer's large cock rooster woke up early to fuck the hen...</p>
+    <p>...she sucked his cock dry while he fingered her pussy...</p>
 </div>
 
-<div id="book-container" id="book-text">
-    <!-- Text will be injected here -->
-</div>
-
-<div id="stats">
-    <div>Score: <span id="score">0</span></div>
-    <button class="btn" onclick="nextBook()">Next Book</button>
-</div>
+<button class="button" onclick="completeQuest()">I found it!</button>
 
 <script>
-    const targets = ["GLITCH", "VOID", "OATMEAL", "SQUID", "PANIC", "EGG", "SOCKS"];
-    
-    // Abstract, unhinged sentence fragments
-    const fragments = [
-        "The sky was the color of a bruised banana.",
-        "Why does the government hide the truth about the sentient ham?",
-        "I saw the librarian eating a stapler yesterday.",
-        "The ritual requires exactly three socks and a moderate amount of screaming.",
-        "The digital ghosts are living in your browser history.",
-        "Never trust a man who keeps bees in his pockets.",
-        "The moon is actually a giant disco ball that stopped spinning in 1974.",
-        "If you stare at the toaster long enough, it starts whispering stock tips.",
-        "Your cat is plotting to replace the internet with yarn.",
-        "The secret ingredient in the cafeteria mystery meat is 'Regret'."
-    ];
-
-    let currentTarget = "";
-    let score = 0;
-
-    function initGame() {
-        nextBook();
-    }
-
-    function nextBook() {
-        currentTarget = targets[Math.floor(Math.random() * targets.length)];
-        document.getElementById('target-word').innerText = currentTarget;
-        generateText();
-    }
-
-    function generateText() {
-        const container = document.getElementById('book-container');
-        container.innerHTML = "";
-        
-        // Generate 30-40 random sentences
-        let textArray = [];
-        for(let i=0; i<40; i++) {
-            let sentence = fragments[Math.floor(Math.random() * fragments.length)];
-            // Randomly inject the target word
-            if(Math.random() > 0.85) {
-                sentence += ` THE ${currentTarget} HAS ARRIVED.`;
-            }
-            textArray.push(sentence);
-        }
-
-        const fullText = textArray.join(" ");
-        const words = fullText.split(" ");
-
-        words.forEach(wordStr => {
-            const span = document.createElement('span');
-            span.className = "word";
-            span.innerText = wordStr + " ";
-            
-            // Interaction for iPad (Click/Touch)
-            span.onclick = () => checkWord(wordStr, span);
-            container.appendChild(span);
-        });
-    }
-
-    function checkWord(clickedWord, element) {
-        // Clean word of punctuation
-        const cleanWord = clickedWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").toUpperCase();
-        
-        if(cleanWord === currentTarget) {
-            score += 10;
-            document.getElementById('score').innerText = score;
-            element.style.background = "#44ff44";
-            alert("FOUND IT! The unhinged knowledge is yours.");
-            nextBook();
-        } else {
-            element.style.background = "#ff4444";
-            setTimeout(() => { element.style.background = "transparent"; }, 500);
-        }
-    }
-
-    window.onload = initGame;
+function completeQuest() {
+    alert("Good job! You're a sick fuck!");
+}
 </script>
 
-</body>
-</html>
+</body></html>
