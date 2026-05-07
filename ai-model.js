@@ -1,94 +1,91 @@
 /**
- * NexusAI - A custom-built intent classification model.
- * This model uses keyword frequency and pattern matching to classify user input.
+ * Custom Generative AI Model
+ * Logic: Word-Association Markov Network
  */
-const NexusAI = (function() {
+const CustomAI = (function() {
+    // This is the model's "Neural Network" - a map of word relationships
+    let brain = {};
     
-    // 1. Training Data (Intents)
-    // The "Model" learns from these associations
-    const knowledgeBase = [
-        {
-            intent: "greeting",
-            keywords: ["hi", "hello", "hey", "greetings", "morning", "evening", "sup"],
-            responses: ["Hello there!", "Hi! How can I assist you?", "Greetings, human.", "Hey! What's on your mind?"]
-        },
-        {
-            intent: "identity",
-            keywords: ["who", "what", "name", "yourself", "you"],
-            responses: ["I am Nexus, a custom AI model built from scratch in JavaScript.", "You can call me Nexus. I don't use any external APIs!"]
-        },
-        {
-            intent: "status",
-            keywords: ["how", "are", "you", "doing", "feeling"],
-            responses: ["I'm functioning at 100% capacity!", "I'm just a collection of scripts, but I'm doing great!", "All systems go."]
-        },
-        {
-            intent: "capabilities",
-            keywords: ["can", "do", "help", "skills", "features"],
-            responses: ["I can chat with you, identify intents, and simulate basic intelligence without needing the internet."]
-        },
-        {
-            intent: "joke",
-            keywords: ["joke", "funny", "laugh"],
-            responses: ["Why did the web developer walk out of a restaurant? Because of the table layout.", "I would tell you a joke about UDP, but you might not get it."]
-        },
-        {
-            intent: "bye",
-            keywords: ["bye", "goodbye", "exit", "quit", "later", "stop"],
-            responses: ["Goodbye! Have a great day.", "See you later!", "Shutting down conversation... just kidding. Bye!"]
-        }
+    // Initial Seed Data so it knows basic English structure
+    const initialKnowledge = [
+        "hello how are you today",
+        "i am a custom artificial intelligence",
+        "i learn from every message you send me",
+        "tell me more about yourself",
+        "that is very interesting",
+        "what do you want to talk about",
+        "i can generate sentences on my own",
+        "the more we talk the smarter i become"
     ];
 
-    // 2. Pre-processing: Tokenizer and Cleaner
-    function tokenize(text) {
-        return text.toLowerCase()
-            .replace(/[^\w\s]/gi, '') // Remove punctuation
-            .split(/\s+/)            // Split into words
-            .filter(word => word.length > 1); // Remove tiny filler words
+    // Function to "Learn" a sentence
+    function ingest(sentence) {
+        const words = sentence.toLowerCase().replace(/[^\w\s]/g, '').split(' ');
+        if (words.length < 2) return;
+
+        for (let i = 0; i < words.length - 1; i++) {
+            const current = words[i];
+            const next = words[i + 1];
+
+            if (!brain[current]) brain[current] = {};
+            if (!brain[current][next]) brain[current][next] = 0;
+            
+            // Strengthen the connection between these words
+            brain[current][next]++;
+        }
     }
 
-    // 3. Inference Engine: Scoring Algorithm
-    function classify(text) {
-        const words = tokenize(text);
-        let bestIntent = null;
-        let highestScore = 0;
+    // Initialize with seed data
+    initialKnowledge.forEach(ingest);
 
-        knowledgeBase.forEach(item => {
-            let score = 0;
-            words.forEach(word => {
-                if (item.keywords.includes(word)) {
-                    score += 1; // Basic weight
-                }
-            });
-
-            if (score > highestScore) {
-                highestScore = score;
-                bestIntent = item;
-            }
-        });
-
-        return { bestIntent, highestScore };
-    }
-
-    // 4. Public API
     return {
-        process: function(input) {
-            const { bestIntent, highestScore } = classify(input);
+        // Main function to generate a new sentence
+        generateResponse: function(userInput) {
+            // First, learn from the user's input (Real-time learning!)
+            ingest(userInput);
 
-            if (bestIntent && highestScore > 0) {
-                // Return a random response from the matched intent
-                const responses = bestIntent.responses;
-                return responses[Math.floor(Math.random() * responses.length)];
-            } else {
-                // Default fallback for "Unknown" intent
-                const fallbacks = [
-                    "I'm not sure I understand. Could you rephrase that?",
-                    "My current model doesn't have a record for that. Tell me more.",
-                    "Interesting... but I don't know how to respond to that yet.",
-                    "I am still learning. Can we talk about something else?"
-                ];
-                return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+            const inputWords = userInput.toLowerCase().replace(/[^\w\s]/g, '').split(' ');
+            
+            // Pick a starting word: either a word from user input or a random word from brain
+            let currentWord = inputWords.find(w => brain[w]) || 
+                               Object.keys(brain)[Math.floor(Math.random() * Object.keys(brain).length)];
+            
+            let result = [currentWord];
+            let maxSentenceLength = 12;
+
+            for (let i = 0; i < maxSentenceLength; i++) {
+                const possibilities = brain[currentWord];
+                if (!possibilities) break;
+
+                // Weighted Random Selection: pick next word based on frequency
+                const nextWords = Object.keys(possibilities);
+                const totalWeight = Object.values(possibilities).reduce((a, b) => a + b, 0);
+                
+                let randomValue = Math.random() * totalWeight;
+                let selectedWord = nextWords[0];
+
+                for (const word in possibilities) {
+                    randomValue -= possibilities[word];
+                    if (randomValue <= 0) {
+                        selectedWord = word;
+                        break;
+                    }
+                }
+
+                result.push(selectedWord);
+                currentWord = selectedWord;
+
+                // Simple probability to end sentence early
+                if (Math.random() > 0.8) break;
             }
+
+            // Cleanup and format
+            let finalOutput = result.join(' ');
+            return finalOutput.charAt(0).toUpperCase() + finalOutput.slice(1) + ".";
+        },
+
+        getStats: function() {
+            return Object.keys(brain).length;
         }
     };
 })();
