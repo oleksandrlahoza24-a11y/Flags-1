@@ -3,406 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>HELLDIVERS 3D: CUSTOM ENGINE</title>
+    <title>HELLDIVERS 3D: SUPER-EARTH COMMAND</title>
     <style>
         :root {
             --hd-yellow: #ffee00;
             --hd-cyan: #00f2ff;
-            --hd-red: #ff3300;
-            --hd-bg: #020406;
+            --hd-bg: #030508;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             overflow: hidden; background: var(--hd-bg);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', sans-serif;
             user-select: none; touch-action: none;
         }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas { display: block; width: 100%; height: 100%; filter: contrast(1.1) brightness(1.1); }
 
-        /* UI HUD */
+        /* --- UI OVERLAY --- */
         #hud {
             position: absolute; inset: 0; pointer-events: none;
-            color: var(--hd-yellow); text-shadow: 0 0 5px black;
+            color: var(--hd-yellow); font-weight: bold;
         }
 
-        .stratagem-overlay {
+        #mission-card {
+            position: absolute; top: 40px; left: 40px;
+            padding: 15px; background: rgba(0,0,0,0.7);
+            border-left: 5px solid var(--hd-yellow);
+        }
+
+        /* STRATAGEM CONSOLE */
+        #stratagem-console {
             position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: column; align-items: center;
-            background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid var(--hd-yellow);
-            border-radius: 10px; pointer-events: auto;
+            width: 300px; padding: 20px; background: rgba(5, 10, 15, 0.95);
+            border: 2px solid var(--hd-yellow); display: none;
+            flex-direction: column; align-items: center; pointer-events: auto;
         }
 
-        .code-row { display: flex; gap: 10px; margin-top: 10px; font-size: 30px; }
+        .code-display { display: flex; gap: 10px; margin-top: 15px; font-size: 30px; }
 
-        /* CONTROLS */
-        .ctrl-zone {
-            position: absolute; bottom: 40px; width: 200px; height: 200px;
+        /* IPAD CONTROLS */
+        .joystick-container {
+            position: absolute; bottom: 50px; width: 180px; height: 180px;
             background: rgba(255,255,255,0.05); border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
         }
-        #move-zone { left: 40px; }
-        #aim-zone { right: 40px; }
+        #move-ctrl { left: 50px; }
+        #aim-ctrl { right: 50px; }
         .knob {
             position: absolute; width: 60px; height: 60px; background: var(--hd-yellow);
-            border-radius: 50%; top: 70px; left: 70px; box-shadow: 0 0 20px var(--hd-yellow);
+            border-radius: 50%; top: 60px; left: 60px; box-shadow: 0 0 20px var(--hd-yellow);
         }
 
-        #action-buttons {
-            position: absolute; bottom: 260px; right: 40px; display: flex; flex-direction: column; gap: 20px;
+        #strat-btn {
+            position: absolute; bottom: 250px; left: 70px;
+            width: 100px; height: 100px; background: rgba(0, 242, 255, 0.2);
+            border: 2px solid var(--hd-cyan); border-radius: 20%;
+            color: var(--hd-cyan); display: flex; align-items: center;
+            justify-content: center; pointer-events: auto; font-size: 14px;
         }
 
-        .btn {
-            width: 80px; height: 80px; border-radius: 15px; border: 2px solid var(--hd-yellow);
-            background: rgba(0,0,0,0.6); color: var(--hd-yellow); font-weight: bold;
-            pointer-events: auto; display: flex; align-items: center; justify-content: center;
-        }
-
-        #stratagem-dpad {
-            position: absolute; bottom: 40px; left: 40px; width: 250px; height: 250px;
+        /* D-PAD FOR STRATAGEMS */
+        #dpad {
+            position: absolute; bottom: 50px; left: 50px; width: 220px; height: 220px;
             display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; pointer-events: auto;
         }
-        .d-btn { background: rgba(255, 238, 0, 0.2); border: 2px solid var(--hd-yellow); color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; border-radius: 10px; }
+        .d-btn { background: rgba(255, 238, 0, 0.15); border: 2px solid var(--hd-yellow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--hd-yellow); }
+
+        #start-screen {
+            position: absolute; inset: 0; background: black; z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .btn-main { padding: 20px 60px; background: var(--hd-yellow); border: none; font-weight: 900; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<canvas id="screen"></canvas>
+<div id="start-screen">
+    <h1 style="color:white; letter-spacing: 15px;">HELLDIVERS</h1>
+    <h3 style="color:var(--hd-yellow); margin-bottom: 40px;">SUPER-EARTH ENGINE 3D</h3>
+    <button class="btn-main" onclick="startGame()">DIVE INTO HELL</button>
+</div>
 
 <div id="hud">
-    <div id="stratagem-ui" class="stratagem-overlay">
-        <div id="strat-name">ORBITAL PRECISION STRIKE</div>
-        <div id="strat-code" class="code-row"></div>
+    <div id="mission-card">
+        <div style="font-size: 10px; opacity: 0.7;">CURRENT SECTOR</div>
+        <div>MALEVOLON CREEK</div>
+        <div id="stratagem-active-name" style="color:var(--hd-cyan); margin-top: 5px;">SUPER DESTROYER: SES PATRIOT OF PRIDE</div>
     </div>
 
-    <div id="move-zone" class="ctrl-zone"><div class="knob"></div></div>
-    <div id="aim-zone" class="ctrl-zone"><div class="knob"></div></div>
+    <div id="stratagem-console">
+        <div id="current-strat-name">ORBITAL LASER</div>
+        <div id="current-strat-code" class="code-display"></div>
+    </div>
 
-    <div id="stratagem-dpad">
+    <div id="move-ctrl" class="joystick-container"><div class="knob"></div></div>
+    <div id="aim-ctrl" class="joystick-container"><div class="knob"></div></div>
+    <div id="strat-btn">HOLD FOR<br>STRATAGEM</div>
+
+    <div id="dpad">
         <div></div><div class="d-btn" data-dir="UP">↑</div><div></div>
         <div class="d-btn" data-dir="LEFT">←</div><div class="d-btn" style="border:none"></div><div class="d-btn" data-dir="RIGHT">→</div>
         <div></div><div class="d-btn" data-dir="DOWN">↓</div><div></div>
     </div>
-
-    <div id="action-buttons">
-        <div id="btn-strat" class="btn">STRAT</div>
-        <div id="btn-dive" class="btn">DIVE</div>
-    </div>
-
-    <div style="position:absolute; top:20px; left:20px;">
-        <div>OBJECTIVE: ELIMINATE XENO MENACE</div>
-        <div id="ammo">AMMO: 30 / 30</div>
-    </div>
 </div>
+
+<canvas id="renderTarget"></canvas>
 
 <script>
 /**
- * CUSTOM 3D ENGINE - "DEMOCRACY RASTERIZER"
- * No WebGL. No libraries. Pure Canvas 2D math.
+ * CUSTOM 3D SOFTWARE RASTERIZER: "DEMOCRACY-3D"
+ * Architected for iPad hardware without WebGL.
  */
 
-// --- 1. VECTOR & MATRIX MATH LIBRARY ---
-const M3D = {
-    project(v, camera, w, h) {
-        // Translate relative to camera
-        let x = v.x - camera.x;
-        let y = v.y - camera.y;
-        let z = v.z - camera.z;
+const canvas = document.getElementById('renderTarget');
+const ctx = canvas.getContext('2d', { alpha: false });
+let width, height;
 
-        // Rotate based on camera yaw (horizontal)
-        let cos = Math.cos(camera.yaw);
-        let sin = Math.sin(camera.yaw);
-        let tx = x * cos - z * sin;
-        let tz = x * sin + z * cos;
-        
-        // Simple perspective projection
-        if (tz < 0.1) return null; // Clipping
-        const fov = 400;
-        const scale = fov / tz;
-        return {
-            x: (w / 2) + tx * scale,
-            y: (h / 2) + y * scale,
-            scale: scale,
-            z: tz
-        };
+// --- 3D MATH & ENGINE UTILS ---
+class Vec3 {
+    constructor(x, y, z) { this.x = x; this.y = y; this.z = z; }
+    static sub(a, b) { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
+    static cross(a, b) {
+        return new Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    }
+    static dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    normalize() {
+        const mag = Math.sqrt(this.x**2 + this.y**2 + this.z**2);
+        this.x /= mag; this.y /= mag; this.z /= mag;
+        return this;
+    }
+}
+
+// Model structures: [x,y,z] vertices and [v1,v2,v3, color] faces
+const MODELS = {
+    // A more complex Super Destroyer shape
+    destroyer: {
+        verts: [
+            new Vec3(0, 0, 150), new Vec3(-40, 20, 0), new Vec3(40, 20, 0), new Vec3(0, -30, 0), // Nose/Body
+            new Vec3(-80, 10, -100), new Vec3(80, 10, -100), new Vec3(0, 40, -120) // Wings/Tail
+        ],
+        faces: [
+            [0, 1, 3, '#333'], [0, 2, 3, '#444'], [1, 2, 3, '#222'],
+            [1, 4, 6, '#333'], [2, 5, 6, '#333'], [4, 5, 6, '#111']
+        ]
+    },
+    hellpod: {
+        verts: [
+            new Vec3(-5, -20, -5), new Vec3(5, -20, -5), new Vec3(5, -20, 5), new Vec3(-5, -20, 5),
+            new Vec3(0, 0, 0)
+        ],
+        faces: [ [0,1,4, '#666'], [1,2,4, '#777'], [2,3,4, '#666'], [3,0,4, '#555'] ]
+    },
+    tree: {
+        verts: [ new Vec3(0, -60, 0), new Vec3(-15, 0, -15), new Vec3(15, 0, -15), new Vec3(0, 0, 15) ],
+        faces: [ [0,1,2, '#1a3300'], [0,2,3, '#2d5a00'], [0,3,1, '#1a3300'] ]
     }
 };
 
-// --- 2. GAME CONFIG & 100 STRATAGEMS ---
-const STRATAGEMS = [];
-const DIRS = ["UP", "DOWN", "LEFT", "RIGHT"];
-for(let i=0; i<100; i++) {
-    let code = [];
-    for(let j=0; j<4+(i%4); j++) code.push(DIRS[Math.floor(Math.random()*4)]);
-    STRATAGEMS.push({
-        name: `COMMAND ${101+i}: ${["STRIKE", "POD", "SENTRY", "BOMB"][i%4]}`,
-        code: code,
-        type: i % 2 === 0 ? 'ATTACK' : 'SUPPORT'
-    });
-}
-
-// --- 3. ENGINE STATE ---
-const canvas = document.getElementById('screen');
-const ctx = canvas.getContext('2d');
-let width, height;
-
+// --- GAME STATE ---
 const STATE = {
-    camera: { x: 0, y: -200, z: -400, yaw: 0 },
-    player: { x: 0, y: 0, z: 0, yaw: 0, ammo: 30 },
-    input: { move: {x:0, y:0}, aim: {x:0, y:0}, stratMode: false, codeIdx: 0, activeStrat: 0 },
-    entities: [], // {x, y, z, type, model}
-    bullets: [],
+    running: false,
+    camera: { x: 0, y: -200, z: -500, pitch: 0.3, yaw: 0 },
+    player: { x: 0, y: 0, z: 0, yaw: 0 },
+    objects: [], // {pos, model, color_mod}
+    planets: [
+        { x: 2000, y: -1000, z: 5000, r: 800, col: '#ff5722' },
+        { x: -3000, y: -1500, z: 8000, r: 1200, col: '#2196f3' }
+    ],
+    stratMode: false,
+    inputBuffer: [],
+    currentStratIdx: 0,
     frame: 0
 };
 
-// Procedural Models (Vertices)
-const MODELS = {
-    player: [[-10,0,-10], [10,0,-10], [10,0,10], [-10,0,10], [0,-40,0]], // Pyramid
-    enemy: [[-15,0,0], [0,0,15], [15,0,0], [0,0,-15], [0,-30,0]],
-    pod: [[-20,-100,-20], [20,-100,-20], [20,0,20], [-20,0,20]], // Dropping Box
-    beacon: [[-2,-2,-2], [2,2,2]]
-};
-
-// --- 4. CORE ENGINE FUNCTIONS ---
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-function spawnEnemy() {
-    const ang = Math.random() * Math.PI * 2;
-    const dist = 600 + Math.random() * 400;
-    STATE.entities.push({
-        x: Math.cos(ang) * dist,
-        y: 0,
-        z: Math.sin(ang) * dist,
-        type: 'enemy',
-        hp: 3
-    });
+const STRATAGEMS = [];
+const DIRS = ["UP", "DOWN", "LEFT", "RIGHT"];
+for(let i=0; i<100; i++) {
+    let c = []; for(let j=0; j<5; j++) c.push(DIRS[Math.floor(Math.random()*4)]);
+    STRATAGEMS.push({ name: `STRATAGEM ${i+1}`, code: c });
 }
 
-function update() {
-    // 1. Move Player
-    const moveX = STATE.input.move.x * 5;
-    const moveZ = -STATE.input.move.y * 5;
-    STATE.player.x += moveX;
-    STATE.player.z += moveZ;
+// --- CORE ENGINE PIPELINE ---
+function project(v) {
+    // Camera Transform
+    let x = v.x - STATE.camera.x;
+    let y = v.y - STATE.camera.y;
+    let z = v.z - STATE.camera.z;
 
-    // 2. Camera follows player
-    STATE.camera.x += (STATE.player.x - STATE.camera.x) * 0.1;
-    STATE.camera.z += (STATE.player.z - 400 - STATE.camera.z) * 0.1;
+    // Rotation (Yaw)
+    let cosY = Math.cos(STATE.camera.yaw);
+    let sinY = Math.sin(STATE.camera.yaw);
+    let nx = x * cosY - z * sinY;
+    let nz = x * sinY + z * cosY;
 
-    // 3. Bullets
-    if (Math.abs(STATE.input.aim.x) > 0.1 || Math.abs(STATE.input.aim.y) > 0.1) {
-        STATE.player.yaw = Math.atan2(STATE.input.aim.x, -STATE.input.aim.y);
-        if (STATE.frame % 10 === 0 && STATE.player.ammo > 0) {
-            STATE.bullets.push({
-                x: STATE.player.x, y: -20, z: STATE.player.z,
-                vx: Math.sin(STATE.player.yaw) * 15,
-                vz: Math.cos(STATE.player.yaw) * 15,
-                life: 60
-            });
-            STATE.player.ammo--;
-        }
-    }
-    if (STATE.player.ammo <= 0 && STATE.frame % 120 === 0) STATE.player.ammo = 30;
+    // Rotation (Pitch)
+    let cosP = Math.cos(STATE.camera.pitch);
+    let sinP = Math.sin(STATE.camera.pitch);
+    let ny = y * cosP - nz * sinP;
+    nz = y * sinP + nz * cosP;
 
-    STATE.bullets.forEach((b, i) => {
-        b.x += b.vx; b.z += b.vz; b.life--;
-        if(b.life <= 0) STATE.bullets.splice(i, 1);
-    });
+    if (nz < 10) return null; // Near-plane clipping
 
-    // 4. Enemy Logic
-    STATE.entities.forEach((e, i) => {
-        if(e.type === 'enemy') {
-            const dx = STATE.player.x - e.x;
-            const dz = STATE.player.z - e.z;
-            const dist = Math.hypot(dx, dz);
-            e.x += (dx / dist) * 2;
-            e.z += (dz / dist) * 2;
-
-            // Collision with bullets
-            STATE.bullets.forEach((b, bi) => {
-                if(Math.hypot(e.x - b.x, e.z - b.z) < 30) {
-                    e.hp--;
-                    STATE.bullets.splice(bi, 1);
-                    if(e.hp <= 0) STATE.entities.splice(i, 1);
-                }
-            });
-        }
-        
-        // Stratagem Pod Logic
-        if(e.type === 'pod') {
-            if(e.y < 0) e.y += 20; // Falling physics
-            else {
-                // Slam effect
-                if(!e.landed) { e.landed = true; spawnExplosion(e.x, e.z); }
-            }
-        }
-    });
-
-    if(STATE.frame % 100 === 0 && STATE.entities.length < 20) spawnEnemy();
-    STATE.frame++;
+    const fov = width * 0.8;
+    return {
+        x: (width / 2) + (nx * fov / nz),
+        y: (height / 2) + (ny * fov / nz),
+        z: nz
+    };
 }
 
 function render() {
-    // Clear
-    ctx.fillStyle = '#020406';
-    ctx.fillRect(0,0,width,height);
+    ctx.fillStyle = '#030508';
+    ctx.fillRect(0, 0, width, height);
 
-    // Draw Floor (3D Grid)
-    ctx.strokeStyle = '#0a1520';
-    ctx.lineWidth = 1;
-    for(let i=-2000; i<=2000; i+=100) {
-        // X lines
-        drawLine3D(i, 0, -2000, i, 0, 2000, '#0a1520');
-        // Z lines
-        drawLine3D(-2000, 0, i, 2000, 0, i, '#0a1520');
-    }
-
-    // Render Entities
-    const allDrawables = [
-        ...STATE.entities,
-        {x: STATE.player.x, y: STATE.player.y, z: STATE.player.z, type: 'player'}
-    ];
-
-    // Z-Sorting (Painter's Algorithm)
-    allDrawables.sort((a, b) => {
-        const distA = Math.hypot(a.x - STATE.camera.x, a.z - STATE.camera.z);
-        const distB = Math.hypot(b.x - STATE.camera.x, b.z - STATE.camera.z);
-        return distB - distA;
-    });
-
-    allDrawables.forEach(e => {
-        const model = MODELS[e.type];
-        if(!model) return;
-        
-        const color = e.type === 'player' ? '#ffee00' : (e.type === 'enemy' ? '#ff3300' : '#00f2ff');
-        
-        // Draw Model Wireframe
-        for(let i=0; i<model.length; i++) {
-            const p1 = model[i];
-            const p2 = model[(i+1)%model.length];
-            drawLine3D(e.x+p1[0], e.y+p1[1], e.z+p1[2], e.x+p2[0], e.y+p2[1], e.z+p2[2], color);
+    // 1. Draw Planets (Simple 3D Circles)
+    STATE.planets.forEach(p => {
+        const proj = project(p);
+        if (proj) {
+            const size = (p.r * (width * 0.8)) / proj.z;
+            const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, size);
+            grad.addColorStop(0, p.col);
+            grad.addColorStop(1, 'black');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(proj.x, proj.y, size, 0, Math.PI*2); ctx.fill();
         }
     });
 
-    // Draw Bullets
-    STATE.bullets.forEach(b => {
-        drawLine3D(b.x, b.y, b.z, b.x-b.vx, b.y, b.z-b.vz, '#fff');
+    // 2. Collect all triangles for Z-sorting
+    const sceneTriangles = [];
+
+    // Add Super Destroyer (Floating High)
+    addModelToScene(MODELS.destroyer, new Vec3(0, -600, 1200), sceneTriangles);
+
+    // Add Procedural Forest
+    STATE.objects.forEach(obj => {
+        addModelToScene(MODELS[obj.type], obj.pos, sceneTriangles);
     });
 
-    document.getElementById('ammo').innerText = `AMMO: ${STATE.player.ammo} / 30`;
-    requestAnimationFrame(() => { update(); render(); });
-}
+    // 3. Painter's Algorithm: Sort by depth
+    sceneTriangles.sort((a, b) => b.zAvg - a.zAvg);
 
-function drawLine3D(x1, y1, z1, x2, y2, z2, color) {
-    const p1 = M3D.project({x:x1, y:y1, z:z1}, STATE.camera, width, height);
-    const p2 = M3D.project({x:x2, y:y2, z:z2}, STATE.camera, width, height);
+    // 4. Rasterize Triangles with Lambert Shading
+    const lightDir = new Vec3(1, -1, 1).normalize();
+    sceneTriangles.forEach(tri => {
+        // Calculate Light Intensity
+        const v1 = Vec3.sub(tri.v2_orig, tri.v1_orig);
+        const v2 = Vec3.sub(tri.v3_orig, tri.v1_orig);
+        const normal = Vec3.cross(v1, v2).normalize();
+        const intensity = Math.max(0.2, Vec3.dot(normal, lightDir));
 
-    if (p1 && p2) {
-        ctx.strokeStyle = color;
+        ctx.fillStyle = tri.color;
+        ctx.globalAlpha = 1.0;
+        
+        // Simple shade simulation
         ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
+        ctx.moveTo(tri.v1.x, tri.v1.y);
+        ctx.lineTo(tri.v2.x, tri.v2.y);
+        ctx.lineTo(tri.v3.x, tri.v3.y);
+        ctx.closePath();
+        
+        // Final pixel push
+        ctx.fill();
+        
+        // Add wireframe highlight for "tech" look
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
         ctx.stroke();
-    }
+    });
+
+    STATE.frame++;
+    if (STATE.running) requestAnimationFrame(render);
 }
 
-function spawnExplosion(x, z) {
-    // Visual wipe of nearby enemies
-    STATE.entities.forEach((e, i) => {
-        if(e.type === 'enemy' && Math.hypot(e.x - x, e.z - z) < 150) {
-            STATE.entities.splice(i, 1);
+function addModelToScene(model, pos, triangleBuffer) {
+    const projectedVerts = model.verts.map(v => {
+        const worldPos = new Vec3(v.x + pos.x, v.y + pos.y, v.z + pos.z);
+        return { proj: project(worldPos), orig: worldPos };
+    });
+
+    model.faces.forEach(f => {
+        const p1 = projectedVerts[f[0]];
+        const p2 = projectedVerts[f[1]];
+        const p3 = projectedVerts[f[2]];
+
+        if (p1.proj && p2.proj && p3.proj) {
+            triangleBuffer.push({
+                v1: p1.proj, v2: p2.proj, v3: p3.proj,
+                v1_orig: p1.orig, v2_orig: p2.orig, v3_orig: p3.orig,
+                zAvg: (p1.proj.z + p2.proj.z + p3.proj.z) / 3,
+                color: f[3]
+            });
         }
     });
 }
 
-// --- 5. INPUT SYSTEM ---
+// --- INPUT & GAME LOGIC ---
 function initInput() {
-    const setupJoy = (id, key) => {
-        const zone = document.getElementById(id);
-        zone.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            const rect = zone.getBoundingClientRect();
-            const process = (t) => {
-                const dx = t.clientX - (rect.left + 100);
-                const dy = t.clientY - (rect.top + 100);
-                const dist = Math.min(Math.hypot(dx, dy), 70);
-                const ang = Math.atan2(dy, dx);
-                STATE.input[key] = { x: (Math.cos(ang)*dist)/70, y: (Math.sin(ang)*dist)/70 };
-                zone.querySelector('.knob').style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
-            };
-            process(touch);
-            const moveSub = (me) => process(me.touches[0]);
-            const endSub = () => {
-                STATE.input[key] = {x:0, y:0};
-                zone.querySelector('.knob').style.transform = `translate(0,0)`;
-                window.removeEventListener('touchmove', moveSub);
-                window.removeEventListener('touchend', endSub);
-            };
-            window.addEventListener('touchmove', moveSub);
-            window.addEventListener('touchend', endSub);
-        });
-    };
+    const stratBtn = document.getElementById('strat-btn');
+    const dpad = document.getElementById('dpad');
+    const moveCtrl = document.getElementById('move-ctrl');
 
-    setupJoy('move-zone', 'move');
-    setupJoy('aim-zone', 'aim');
+    stratBtn.addEventListener('touchstart', (e) => {
+        STATE.stratMode = true;
+        dpad.style.display = 'grid';
+        moveCtrl.style.display = 'none';
+        document.getElementById('stratagem-console').style.display = 'flex';
+        STATE.inputBuffer = [];
+        updateStratUI();
+    });
 
-    // Stratagem Toggle
-    document.getElementById('btn-strat').addEventListener('touchstart', () => {
-        STATE.input.stratMode = !STATE.input.stratMode;
-        document.getElementById('stratagem-ui').style.display = STATE.input.stratMode ? 'flex' : 'none';
-        document.getElementById('stratagem-dpad').style.display = STATE.input.stratMode ? 'grid' : 'none';
-        document.getElementById('move-zone').style.display = STATE.input.stratMode ? 'none' : 'block';
-        if(STATE.input.stratMode) {
-            STATE.input.activeStrat = Math.floor(Math.random()*100);
-            STATE.input.codeIdx = 0;
-            renderStratCode();
-        }
+    stratBtn.addEventListener('touchend', () => {
+        STATE.stratMode = false;
+        dpad.style.display = 'none';
+        moveCtrl.style.display = 'block';
+        document.getElementById('stratagem-console').style.display = 'none';
     });
 
     document.querySelectorAll('.d-btn').forEach(btn => {
         btn.addEventListener('touchstart', (e) => {
             const dir = e.target.dataset.dir;
-            const strat = STRATAGEMS[STATE.input.activeStrat];
-            if(strat.code[STATE.input.codeIdx] === dir) {
-                STATE.input.codeIdx++;
-                if(STATE.input.codeIdx === strat.code.length) {
-                    // CALL DOWN POD
-                    STATE.entities.push({
-                        x: STATE.player.x + Math.sin(STATE.player.yaw)*100,
-                        y: -1000, // Sky
-                        z: STATE.player.z + Math.cos(STATE.player.yaw)*100,
-                        type: 'pod'
-                    });
-                    // Close UI
-                    document.getElementById('btn-strat').dispatchEvent(new Event('touchstart'));
+            const strat = STRATAGEMS[STATE.currentStratIdx];
+            if(strat.code[STATE.inputBuffer.length] === dir) {
+                STATE.inputBuffer.push(dir);
+                if(STATE.inputBuffer.length === strat.code.length) {
+                    callHellpod();
+                    STATE.currentStratIdx = (STATE.currentStratIdx + 1) % 100;
+                    stratBtn.dispatchEvent(new Event('touchend'));
                 }
             } else {
-                STATE.input.codeIdx = 0;
+                STATE.inputBuffer = [];
             }
-            renderStratCode();
+            updateStratUI();
         });
+    });
+
+    // Simple Joystick Logic
+    setupJoystick('move-ctrl', (x, y) => {
+        if(!STATE.stratMode) {
+            STATE.camera.x += x * 10;
+            STATE.camera.z += -y * 10;
+        }
     });
 }
 
-function renderStratCode() {
-    const strat = STRATAGEMS[STATE.input.activeStrat];
-    document.getElementById('strat-name').innerText = strat.name;
-    document.getElementById('strat-code').innerHTML = strat.code.map((d, i) => {
-        const color = i < STATE.input.codeIdx ? 'var(--hd-yellow)' : '#333';
+function updateStratUI() {
+    const strat = STRATAGEMS[STATE.currentStratIdx];
+    document.getElementById('current-strat-name').innerText = strat.name;
+    document.getElementById('current-strat-code').innerHTML = strat.code.map((d, i) => {
+        const col = i < STATE.inputBuffer.length ? 'var(--hd-yellow)' : '#444';
         const sym = {UP:'↑', DOWN:'↓', LEFT:'←', RIGHT:'→'}[d];
-        return `<span style="color:${color}">${sym}</span>`;
+        return `<span style="color:${col}">${sym}</span>`;
     }).join('');
 }
 
-// Start Engine
-initInput();
-render();
+function callHellpod() {
+    // Spawn a falling hellpod from the Destroyer's height
+    const pod = { pos: new Vec3(STATE.camera.x, -600, STATE.camera.z + 200), type: 'hellpod' };
+    STATE.objects.push(pod);
+    const fallInt = setInterval(() => {
+        pod.pos.y += 20;
+        if(pod.pos.y >= 0) {
+            pod.pos.y = 0;
+            clearInterval(fallInt);
+            spawnTree(pod.pos.x, pod.pos.z); // Deploy something
+        }
+    }, 16);
+}
+
+function spawnTree(x, z) {
+    STATE.objects.push({ pos: new Vec3(x, 0, z), type: 'tree' });
+}
+
+function setupJoystick(id, cb) {
+    const el = document.getElementById(id);
+    const knob = el.querySelector('.knob');
+    el.addEventListener('touchmove', (e) => {
+        const r = el.getBoundingClientRect();
+        const t = e.touches[0];
+        let dx = t.clientX - (r.left + 90);
+        let dy = t.clientY - (r.top + 90);
+        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 60);
+        const ang = Math.atan2(dy, dx);
+        knob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+        cb(Math.cos(ang)*dist/60, Math.sin(ang)*dist/60);
+    });
+    el.addEventListener('touchend', () => { knob.style.transform = `translate(0,0)`; });
+}
+
+function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    resize();
+    STATE.running = true;
+    
+    // Seed the forest
+    for(let i=0; i<30; i++) {
+        spawnTree((Math.random()-0.5)*2000, (Math.random()-0.5)*2000);
+    }
+    
+    initInput();
+    render();
+}
+
+function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
 
 </script>
 </body>
