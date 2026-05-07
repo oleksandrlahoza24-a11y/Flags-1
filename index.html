@@ -4,47 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Voxel Farm Fix</title>
+    <title>Voxel Harvest Pro</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Courier New', monospace; touch-action: none; }
+        :root {
+            --bg: #2c3e50;
+            --ui-accent: #f1c40f;
+            --ui-panel: rgba(0, 0, 0, 0.85);
+            --font: 'Courier New', Courier, monospace;
+        }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: var(--font); touch-action: none; -webkit-user-select: none; }
         
-        #game-ui { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; z-index: 10;
-        }
-
-        .stat-box {
-            position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6);
-            color: white; padding: 10px; border: 3px solid #fff; pointer-events: none;
-        }
-
-        #action-log {
-            position: absolute; top: 10px; right: 10px; text-align: right;
-            color: #ffff00; font-weight: bold; font-size: 14px;
+        /* HUD */
+        #hud {
+            position: absolute; top: 15px; left: 15px; pointer-events: none;
+            color: white; text-shadow: 2px 2px 0 #000; z-index: 5;
         }
 
         #inventory-bar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; background: rgba(0,0,0,0.8);
-            padding: 10px; border: 3px solid white; pointer-events: auto;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; background: var(--ui-panel);
+            padding: 12px; border: 4px solid #fff; z-index: 10;
         }
 
         .slot {
-            width: 55px; height: 55px; background: #333; border: 2px solid #777;
+            width: 50px; height: 50px; background: #34495e; border: 2px solid #7f8c8d;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: white; font-size: 20px;
+            position: relative; color: white; font-size: 20px;
         }
-        .slot-count { font-size: 12px; color: #0f0; }
+        .slot-count { position: absolute; bottom: 2px; right: 4px; font-size: 11px; color: #2ecc71; font-weight: bold; }
 
-        .btn {
-            pointer-events: auto; background: #2ecc71; border: 3px solid white;
-            color: white; padding: 12px; font-weight: bold; cursor: pointer;
-        }
-
-        #craft-panel {
+        /* CRAFTING SYSTEM */
+        #crafting-window {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #222; border: 4px solid white; padding: 20px;
-            display: none; color: white; pointer-events: auto;
+            width: 320px; background: var(--ui-panel); border: 5px solid white;
+            color: white; display: none; z-index: 20; padding: 15px;
+        }
+        .recipe-card {
+            background: #2c3e50; padding: 10px; margin-bottom: 10px; border: 2px solid #555;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn {
+            background: var(--ui-accent); border: none; padding: 10px 15px; 
+            font-family: var(--font); font-weight: bold; cursor: pointer; pointer-events: auto;
+        }
+        .btn-close { background: #e74c3c; color: white; width: 100%; margin-top: 10px; }
+
+        #log {
+            position: absolute; top: 15px; right: 15px; text-align: right;
+            color: #00ff00; font-size: 14px; text-shadow: 1px 1px 0 #000;
         }
 
         canvas { display: block; image-rendering: pixelated; }
@@ -52,228 +59,306 @@
 </head>
 <body>
 
-    <div id="game-ui">
-        <div class="stat-box">
-            LVL: <span id="lvl">1</span> | XP: <span id="xp">0</span>
-        </div>
-        
-        <div id="action-log">WELCOME TO THE FARM</div>
+    <div id="hud">
+        <div style="font-size: 24px;">GATHERER LVL <span id="ui-lvl">1</span></div>
+        <div style="font-size: 14px; color: #bbb;">XP: <span id="ui-xp">0</span> / 200</div>
+    </div>
 
-        <div style="position:absolute; top: 10px; right: 10px; pointer-events: auto;">
-            <button class="btn" onclick="toggleCraft()">KITCHEN 🍳</button>
-        </div>
+    <div id="log">SYSTEM READY</div>
 
-        <div id="craft-panel">
-            <h3>RECIPES</h3>
-            <p>Juice: 1x 🍉 <button class="btn" onclick="craft('juice')">MAKE</button></p>
-            <p>Salad: 1x 🍉 + 1x ☁️ <button class="btn" onclick="craft('salad')">MAKE</button></p>
-            <button class="btn" style="background:#e74c3c" onclick="toggleCraft()">CLOSE</button>
-        </div>
+    <div id="inventory-bar">
+        <div class="slot">🪵<span class="slot-count" id="inv-wood">0</span></div>
+        <div class="slot">🪨<span class="slot-count" id="inv-rock">0</span></div>
+        <div class="slot">⛓️<span class="slot-count" id="inv-iron">0</span></div>
+        <div class="slot">☁️<span class="slot-count" id="inv-cotton">0</span></div>
+        <div class="slot">🍉<span class="slot-count" id="inv-melon">0</span></div>
+        <div class="slot">✨<span class="slot-count" id="inv-golden">0</span></div>
+        <div class="slot">🍹<span class="slot-count" id="inv-juice">0</span></div>
+        <div class="slot">🥗<span class="slot-count" id="inv-salad">0</span></div>
+        <button class="btn" style="margin-left:10px" onclick="openCrafting()">🍳<br>CRAFT</button>
+    </div>
 
-        <div id="inventory-bar">
-            <div class="slot">🪨<span class="slot-count" id="count-rock">0</span></div>
-            <div class="slot">☁️<span class="slot-count" id="count-cotton">0</span></div>
-            <div class="slot">🍉<span class="slot-count" id="count-melon">0</span></div>
-            <div class="slot" onclick="eat('juice')">🍹<span class="slot-count" id="count-juice">0</span></div>
-            <div class="slot" onclick="eat('salad')">🥗<span class="slot-count" id="count-salad">0</span></div>
+    <div id="crafting-window">
+        <h2 style="margin-top:0; color:var(--ui-accent)">KITCHEN & FORGE</h2>
+        <div class="recipe-card">
+            <div>🍹 WM Juice<br><small>1x 🍉</small></div>
+            <button class="btn" onclick="craft('juice')">COOK</button>
         </div>
+        <div class="recipe-card">
+            <div>🥗 Super Salad<br><small>1x 🍉 + 1x ☁️</small></div>
+            <button class="btn" onclick="craft('salad')">COOK</button>
+        </div>
+        <div class="recipe-card">
+            <div>🔨 Iron Pickaxe<br><small>2x 🪵 + 3x ⛓️</small></div>
+            <button class="btn" onclick="craft('pick')">FORGE</button>
+        </div>
+        <div class="recipe-card" style="border-color:gold">
+            <div>🏺 Golden Jam<br><small>2x ✨ + 1x ☁️</small></div>
+            <button class="btn" onclick="craft('jam')">COOK</button>
+        </div>
+        <button class="btn btn-close" onclick="closeCrafting()">CLOSE</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // --- GAME STATE ---
-        const inv = { rock: 0, cotton: 0, melon: 0, juice: 0, salad: 0 };
-        let xp = 0, lvl = 1;
+        // --- GAME DATA ---
+        const state = {
+            inv: { wood: 0, rock: 0, iron: 0, cotton: 0, melon: 0, golden: 0, juice: 0, salad: 0, jam: 0 },
+            xp: 0, lvl: 1,
+            power: 1 // Increases with crafted pickaxe
+        };
+
+        const config = {
+            types: {
+                TREE: 'wood',
+                ROCK: 'rock',
+                IRON: 'iron',
+                COTTON: 'cotton',
+                SOIL: 'soil',
+                CROP: 'melon'
+            }
+        };
 
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x40a6e0);
-        
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 10, 12);
+        scene.background = new THREE.Color(0x7fb3d5);
+        scene.fog = new THREE.Fog(0x7fb3d5, 20, 50);
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(10, 15, 20);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        const ambient = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambient);
-        const sun = new THREE.DirectionalLight(0xffffff, 0.6); sun.position.set(10, 20, 10); scene.add(sun);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+        sun.position.set(10, 20, 10);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-        const clickableObjects = [];
+        // --- WORLD GENERATION ---
+        const clickables = [];
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(40, 1, 40), new THREE.MeshLambertMaterial({color: 0x48ae64}));
+        floor.position.y = -0.5;
+        floor.receiveShadow = true;
+        scene.add(floor);
 
-        // --- GROUND & FARM ---
-        const ground = new THREE.Mesh(new THREE.BoxGeometry(30, 1, 30), new THREE.MeshLambertMaterial({color: 0x56a04e}));
-        ground.position.y = -0.5;
-        scene.add(ground);
+        function createVoxel(type, x, z, data = {}) {
+            let mesh;
+            const group = new THREE.Group();
 
-        const soil = new THREE.Mesh(new THREE.BoxGeometry(8, 1.1, 8), new THREE.MeshLambertMaterial({color: 0x4b342a}));
-        soil.position.set(0, -0.5, 3);
+            if (type === 'wood') {
+                const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.5, 0.8), new THREE.MeshLambertMaterial({color: 0x5d4037}));
+                const leaves = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), new THREE.MeshLambertMaterial({color: 0x2d5a27}));
+                leaves.position.y = 2; trunk.castShadow = true;
+                group.add(trunk, leaves);
+                data.hp = 4;
+            } else if (type === 'rock') {
+                mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8), new THREE.MeshLambertMaterial({color: 0x888888}));
+                group.add(mesh);
+                data.hp = 3;
+            } else if (type === 'iron') {
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.7), new THREE.MeshLambertMaterial({color: 0x34495e}));
+                const glint = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshLambertMaterial({color: 0xecf0f1}));
+                glint.position.set(0.3, 0.3, 0.3); group.add(mesh, glint);
+                data.hp = 5;
+            } else if (type === 'cotton') {
+                const puff = new THREE.Mesh(new THREE.SphereGeometry(0.4, 6, 6), new THREE.MeshLambertMaterial({color: 0xffffff}));
+                group.add(puff);
+                data.hp = 1;
+            }
+
+            group.position.set(x, 0.5, z);
+            group.userData = { ...data, type };
+            scene.add(group);
+            clickables.push(group);
+        }
+
+        // Zones
+        const soil = new THREE.Mesh(new THREE.BoxGeometry(10, 1.1, 10), new THREE.MeshLambertMaterial({color: 0x3d2b1f}));
+        soil.position.set(0, -0.5, 0);
         soil.userData = { type: 'soil' };
         scene.add(soil);
-        clickableObjects.push(soil);
+        clickables.push(soil);
 
-        // --- SPAWN SYSTEM ---
-        function createItem(type, x, z) {
-            let geo, mat;
-            if(type === 'rock') {
-                geo = new THREE.DodecahedronGeometry(0.7, 0);
-                mat = new THREE.MeshLambertMaterial({color: 0x888888});
-            } else if(type === 'cotton') {
-                geo = new THREE.SphereGeometry(0.5, 4, 4);
-                mat = new THREE.MeshLambertMaterial({color: 0xffffff});
-            } else if(type === 'melon') {
-                geo = new THREE.BoxGeometry(0.8, 0.6, 0.9);
-                mat = new THREE.MeshLambertMaterial({color: 0x1d8348});
-            }
+        // Populate items
+        for(let i=0; i<8; i++) createVoxel('wood', -10-Math.random()*5, -10+Math.random()*20);
+        for(let i=0; i<8; i++) createVoxel('rock', 10+Math.random()*5, -10+Math.random()*20);
+        for(let i=0; i<5; i++) createVoxel('iron', 12+Math.random()*3, 5+Math.random()*10);
+        for(let i=0; i<10; i++) createVoxel('cotton', -5+Math.random()*10, -10-Math.random()*5);
 
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, 0.5, z);
-            mesh.userData = { type: type, health: (type === 'rock' ? 3 : 1) };
-            
-            scene.add(mesh);
-            clickableObjects.push(mesh);
-        }
-
-        // Spawn initially
-        for(let i=0; i<5; i++){
-            createItem('rock', Math.random()*14-7, Math.random()*-6-2);
-            createItem('cotton', Math.random()*14-7, Math.random()*-6-2);
-        }
-
-        // --- CORE MECHANICS ---
-        function log(txt) {
-            const el = document.getElementById('action-log');
-            el.innerText = txt;
-            setTimeout(()=> { if(el.innerText === txt) el.innerText = ""; }, 2000);
-        }
-
-        function handleHit(obj, point) {
-            // Flash Effect
-            const originalColor = obj.material.color.getHex();
-            obj.material.color.setHex(0xffffff);
-            setTimeout(() => obj.material.color.setHex(originalColor), 100);
-
-            if(obj.userData.type === 'soil') {
-                log("PLANTED SEED 🍉");
-                const plant = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshLambertMaterial({color: 0x2ecc71}));
-                plant.position.set(point.x, 0.1, point.z);
-                plant.userData = { type: 'growing', age: 0 };
-                scene.add(plant);
-                clickableObjects.push(plant);
-                return;
-            }
-
-            if(obj.userData.type === 'growing') {
-                if(obj.userData.age >= 100) {
-                    inv.melon++; log("+1 WATERMELON!");
-                    removeObj(obj);
-                } else {
-                    log("STILL GROWING...");
-                }
-                updateUI();
-                return;
-            }
-
-            // Normal harvesting
-            obj.userData.health--;
-            if(obj.userData.health <= 0) {
-                inv[obj.userData.type]++;
-                log("GATHERED " + obj.userData.type.toUpperCase());
-                const t = obj.userData.type;
-                removeObj(obj);
-                setTimeout(() => createItem(t, Math.random()*14-7, Math.random()*-6-2), 3000);
-                addXP(25);
-            }
-            updateUI();
-        }
-
-        function removeObj(obj) {
-            scene.remove(obj);
-            const idx = clickableObjects.indexOf(obj);
-            if(idx > -1) clickableObjects.splice(idx, 1);
-        }
-
-        function addXP(amt) {
-            xp += amt;
-            if(xp >= 100) { xp = 0; lvl++; log("LEVEL UP! 🌟"); }
-            updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('count-rock').innerText = inv.rock;
-            document.getElementById('count-cotton').innerText = inv.cotton;
-            document.getElementById('count-melon').innerText = inv.melon;
-            document.getElementById('count-juice').innerText = inv.juice;
-            document.getElementById('count-salad').innerText = inv.salad;
-            document.getElementById('xp').innerText = xp;
-            document.getElementById('lvl').innerText = lvl;
-        }
-
-        // --- CONTROLS ---
+        // --- INTERACTION LOGIC ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        function onTouch(e) {
-            // Logic to prevent clicking through UI
+        function handleTap(e) {
             if (e.target.tagName !== "CANVAS") return;
-
-            const t = e.changedTouches ? e.changedTouches[0] : e;
-            mouse.x = (t.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(t.clientY / window.innerHeight) * 2 + 1;
+            const touch = e.changedTouches ? e.changedTouches[0] : e;
+            mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(clickableObjects);
+            const hits = raycaster.intersectObjects(clickables, true);
 
-            if(intersects.length > 0) {
-                handleHit(intersects[0].object, intersects[0].point);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.type) obj = obj.parent;
+                processClick(obj, hits[0].point);
             }
         }
 
-        window.toggleCraft = () => {
-            const panel = document.getElementById('craft-panel');
-            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-        };
+        function processClick(obj, point) {
+            const type = obj.userData.type;
+
+            // Flash effect
+            const originalY = obj.position.y;
+            obj.position.y += 0.2;
+            setTimeout(() => obj.position.y = originalY, 100);
+
+            if (type === 'soil') {
+                plant(point);
+            } else if (type === 'crop') {
+                if (obj.userData.stage >= 3) harvest(obj);
+                else addLog("Still growing...");
+            } else {
+                obj.userData.hp -= state.power;
+                spawnParticles(point, obj.userData.type === 'wood' ? 0x5d4037 : 0xffffff);
+                if (obj.userData.hp <= 0) {
+                    collect(obj);
+                }
+            }
+        }
+
+        function plant(pt) {
+            const group = new THREE.Group();
+            const seed = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.2), new THREE.MeshLambertMaterial({color: 0x1d8348}));
+            group.add(seed);
+            group.position.set(pt.x, 0.1, pt.z);
+            group.userData = { type: 'crop', stage: 0, timer: 0 };
+            scene.add(group);
+            clickables.push(group);
+            addLog("Planted Melon");
+        }
+
+        function harvest(obj) {
+            const isGolden = Math.random() > 0.9;
+            if(isGolden) {
+                state.inv.golden++;
+                addLog("✨ RARE GOLDEN MELON!");
+            } else {
+                state.inv.melon++;
+                addLog("+1 Melon");
+            }
+            addXP(40);
+            cleanup(obj);
+            updateUI();
+        }
+
+        function collect(obj) {
+            const type = obj.userData.type;
+            state.inv[type]++;
+            addLog(`+1 ${type}`);
+            addXP(15);
+            cleanup(obj);
+            // Respawn later
+            setTimeout(() => {
+                createVoxel(type, obj.position.x, obj.position.z);
+            }, 10000);
+            updateUI();
+        }
+
+        function spawnParticles(pos, color) {
+            for(let i=0; i<5; i++) {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshLambertMaterial({color}));
+                p.position.copy(pos);
+                scene.add(p);
+                const vel = new THREE.Vector3((Math.random()-0.5)*0.2, 0.2, (Math.random()-0.5)*0.2);
+                const anim = () => {
+                    p.position.add(vel);
+                    vel.y -= 0.01;
+                    p.scale.multiplyScalar(0.9);
+                    if(p.scale.x > 0.01) requestAnimationFrame(anim);
+                    else scene.remove(p);
+                };
+                anim();
+            }
+        }
+
+        // --- UTILS ---
+        function cleanup(obj) {
+            scene.remove(obj);
+            const idx = clickables.indexOf(obj);
+            if(idx > -1) clickables.splice(idx, 1);
+        }
+
+        function addLog(msg) {
+            const el = document.getElementById('log');
+            el.innerText = msg;
+        }
+
+        function addXP(amt) {
+            state.xp += amt;
+            if(state.xp >= 200) {
+                state.xp = 0; state.lvl++; addLog("LEVEL UP!! 🌟");
+            }
+        }
+
+        function updateUI() {
+            for(let key in state.inv) {
+                const el = document.getElementById(`inv-${key}`);
+                if(el) el.innerText = state.inv[key];
+            }
+            document.getElementById('ui-lvl').innerText = state.lvl;
+            document.getElementById('ui-xp').innerText = state.xp;
+        }
+
+        // --- CRAFTING LOGIC ---
+        window.openCrafting = () => document.getElementById('crafting-window').style.display = 'block';
+        window.closeCrafting = () => document.getElementById('crafting-window').style.display = 'none';
 
         window.craft = (item) => {
-            if(item === 'juice' && inv.melon >= 1) {
-                inv.melon--; inv.juice++; log("MIXED JUICE 🍹");
-            } else if(item === 'salad' && inv.melon >= 1 && inv.cotton >= 1) {
-                inv.melon--; inv.cotton--; inv.salad++; log("MADE SALAD 🥗");
+            const { inv } = state;
+            if (item === 'juice' && inv.melon >= 1) {
+                inv.melon--; inv.juice++; addLog("Mixed Juice!");
+            } else if (item === 'salad' && inv.melon >= 1 && inv.cotton >= 1) {
+                inv.melon--; inv.cotton--; inv.salad++; addLog("Chef Skills! Salad made.");
+            } else if (item === 'pick' && inv.wood >= 2 && inv.iron >= 3) {
+                inv.wood -= 2; inv.iron -= 3; state.power += 2; addLog("Pickaxe Forged! (3x Mine Speed)");
+            } else if (item === 'jam' && inv.golden >= 2 && inv.cotton >= 1) {
+                inv.golden -= 2; inv.cotton--; inv.juice += 5; addLog("Divine Jam Made!");
             } else {
-                log("NOT ENOUGH ITEMS!");
+                addLog("MISSING MATERIALS");
             }
             updateUI();
         };
 
-        window.eat = (item) => {
-            if(inv[item] > 0) {
-                inv[item]--;
-                log("YUM! Delicious.");
-                updateUI();
-            }
-        };
-
-        window.addEventListener('mousedown', onTouch);
-        window.addEventListener('touchstart', onTouch);
-
-        // --- GAME LOOP ---
+        // --- LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            
-            // Handle Watermelon Growth
-            clickableObjects.forEach(obj => {
-                if(obj.userData.type === 'growing' && obj.userData.age < 100) {
-                    obj.userData.age += 0.2;
-                    const s = 1 + (obj.userData.age / 50);
-                    obj.scale.set(s, s, s);
-                    if(obj.userData.age >= 100) obj.material.color.set(0x1d8348);
+
+            clickables.forEach(obj => {
+                if (obj.userData.type === 'crop') {
+                    obj.userData.timer += 0.01;
+                    if (obj.userData.stage < 3 && obj.userData.timer > 2) {
+                        obj.userData.stage++;
+                        obj.userData.timer = 0;
+                        const s = obj.userData.stage;
+                        // Visual update
+                        obj.children[0].scale.set(1+s, 1+s, 1+s);
+                        if(s === 1) obj.children[0].material.color.set(0x27ae60);
+                        if(s === 3) obj.children[0].material.color.set(0x1d8348);
+                    }
                 }
             });
 
             renderer.render(scene, camera);
         }
 
+        window.addEventListener('touchstart', handleTap);
+        window.addEventListener('mousedown', handleTap);
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -281,6 +366,7 @@
         });
 
         animate();
+        updateUI();
     </script>
 </body>
 </html>
