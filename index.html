@@ -5,16 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Cozy Liquid</title>
+    <title>Liquid RGB</title>
     <style>
         :root {
-            /* Warm "Sunset & Oat" Palette */
-            --bg: #1a1614;
-            --color1: #ff8c61; /* Soft Peach */
-            --color2: #ce5a5a; /* Muted Terracotta */
-            --color3: #4a5d4a; /* Sage Dust */
-            --color4: #e8cca6; /* Creamy Sand */
-            --glass: rgba(255, 255, 255, 0.03);
+            --bg: #080808;
+            --speed: 30s;
         }
 
         body, html {
@@ -28,8 +23,8 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* The Liquid Container - Uses the SVG filter defined below */
-        .liquid-container {
+        /* The Liquid Gooey Effect */
+        .stage {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -37,88 +32,89 @@
             overflow: hidden;
         }
 
-        /* The Grain Texture Overlay (Makes it look like high-end paper/film) */
+        /* Large RGB Blobs */
+        .blob {
+            position: absolute;
+            width: 65vw;
+            height: 65vw;
+            border-radius: 50%;
+            opacity: 0.8;
+            /* Cycles through the RGB spectrum */
+            animation: 
+                move 35s infinite linear alternate,
+                rgb-cycle 15s infinite linear;
+            filter: blur(30px);
+            will-change: transform;
+        }
+
+        .blob:nth-child(2) {
+            width: 75vw; height: 75vw;
+            right: -10%; top: 10%;
+            animation-duration: 45s, 12s;
+            animation-delay: -5s;
+        }
+
+        .blob:nth-child(3) {
+            width: 55vw; height: 55vw;
+            left: 10%; bottom: -5%;
+            animation-duration: 40s, 18s;
+            animation-delay: -2s;
+        }
+
+        /* Ultra-Smooth Movement */
+        @keyframes move {
+            0% { transform: translate(-20%, -20%) rotate(0deg) scale(1); }
+            33% { transform: translate(20%, 10%) rotate(120deg) scale(1.1); }
+            66% { transform: translate(-10%, 30%) rotate(240deg) scale(0.9); }
+            100% { transform: translate(15%, -15%) rotate(360deg) scale(1.05); }
+        }
+
+        /* The "Nice" RGB Shift: Uses HSL for buttery smooth transitions */
+        @keyframes rgb-cycle {
+            0% { background: hsl(0, 80%, 60%); }
+            20% { background: hsl(72, 80%, 60%); }
+            40% { background: hsl(144, 80%, 60%); }
+            60% { background: hsl(216, 80%, 60%); }
+            80% { background: hsl(288, 80%, 60%); }
+            100% { background: hsl(360, 80%, 60%); }
+        }
+
+        /* Film Grain for a "Realistic" non-digital feel */
         .grain {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.15;
+            opacity: 0.12;
             pointer-events: none;
             z-index: 10;
+            mix-blend-mode: overlay;
         }
 
-        /* Large Realistic Blobs */
-        .blob {
-            position: absolute;
-            background: linear-gradient(135deg, var(--color1), var(--color2));
-            width: 70vw;
-            height: 70vw;
-            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-            filter: blur(40px);
-            opacity: 0.7;
-            animation: 
-                move 35s infinite ease-in-out alternate,
-                morph 18s infinite ease-in-out alternate;
-            will-change: transform, border-radius;
-        }
-
-        .blob:nth-child(2) {
-            background: linear-gradient(135deg, var(--color3), var(--color4));
-            width: 80vw;
-            height: 80vw;
-            right: -10%;
-            top: -10%;
-            animation-duration: 45s, 25s;
-            opacity: 0.5;
-        }
-
-        .blob:nth-child(3) {
-            background: radial-gradient(circle, var(--color2), transparent);
-            width: 60vw;
-            height: 60vw;
-            left: 20%;
-            bottom: -20%;
-            animation-duration: 40s, 22s;
-            opacity: 0.6;
-        }
-
-        /* Premium Glassmorphism Card (Centered focus) */
-        .glass-overlay {
+        /* Refractive Glass Overlay */
+        .glass {
             position: relative;
-            width: 85%;
-            height: 85%;
-            background: var(--glass);
-            backdrop-filter: blur(80px);
-            -webkit-backdrop-filter: blur(80px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 60px; /* Squircle-like radius */
+            width: 90%;
+            height: 90%;
+            background: rgba(255, 255, 255, 0.015);
+            backdrop-filter: blur(40px) saturate(1.5);
+            -webkit-backdrop-filter: blur(40px) saturate(1.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 50px;
             z-index: 5;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
         }
 
-        @keyframes move {
-            0% { transform: translate(-10%, -10%) rotate(0deg); }
-            50% { transform: translate(20%, 15%) rotate(90deg); }
-            100% { transform: translate(-5%, 20%) rotate(180deg); }
-        }
-
-        @keyframes morph {
-            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-        }
-
-        #hint {
+        #ui {
             position: absolute;
-            bottom: 40px;
-            color: rgba(255,255,255,0.2);
+            bottom: 30px;
+            color: rgba(255,255,255,0.15);
             font-family: -apple-system, sans-serif;
-            font-weight: 300;
-            letter-spacing: 1px;
-            font-size: 12px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             z-index: 20;
-            transition: opacity 1s;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -126,46 +122,48 @@
 
     <div class="grain"></div>
     
-    <div class="liquid-container">
+    <div class="stage">
         <div class="blob"></div>
         <div class="blob"></div>
         <div class="blob"></div>
     </div>
 
-    <div class="glass-overlay"></div>
+    <div class="glass"></div>
 
-    <div id="hint">Tap to keep screen awake</div>
+    <div id="ui">Liquid Pro RGB • Tap to wake</div>
 
-    <!-- The "Gooey" SVG Filter: This makes the shapes melt together -->
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
         <defs>
             <filter id="gooey">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="25" result="blur" />
-                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -15" result="goo" />
-                <feBlend in="SourceGraphic" in2="goo" />
+                <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="blur" />
+                <!-- The matrix below creates the "merging" liquid effect -->
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 35 -15" />
             </filter>
         </defs>
     </svg>
 
     <script>
-        // Screen Wake Lock to keep the iPad on
+        // Keep Screen Awake
         let wakeLock = null;
         const requestWakeLock = async () => {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
-                document.getElementById('hint').style.opacity = '0';
-            } catch (err) {
-                console.log(err);
-            }
+                document.getElementById('ui').style.opacity = '0';
+            } catch (err) {}
         };
 
-        window.addEventListener('click', requestWakeLock);
-        
-        // Re-enable if the user leaves and comes back
-        document.addEventListener('visibilitychange', () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                requestWakeLock();
-            }
+        window.addEventListener('mousedown', requestWakeLock);
+        window.addEventListener('touchstart', requestWakeLock);
+
+        // Toggle RGB Intensity on double tap
+        let intense = false;
+        window.addEventListener('dblclick', () => {
+            intense = !intense;
+            const blobs = document.querySelectorAll('.blob');
+            blobs.forEach(b => {
+                b.style.filter = intense ? 'blur(10px)' : 'blur(30px)';
+                b.style.opacity = intense ? '1' : '0.8';
+            });
         });
     </script>
 </body>
