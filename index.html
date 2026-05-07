@@ -3,67 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Relational AI</title>
+    <title>Nexus: Sentient Logic Model</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #chat-box { width: 90%; max-width: 500px; height: 60vh; background: #1e1e1e; border-radius: 10px; overflow-y: auto; padding: 20px; border: 1px solid #333; margin-bottom: 10px; }
-        .msg { margin-bottom: 15px; line-height: 1.5; padding: 8px 12px; border-radius: 8px; max-width: 80%; }
-        .user { background: #0056b3; align-self: flex-end; margin-left: auto; }
-        .ai { background: #333; align-self: flex-start; }
-        #input-area { width: 90%; max-width: 500px; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: none; background: #222; color: white; }
-        button { padding: 10px 20px; background: #0056b3; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .stats { font-size: 0.8rem; color: #777; margin-top: 10px; }
-        #clear-btn { background: #441111; font-size: 0.7rem; margin-left: 10px; }
+        :root { --glow: #00f2ff; --bg: #05070a; }
+        body { font-family: 'Courier New', monospace; background: var(--bg); color: #8ecae6; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        
+        #monitor { width: 90%; max-width: 600px; background: rgba(10, 15, 25, 0.9); border: 1px solid #1a3a4a; border-radius: 5px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 0.8rem; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); }
+        .stat-val { color: var(--glow); text-shadow: 0 0 5px var(--glow); }
+
+        #chat-window { width: 90%; max-width: 600px; height: 50vh; overflow-y: auto; padding: 20px; border-left: 2px solid #1a3a4a; margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 10px; border-radius: 4px; line-height: 1.4; position: relative; }
+        .user { align-self: flex-end; color: #fff; background: rgba(0, 242, 255, 0.1); border-right: 3px solid var(--glow); }
+        .ai { align-self: flex-start; background: rgba(255, 255, 255, 0.05); border-left: 3px solid #666; }
+        
+        #input-container { width: 90%; max-width: 600px; display: flex; gap: 10px; }
+        input { flex: 1; background: #000; border: 1px solid #1a3a4a; color: var(--glow); padding: 15px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--glow); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
+        button { background: #1a3a4a; color: white; border: none; padding: 0 25px; cursor: pointer; text-transform: uppercase; font-weight: bold; }
+        button:hover { background: var(--glow); color: #000; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #1a3a4a; }
     </style>
 </head>
 <body>
 
-    <h2>Nexus Relational AI</h2>
-    <div id="chat-box">
-        <div class="msg ai">I have no pre-programmed answers. Teach me things by talking to me. My brain is empty until you speak.</div>
+    <div id="monitor">
+        <div>MOOD: <span id="mood" class="stat-val">Neutral</span></div>
+        <div>CURIOSITY: <span id="curiosity" class="stat-val">0%</span></div>
+        <div>BRAIN_NODES: <span id="nodes" class="stat-val">0</span></div>
     </div>
 
-    <form id="input-area">
-        <input type="text" id="user-input" placeholder="Say something..." autocomplete="off">
-        <button type="submit">Send</button>
+    <div id="chat-window">
+        <div class="msg ai">System Online. My mind is currently blank. Speak to me so I may begin existing.</div>
+    </div>
+
+    <form id="input-container">
+        <input type="text" id="user-input" placeholder="Initiate interaction..." autocomplete="off">
+        <button type="submit">Transmit</button>
     </form>
-
-    <div class="stats">
-        Known Associations: <span id="conn-count">0</span>
-        <button id="clear-btn" onclick="CustomAI.forget()">Reset Brain</button>
-    </div>
 
     <script src="ai-model.js"></script>
     <script>
-        const chatBox = document.getElementById('chat-box');
-        const form = document.getElementById('input-area');
+        const chat = document.getElementById('chat-window');
+        const form = document.getElementById('input-container');
         const input = document.getElementById('user-input');
-        const connDisplay = document.getElementById('conn-count');
 
-        function updateStats() {
-            connDisplay.innerText = CustomAI.getMemorySize();
+        function updateUI() {
+            const stats = CustomAI.getStats();
+            document.getElementById('mood').innerText = stats.mood;
+            document.getElementById('curiosity').innerText = Math.floor(stats.curiosity * 100) + "%";
+            document.getElementById('nodes').innerText = stats.nodeCount;
         }
 
         form.onsubmit = (e) => {
             e.preventDefault();
-            const val = input.value.trim();
-            if(!val) return;
+            const text = input.value.trim();
+            if(!text) return;
 
-            // User Message UI
-            chatBox.innerHTML += `<div class="msg user">${val}</div>`;
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
             input.value = "";
+            chat.scrollTop = chat.scrollHeight;
 
-            // AI Response Logic
+            // AI Processing simulation
             setTimeout(() => {
-                const response = CustomAI.think(val);
-                chatBox.innerHTML += `<div class="msg ai">${response}</div>`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                updateStats();
-            }, 500);
+                const response = CustomAI.think(text);
+                chat.innerHTML += `<div class="msg ai">${response}</div>`;
+                chat.scrollTop = chat.scrollHeight;
+                updateUI();
+            }, 600);
         };
-
-        updateStats();
+        updateUI();
     </script>
 </body>
 </html>
