@@ -1,91 +1,79 @@
-/**
- * Custom Generative AI Model
- * Logic: Word-Association Markov Network
- */
 const CustomAI = (function() {
-    // This is the model's "Neural Network" - a map of word relationships
-    let brain = {};
-    
-    // Initial Seed Data so it knows basic English structure
-    const initialKnowledge = [
-        "hello how are you today",
-        "i am a custom artificial intelligence",
-        "i learn from every message you send me",
-        "tell me more about yourself",
-        "that is very interesting",
-        "what do you want to talk about",
-        "i can generate sentences on my own",
-        "the more we talk the smarter i become"
-    ];
+    // Load brain from localStorage or start empty
+    let memory = JSON.parse(localStorage.getItem('ai_brain')) || {
+        relationships: {}, // How words relate to each other
+        lastInput: ""      // To learn cause-and-effect
+    };
 
-    // Function to "Learn" a sentence
-    function ingest(sentence) {
-        const words = sentence.toLowerCase().replace(/[^\w\s]/g, '').split(' ');
-        if (words.length < 2) return;
-
-        for (let i = 0; i < words.length - 1; i++) {
-            const current = words[i];
-            const next = words[i + 1];
-
-            if (!brain[current]) brain[current] = {};
-            if (!brain[current][next]) brain[current][next] = 0;
-            
-            // Strengthen the connection between these words
-            brain[current][next]++;
-        }
+    function save() {
+        localStorage.setItem('ai_brain', JSON.stringify(memory));
     }
 
-    // Initialize with seed data
-    initialKnowledge.forEach(ingest);
+    function tokenize(text) {
+        return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+    }
 
     return {
-        // Main function to generate a new sentence
-        generateResponse: function(userInput) {
-            // First, learn from the user's input (Real-time learning!)
-            ingest(userInput);
-
-            const inputWords = userInput.toLowerCase().replace(/[^\w\s]/g, '').split(' ');
+        think: function(input) {
+            const words = tokenize(input);
             
-            // Pick a starting word: either a word from user input or a random word from brain
-            let currentWord = inputWords.find(w => brain[w]) || 
-                               Object.keys(brain)[Math.floor(Math.random() * Object.keys(brain).length)];
-            
-            let result = [currentWord];
-            let maxSentenceLength = 12;
-
-            for (let i = 0; i < maxSentenceLength; i++) {
-                const possibilities = brain[currentWord];
-                if (!possibilities) break;
-
-                // Weighted Random Selection: pick next word based on frequency
-                const nextWords = Object.keys(possibilities);
-                const totalWeight = Object.values(possibilities).reduce((a, b) => a + b, 0);
-                
-                let randomValue = Math.random() * totalWeight;
-                let selectedWord = nextWords[0];
-
-                for (const word in possibilities) {
-                    randomValue -= possibilities[word];
-                    if (randomValue <= 0) {
-                        selectedWord = word;
-                        break;
+            // 1. LEARNING PHASE
+            // Link words in the current sentence to each other
+            words.forEach(word => {
+                if (!memory.relationships[word]) memory.relationships[word] = [];
+                words.forEach(related => {
+                    if (word !== related) {
+                        memory.relationships[word].push(related);
                     }
-                }
+                });
+            });
 
-                result.push(selectedWord);
-                currentWord = selectedWord;
-
-                // Simple probability to end sentence early
-                if (Math.random() > 0.8) break;
+            // Link the last thing said to the current thing (sequence learning)
+            if (memory.lastInput) {
+                const prevWords = tokenize(memory.lastInput);
+                prevWords.forEach(prev => {
+                    if (!memory.relationships[prev]) memory.relationships[prev] = [];
+                    memory.relationships[prev].push(...words);
+                });
             }
 
-            // Cleanup and format
-            let finalOutput = result.join(' ');
-            return finalOutput.charAt(0).toUpperCase() + finalOutput.slice(1) + ".";
+            // 2. RESPONSE GENERATION PHASE
+            let possibleResponses = [];
+            
+            words.forEach(word => {
+                if (memory.relationships[word]) {
+                    possibleResponses.push(...memory.relationships[word]);
+                }
+            });
+
+            // Store current input for next learning cycle
+            memory.lastInput = input;
+            save();
+
+            if (possibleResponses.length === 0) {
+                return "I don't know enough about those words yet. Tell me more.";
+            }
+
+            // 3. SYNTHESIS
+            // Pick the most relevant associated words
+            const uniqueResponses = [...new Set(possibleResponses)];
+            const shuffle = uniqueResponses.sort(() => 0.5 - Math.random());
+            const selection = shuffle.slice(0, 4); // Pick top 4 related concepts
+
+            // Construct a "sentence"
+            const connectors = ["is related to", "makes me think of", "and", "usually involves"];
+            const conn = connectors[Math.floor(Math.random() * connectors.length)];
+            
+            return `Talking about "${words[0]}" ${conn} ${selection.join(', ')}.`;
         },
 
-        getStats: function() {
-            return Object.keys(brain).length;
+        getMemorySize: function() {
+            return Object.keys(memory.relationships).length;
+        },
+
+        forget: function() {
+            localStorage.removeItem('ai_brain');
+            location.reload();
         }
     };
 })();
