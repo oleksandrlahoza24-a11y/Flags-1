@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Void-Hook: The Rolling Knight</title>
+    <title>HELLDIVERS: MOBILE COMMAND</title>
     <style>
         :root {
-            --hk-blue: #1a1f2c;
-            --hk-glow: #7ee7ff;
-            --hk-white: #e0faff;
+            --hd-yellow: #ffeb3b;
+            --hd-blue: #00bcd4;
+            --hd-red: #f44336;
+            --hd-bg: #0a0a0a;
         }
 
         body, html {
@@ -17,17 +18,26 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #050508;
+            background-color: var(--hd-bg);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
             touch-action: none; /* Prevents iPad gestures from interfering */
         }
 
-        canvas {
-            display: block;
+        #game-container {
+            position: relative;
             width: 100vw;
             height: 100vh;
         }
 
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #1a1a1a 0%, #050505 100%);
+        }
+
+        /* --- UI OVERLAY --- */
         #ui-layer {
             position: absolute;
             top: 0;
@@ -35,587 +45,635 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            user-select: none;
+            color: white;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
         }
 
-        .game-state {
+        .hud-element {
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        /* Top HUD */
+        #mission-info {
+            top: 20px;
+            left: 20px;
+            border-left: 4px solid var(--hd-yellow);
+            padding-left: 10px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        #timer {
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: var(--hd-yellow);
+        }
+
+        /* Bottom Controls */
+        #joystick-container {
+            bottom: 40px;
+            left: 40px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: var(--hd-yellow);
+            border-radius: 50%;
+            top: 45px;
+            left: 45px;
+            box-shadow: 0 0 15px var(--hd-yellow);
+        }
+
+        /* Stratagem System */
+        #stratagem-btn {
+            bottom: 40px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            background: rgba(0,0,0,0.8);
+            border: 3px solid var(--hd-yellow);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--hd-yellow);
+            font-size: 12px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(255, 235, 59, 0.5);
+        }
+
+        #stratagem-menu {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            text-align: center;
-            color: var(--hk-white);
+            width: 300px;
+            height: 300px;
+            background: rgba(0,0,0,0.9);
+            border: 2px solid var(--hd-yellow);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
             pointer-events: auto;
-            transition: opacity 0.5s ease;
+            z-index: 100;
         }
 
-        h1 {
-            font-size: 3rem;
-            letter-spacing: 10px;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 20px var(--hk-glow);
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
         }
 
-        p {
-            font-size: 1.2rem;
-            opacity: 0.8;
-            margin-bottom: 2rem;
-        }
-
-        .btn {
+        .d-btn {
             background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--hk-glow);
-            color: var(--hk-white);
+            border: 1px solid var(--hd-yellow);
+            color: var(--hd-yellow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* Feedback Effects */
+        .shake {
+            animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        #overlay-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .btn-main {
+            margin-top: 20px;
             padding: 15px 40px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
-        }
-
-        .btn:active {
-            background: var(--hk-glow);
-            color: var(--hk-blue);
-        }
-
-        .hidden {
-            display: none !important;
-            opacity: 0;
-        }
-
-        #hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: var(--hk-glow);
-            font-size: 1.5rem;
+            background: var(--hd-yellow);
+            color: black;
+            border: none;
             font-weight: bold;
-            text-shadow: 0 0 10px rgba(126, 231, 255, 0.5);
-        }
-
-        /* Touch Instruction Overlays */
-        .touch-hint {
-            position: absolute;
-            bottom: 40px;
-            color: var(--hk-glow);
-            opacity: 0.4;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-size: 20px;
+            cursor: pointer;
+            pointer-events: auto;
         }
     </style>
 </head>
 <body>
 
+<div id="game-container">
     <canvas id="gameCanvas"></canvas>
-
+    
     <div id="ui-layer">
-        <div id="hud">DISTANCE: 0m</div>
+        <!-- Start/Death Screens -->
+        <div id="overlay-screen">
+            <h1 style="color: var(--hd-yellow); font-size: 48px;">HELLDIVERS</h1>
+            <h3 style="color: white; letter-spacing: 5px;">MOBILE COMMAND</h3>
+            <p style="color: #aaa; max-width: 400px;">Spread managed democracy across the stars. Enter Stratagem codes to call in orbital support.</p>
+            <button class="btn-main" id="start-btn">DIVE INTO HELL</button>
+        </div>
 
-        <!-- Start Screen -->
-        <div id="menu-screen" class="game-state">
-            <h1>VOID HOOK</h1>
-            <p>Roll through the abyss. Hook to the lanterns.</p>
-            <button class="btn" onclick="startGame()">ENTER THE VOID</button>
-            <div style="margin-top: 20px; font-size: 0.8rem; opacity: 0.6;">
-                LEFT SCREEN: MOVE | RIGHT SCREEN: HOOK
+        <!-- Gameplay HUD -->
+        <div id="mission-info" class="hud-element">
+            <div style="font-size: 12px; color: #aaa;">Objective</div>
+            <div id="objective-text">Eliminate Terminid Swarm</div>
+            <div id="ammo-bar" style="width: 100px; height: 5px; background: #333; margin-top: 10px;">
+                <div id="ammo-fill" style="width: 100%; height: 100%; background: var(--hd-yellow);"></div>
             </div>
         </div>
 
-        <!-- Death Screen -->
-        <div id="death-screen" class="game-state hidden">
-            <h1>LOST</h1>
-            <p id="final-score">Distance: 0m</p>
-            <button class="btn" onclick="startGame()">RETRY</button>
+        <div id="timer" class="hud-element">40:00</div>
+
+        <!-- Controls -->
+        <div id="joystick-container" class="hud-element">
+            <div id="joystick-knob"></div>
         </div>
 
-        <div class="touch-hint" style="left: 40px;">[ ROLL ]</div>
-        <div class="touch-hint" style="right: 40px;">[ HOOK ]</div>
+        <div id="stratagem-btn" class="hud-element">
+            HOLD FOR<br>STRATAGEM
+        </div>
+
+        <!-- Stratagem Input Overlay -->
+        <div id="stratagem-menu">
+            <div id="active-stratagem-name" style="color: var(--hd-yellow);">ORBITAL STRIKE</div>
+            <div id="stratagem-sequence" style="font-size: 20px; letter-spacing: 10px;"></div>
+            <div class="dpad">
+                <div></div><div class="d-btn" data-dir="UP">↑</div><div></div>
+                <div class="d-btn" data-dir="LEFT">←</div><div class="d-btn" style="border:none"></div><div class="d-btn" data-dir="RIGHT">→</div>
+                <div></div><div class="d-btn" data-dir="DOWN">↓</div><div></div>
+            </div>
+        </div>
     </div>
+</div>
 
 <script>
 /**
- * VOID-HOOK GAME ENGINE
- * A production-ready implementation of a physics-based "rolling" platformer.
+ * HELLDIVERS: MOBILE COMMAND - CORE ENGINE
+ * Architecture: Entity-Component-System (ECS) inspired game loop.
+ * Modular handling for Input, Rendering, and AI.
  */
 
+// --- CONFIG & STATE ---
+const CONFIG = {
+    PLAYER_SPEED: 4,
+    BULLET_SPEED: 12,
+    ENEMY_SPEED: 2.5,
+    MAX_ENEMIES: 15,
+    SCREEN_SHAKE_DECAY: 0.9,
+    AMMO_CAPACITY: 30,
+    STRATAGEMS: [
+        { name: "ORBITAL STRIKE", code: ["UP", "RIGHT", "DOWN", "DOWN", "DOWN"], type: "offensive" },
+        { name: "REINFORCE", code: ["UP", "DOWN", "RIGHT", "LEFT", "UP"], type: "support" },
+        { name: "SENTRY GUN", code: ["DOWN", "UP", "LEFT", "RIGHT", "RIGHT"], type: "defensive" }
+    ]
+};
+
+const STATE = {
+    playing: false,
+    score: 0,
+    ammo: CONFIG.AMMO_CAPACITY,
+    shake: 0,
+    currentStratagemIdx: 0,
+    inputBuffer: [],
+    lastEnemySpawn: 0,
+    gameOver: false
+};
+
+// --- AUDIO SYSTEM (Synthesized) ---
+const AudioEngine = {
+    ctx: new (window.AudioContext || window.webkitAudioContext)(),
+    
+    playShot() {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    },
+
+    playExplosion() {
+        const bufferSize = this.ctx.sampleRate * 0.5;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(400, this.ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.5);
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+    }
+};
+
+// --- RENDER & CANVAS ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const hud = document.getElementById('hud');
-
-// --- CONFIGURATION ---
-const CONFIG = {
-    GRAVITY: 0.5,
-    FRICTION: 0.98,
-    ROLL_ACCEL: 0.8,
-    MAX_ROLL_SPEED: 8,
-    HOOK_FORCE: 1.2,
-    MAX_HOOK_RANGE: 450,
-    PLAYER_SIZE: 36,
-    CHUNK_WIDTH: 1200,
-    COLORS: {
-        bgTop: '#0a0d14',
-        bgBottom: '#1a1f2c',
-        player: '#ffffff',
-        accent: '#7ee7ff',
-        ground: '#020205'
-    }
+const ui = {
+    overlay: document.getElementById('overlay-screen'),
+    stratagemMenu: document.getElementById('stratagem-menu'),
+    stratagemSequence: document.getElementById('stratagem-sequence'),
+    stratagemName: document.getElementById("active-stratagem-name"),
+    ammoFill: document.getElementById('ammo-fill')
 };
 
-// --- GAME STATE ---
-let gameState = 'MENU';
-let camera = { x: 0, y: 0 };
-let score = 0;
-let chunks = [];
-let particles = [];
-let lastTime = 0;
-
-// --- INPUT HANDLING ---
-const input = {
-    leftSide: false, // For rolling
-    rightSide: false, // For hooking
-    touchX: 0,
-    touchY: 0,
-    moveDir: 0
-};
-
-// Event Listeners for iPad
-window.addEventListener('touchstart', handleTouchStart, { passive: false });
-window.addEventListener('touchmove', handleTouchMove, { passive: false });
-window.addEventListener('touchend', handleTouchEnd, { passive: false });
-
-function handleTouchStart(e) {
-    e.preventDefault();
-    for (let t of e.changedTouches) {
-        if (t.clientX < window.innerWidth / 2) {
-            input.leftSide = true;
-            updateMoveDir(t.clientX);
-        } else {
-            input.rightSide = true;
-            input.touchX = t.clientX;
-            input.touchY = t.clientY;
-            player.tryHook();
-        }
-    }
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
+window.addEventListener('resize', resize);
+resize();
 
-function handleTouchMove(e) {
-    e.preventDefault();
-    for (let t of e.changedTouches) {
-        if (t.clientX < window.innerWidth / 2) {
-            updateMoveDir(t.clientX);
-        } else {
-            input.touchX = t.clientX;
-            input.touchY = t.clientY;
-        }
-    }
+// --- ENTITIES ---
+class Vector {
+    constructor(x, y) { this.x = x; this.y = y; }
+    static distance(a, b) { return Math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2); }
 }
-
-function handleTouchEnd(e) {
-    for (let t of e.changedTouches) {
-        if (t.clientX < window.innerWidth / 2) {
-            input.leftSide = false;
-            input.moveDir = 0;
-        } else {
-            input.rightSide = false;
-            player.releaseHook();
-        }
-    }
-}
-
-function updateMoveDir(x) {
-    // Relative to the left half center
-    const center = window.innerWidth / 4;
-    input.moveDir = x < center ? -1 : 1;
-}
-
-// --- CLASSES ---
 
 class Particle {
-    constructor(x, y, color, size = 2) {
-        this.x = x;
-        this.y = y;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10;
-        this.life = 1.0;
+    constructor(x, y, color, speed, life) {
+        this.x = x; this.y = y;
         this.color = color;
-        this.size = Math.random() * size + 1;
+        this.vx = (Math.random() - 0.5) * speed;
+        this.vy = (Math.random() - 0.5) * speed;
+        this.life = life;
+        this.maxLife = life;
     }
-
     update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.life -= 0.02;
+        this.life--;
     }
-
     draw() {
-        ctx.globalAlpha = this.life;
+        ctx.globalAlpha = this.life / this.maxLife;
         ctx.fillStyle = this.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
-        ctx.fillRect(this.x - camera.x, this.y - camera.y, this.size, this.size);
-        ctx.shadowBlur = 0;
+        ctx.fillRect(this.x, this.y, 3, 3);
         ctx.globalAlpha = 1;
     }
 }
 
-class Player {
-    constructor() {
-        this.reset();
+class Bullet {
+    constructor(x, y, angle) {
+        this.x = x; this.y = y;
+        this.vx = Math.cos(angle) * CONFIG.BULLET_SPEED;
+        this.vy = Math.sin(angle) * CONFIG.BULLET_SPEED;
+        this.active = true;
     }
-
-    reset() {
-        this.x = 200;
-        this.y = 200;
-        this.vx = 0;
-        this.vy = 0;
-        this.rotation = 0;
-        this.hookPoint = null;
-        this.radius = CONFIG.PLAYER_SIZE / 2;
-        this.onGround = false;
-        this.isDead = false;
-    }
-
     update() {
-        if (this.isDead) return;
-
-        // Apply Horizontal Movement (Rolling)
-        if (input.leftSide) {
-            this.vx += input.moveDir * CONFIG.ROLL_ACCEL;
-        }
-        this.vx *= CONFIG.FRICTION;
-
-        // Apply Gravity
-        this.vy += CONFIG.GRAVITY;
-
-        // Hook Physics
-        if (this.hookPoint) {
-            const dx = this.hookPoint.x - this.x;
-            const dy = this.hookPoint.y - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            // Pull towards hook
-            this.vx += (dx / dist) * CONFIG.HOOK_FORCE;
-            this.vy += (dy / dist) * CONFIG.HOOK_FORCE;
-
-            // Spawn rope particles
-            if (Math.random() > 0.8) {
-                particles.push(new Particle(this.x + Math.random()*10, this.y + Math.random()*10, CONFIG.COLORS.accent, 1));
-            }
-        }
-
-        // Limit speed
-        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (speed > 25) { // Terminal velocity
-            this.vx *= 0.95;
-            this.vy *= 0.95;
-        }
-
-        // Update Position
         this.x += this.vx;
         this.y += this.vy;
-
-        // Rotate based on horizontal movement (Rolling effect)
-        this.rotation += this.vx * 0.05;
-
-        // Collision with Terrain
-        this.checkCollisions();
-
-        // Check Death (falling out of world)
-        if (this.y > 1500) {
-            this.die();
-        }
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.active = false;
     }
-
-    checkCollisions() {
-        this.onGround = false;
-        
-        // Simple bounding box collisions with platforms in chunks
-        chunks.forEach(chunk => {
-            chunk.platforms.forEach(p => {
-                // Check if player is within platform horizontal bounds
-                if (this.x + this.radius > p.x && this.x - this.radius < p.x + p.w) {
-                    // Check if player is hitting the top of the platform
-                    if (this.y + this.radius > p.y && this.y - this.radius < p.y + p.h) {
-                        // Collision response
-                        if (this.vy > 0 && this.y < p.y) { // Landing
-                            this.y = p.y - this.radius;
-                            this.vy *= -0.2; // Small bounce
-                            this.onGround = true;
-                        } else if (this.vy < 0 && this.y > p.y + p.h) { // Hit ceiling
-                            this.y = p.y + p.h + this.radius;
-                            this.vy = 0;
-                        } else { // Hit side
-                             this.vx *= -0.5;
-                             this.x = (this.x < p.x) ? p.x - this.radius : p.x + p.w + this.radius;
-                        }
-                    }
-                }
-            });
-        });
-    }
-
-    tryHook() {
-        // Find nearest grapple point (Lantern)
-        let nearest = null;
-        let minDist = CONFIG.MAX_HOOK_RANGE;
-
-        // Convert touch to world coords
-        const worldTouchX = input.touchX + camera.x;
-        const worldTouchY = input.touchY + camera.y;
-
-        chunks.forEach(chunk => {
-            chunk.points.forEach(pt => {
-                const dx = pt.x - worldTouchX;
-                const dy = pt.y - worldTouchY;
-                const distToTouch = Math.sqrt(dx * dx + dy * dy);
-                
-                // If we tapped near a point
-                if (distToTouch < 100) {
-                    const pdx = pt.x - this.x;
-                    const pdy = pt.y - this.y;
-                    const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
-                    
-                    if (pdist < minDist) {
-                        minDist = pdist;
-                        nearest = pt;
-                    }
-                }
-            });
-        });
-
-        if (nearest) {
-            this.hookPoint = nearest;
-            // Impact effect
-            for(let i=0; i<5; i++) particles.push(new Particle(nearest.x, nearest.y, CONFIG.COLORS.accent, 3));
-        }
-    }
-
-    releaseHook() {
-        this.hookPoint = null;
-    }
-
-    die() {
-        if (this.isDead) return;
-        this.isDead = true;
-        for(let i=0; i<30; i++) particles.push(new Particle(this.x, this.y, '#fff', 4));
-        setTimeout(() => endGame(), 1000);
-    }
-
     draw() {
-        if (this.isDead) return;
-
-        ctx.save();
-        ctx.translate(this.x - camera.x, this.y - camera.y);
-        
-        // Draw Hook Line
-        if (this.hookPoint) {
-            ctx.restore(); ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(this.x - camera.x, this.y - camera.y);
-            ctx.lineTo(this.hookPoint.x - camera.x, this.hookPoint.y - camera.y);
-            ctx.strokeStyle = CONFIG.COLORS.accent;
-            ctx.setLineDash([5, 5]);
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.restore(); ctx.save();
-            ctx.translate(this.x - camera.x, this.y - camera.y);
-        }
-
-        ctx.rotate(this.rotation);
-
-        // Draw the Cube (The Knight)
-        ctx.fillStyle = CONFIG.COLORS.ground;
-        ctx.strokeStyle = CONFIG.COLORS.player;
+        ctx.strokeStyle = CONFIG.PLAYER_SPEED > 0 ? '#fff' : '#ff0';
         ctx.lineWidth = 3;
-        ctx.fillRect(-this.radius, -this.radius, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
-        ctx.strokeRect(-this.radius, -this.radius, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
-
-        // Eyes (Hollow Knight Style)
-        ctx.fillStyle = CONFIG.COLORS.player;
         ctx.beginPath();
-        ctx.ellipse(-8, -4, 4, 6, 0, 0, Math.PI * 2);
-        ctx.ellipse(8, -4, 4, 6, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.vx * 0.5, this.y - this.vy * 0.5);
+        ctx.stroke();
+    }
+}
 
+class Enemy {
+    constructor() {
+        // Spawn offscreen
+        const side = Math.floor(Math.random() * 4);
+        if (side === 0) { this.x = Math.random() * canvas.width; this.y = -50; }
+        else if (side === 1) { this.x = canvas.width + 50; this.y = Math.random() * canvas.height; }
+        else if (side === 2) { this.x = Math.random() * canvas.width; this.y = canvas.height + 50; }
+        else { this.x = -50; this.y = Math.random() * canvas.height; }
+        
+        this.active = true;
+        this.hp = 2;
+    }
+    update(target) {
+        const angle = Math.atan2(target.y - this.y, target.x - this.x);
+        this.x += Math.cos(angle) * CONFIG.ENEMY_SPEED;
+        this.y += Math.sin(angle) * CONFIG.ENEMY_SPEED;
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.fillStyle = '#ff5722'; // Bug Orange
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(8, 10);
+        ctx.lineTo(-8, 10);
+        ctx.fill();
+        // Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ff5722';
         ctx.restore();
     }
 }
 
-// --- WORLD GENERATION ---
+// --- INPUT HANDLING (Touch Specific) ---
+const Input = {
+    joyOrigin: new Vector(0,0),
+    joyVector: new Vector(0,0),
+    isMoving: false,
+    aimAngle: 0,
+    isFiring: false,
+    
+    init() {
+        const joyCont = document.getElementById('joystick-container');
+        const joyKnob = document.getElementById('joystick-knob');
 
-class Chunk {
-    constructor(x) {
-        this.x = x;
-        this.platforms = [];
-        this.points = []; // Grapple points
-        this.generate();
-    }
-
-    generate() {
-        const floorY = 600;
-        // Basic ground
-        this.platforms.push({
-            x: this.x,
-            y: floorY + Math.random() * 200,
-            w: CONFIG.CHUNK_WIDTH,
-            h: 500
+        canvas.addEventListener('touchstart', (e) => {
+            for(let t of e.changedTouches) {
+                if (t.clientX > canvas.width / 2) {
+                    this.isFiring = true;
+                    this.updateAim(t);
+                }
+            }
         });
 
-        // Floating platforms
-        for (let i = 0; i < 3; i++) {
-            this.platforms.push({
-                x: this.x + (i * 400) + Math.random() * 100,
-                y: 300 + Math.random() * 200,
-                w: 150 + Math.random() * 100,
-                h: 40
+        canvas.addEventListener('touchmove', (e) => {
+            for(let t of e.changedTouches) {
+                if (t.clientX > canvas.width / 2) this.updateAim(t);
+                else this.updateMove(t);
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            for(let t of e.changedTouches) {
+                if (t.clientX > canvas.width / 2) this.isFiring = false;
+                else {
+                    this.isMoving = false;
+                    this.joyVector = new Vector(0,0);
+                    joyKnob.style.transform = `translate(0px, 0px)`;
+                }
+            }
+        });
+
+        // Stratagem logic
+        const stratBtn = document.getElementById('stratagem-btn');
+        stratBtn.addEventListener('touchstart', () => {
+            STATE.inputBuffer = [];
+            ui.stratagemMenu.style.display = 'flex';
+            this.updateStratDisplay();
+        });
+        stratBtn.addEventListener('touchend', () => {
+            ui.stratagemMenu.style.display = 'none';
+        });
+
+        document.querySelectorAll('.d-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                const dir = e.target.dataset.dir;
+                if(dir) this.pushStratCode(dir);
             });
+        });
+    },
+
+    updateAim(touch) {
+        const dx = touch.clientX - player.x;
+        const dy = touch.clientY - player.y;
+        this.aimAngle = Math.atan2(dy, dx);
+    },
+
+    updateMove(touch) {
+        const rect = document.getElementById('joystick-container').getBoundingClientRect();
+        const centerX = rect.left + rect.width/2;
+        const centerY = rect.top + rect.height/2;
+        
+        let dx = touch.clientX - centerX;
+        let dy = touch.clientY - centerY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const max = 50;
+
+        if (dist > max) {
+            dx = (dx / dist) * max;
+            dy = (dy / dist) * max;
         }
 
-        // Hook points (Lanterns)
-        for (let i = 0; i < 4; i++) {
-            this.points.push({
-                x: this.x + (i * 300) + 150,
-                y: 100 + Math.random() * 200
+        this.isMoving = true;
+        this.joyVector = new Vector(dx/max, dy/max);
+        document.getElementById('joystick-knob').style.transform = `translate(${dx}px, ${dy}px)`;
+    },
+
+    updateStratDisplay() {
+        const strat = CONFIG.STRATAGEMS[STATE.currentStratagemIdx];
+        ui.stratagemName.innerText = strat.name;
+        let html = "";
+        strat.code.forEach((step, i) => {
+            const symbols = {UP:'↑', DOWN:'↓', LEFT:'←', RIGHT:'→'};
+            const color = i < STATE.inputBuffer.length ? 'var(--hd-yellow)' : '#444';
+            html += `<span style="color:${color}">${symbols[step]}</span>`;
+        });
+        ui.stratagemSequence.innerHTML = html;
+    },
+
+    pushStratCode(dir) {
+        const strat = CONFIG.STRATAGEMS[STATE.currentStratagemIdx];
+        const nextStepIdx = STATE.inputBuffer.length;
+        
+        if (strat.code[nextStepIdx] === dir) {
+            STATE.inputBuffer.push(dir);
+            if (STATE.inputBuffer.length === strat.code.length) {
+                this.triggerStratagem(strat);
+                STATE.inputBuffer = [];
+                ui.stratagemMenu.style.display = 'none';
+            }
+        } else {
+            STATE.inputBuffer = []; // Reset on fail
+        }
+        this.updateStratDisplay();
+    },
+
+    triggerStratagem(strat) {
+        AudioEngine.playExplosion();
+        STATE.shake = 20;
+        
+        // Logical Effect: Kill all enemies on screen for "Orbital Strike"
+        if(strat.name === "ORBITAL STRIKE") {
+            enemies.forEach(e => {
+                e.active = false;
+                spawnBlood(e.x, e.y);
             });
         }
+        
+        // Rotate next stratagem
+        STATE.currentStratagemIdx = (STATE.currentStratagemIdx + 1) % CONFIG.STRATAGEMS.length;
     }
+};
 
-    draw() {
-        ctx.fillStyle = CONFIG.COLORS.ground;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#000';
+// --- GAME OBJECTS ---
+const player = { x: 0, y: 0, radius: 15 };
+let bullets = [];
+let enemies = [];
+let particles = [];
 
-        this.platforms.forEach(p => {
-            ctx.fillRect(p.x - camera.x, p.y - camera.y, p.w, p.h);
-            // Detail line on top
-            ctx.strokeStyle = '#2a2e3a';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(p.x - camera.x, p.y - camera.y, p.w, 2);
-        });
-
-        this.points.forEach(pt => {
-            // Draw Lantern
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = CONFIG.COLORS.accent;
-            ctx.fillStyle = CONFIG.COLORS.accent;
-            ctx.beginPath();
-            ctx.arc(pt.x - camera.x, pt.y - camera.y, 8, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Lantern Cage
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(pt.x - camera.x - 10, pt.y - camera.y - 10, 20, 20);
-        });
+function spawnBlood(x, y) {
+    for(let i=0; i<10; i++) {
+        particles.push(new Particle(x, y, '#8b0000', 4, 30));
     }
 }
 
-// --- CORE ENGINE ---
-
-const player = new Player();
-
-function startGame() {
-    gameState = 'PLAYING';
-    score = 0;
-    player.reset();
-    chunks = [new Chunk(0), new Chunk(CONFIG.CHUNK_WIDTH)];
+function resetGame() {
+    player.x = canvas.width / 2;
+    player.y = canvas.height / 2;
+    bullets = [];
+    enemies = [];
     particles = [];
-    document.getElementById('menu-screen').classList.add('hidden');
-    document.getElementById('death-screen').classList.add('hidden');
-    requestAnimationFrame(gameLoop);
+    STATE.ammo = CONFIG.AMMO_CAPACITY;
+    STATE.playing = true;
+    STATE.gameOver = false;
+    ui.overlay.style.display = 'none';
 }
 
-function endGame() {
-    gameState = 'GAMEOVER';
-    document.getElementById('death-screen').classList.remove('hidden');
-    document.getElementById('final-score').innerText = `Distance Reached: ${Math.floor(score)}m`;
-}
+// --- MAIN LOOP ---
+let lastTime = 0;
+function loop(timestamp) {
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
 
-function update(dt) {
-    if (gameState !== 'PLAYING') return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    player.update();
+    if (STATE.playing && !STATE.gameOver) {
+        // 1. Update Player
+        if (Input.isMoving) {
+            player.x += Input.joyVector.x * CONFIG.PLAYER_SPEED;
+            player.y += Input.joyVector.y * CONFIG.PLAYER_SPEED;
+        }
 
-    // Camera follow
-    camera.x += (player.x - camera.x - canvas.width * 0.3) * 0.1;
-    camera.y += (player.y - camera.y - canvas.height * 0.6) * 0.1;
+        // 2. Auto-fire
+        if (Input.isFiring && STATE.ammo > 0 && timestamp % 150 < 20) {
+            bullets.push(new Bullet(player.x, player.y, Input.aimAngle));
+            STATE.ammo--;
+            STATE.shake = 2;
+            AudioEngine.playShot();
+            ui.ammoFill.style.width = `${(STATE.ammo / CONFIG.AMMO_CAPACITY) * 100}%`;
+        }
+        
+        if (STATE.ammo <= 0 && timestamp % 2000 < 20) {
+             STATE.ammo = CONFIG.AMMO_CAPACITY; // Auto reload
+             ui.ammoFill.style.width = `100%`;
+        }
 
-    // Procedural generation logic
-    const currentChunkIndex = Math.floor(player.x / CONFIG.CHUNK_WIDTH);
-    if (chunks[chunks.length - 1].x < player.x + canvas.width) {
-        chunks.push(new Chunk(chunks[chunks.length - 1].x + CONFIG.CHUNK_WIDTH));
+        // 3. Spawning
+        if (timestamp - STATE.lastEnemySpawn > 1500 && enemies.length < CONFIG.MAX_ENEMIES) {
+            enemies.push(new Enemy());
+            STATE.lastEnemySpawn = timestamp;
+        }
+
+        // 4. Collision & Updates
+        bullets.forEach((b, bi) => {
+            b.update();
+            enemies.forEach((e, ei) => {
+                if (Vector.distance(b, e) < 20) {
+                    e.hp--;
+                    b.active = false;
+                    if (e.hp <= 0) {
+                        e.active = false;
+                        spawnBlood(e.x, e.y);
+                    }
+                }
+            });
+        });
+
+        enemies.forEach(e => {
+            e.update(player);
+            if (Vector.distance(e, player) < 20) {
+                STATE.gameOver = true;
+            }
+        });
+
+        // Cleanup
+        bullets = bullets.filter(b => b.active);
+        enemies = enemies.filter(e => e.active);
+        particles.forEach(p => p.update());
+        particles = particles.filter(p => p.life > 0);
+
+        // 5. Draw
+        // Screen Shake
+        if (STATE.shake > 0.1) {
+            ctx.save();
+            ctx.translate(Math.random()*STATE.shake, Math.random()*STATE.shake);
+            STATE.shake *= CONFIG.SCREEN_SHAKE_DECAY;
+        }
+
+        particles.forEach(p => p.draw());
+        bullets.forEach(b => b.draw());
+        enemies.forEach(e => e.draw());
+
+        // Draw Player
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(Input.aimAngle);
+        // Body
+        ctx.fillStyle = '#333';
+        ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI*2); ctx.fill();
+        // Yellow Cape/Stripe
+        ctx.fillStyle = varColor('--hd-yellow');
+        ctx.fillRect(-15, -5, 10, 10);
+        // Weapon
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, -2, 15, 4);
+        ctx.restore();
+
+        if (STATE.shake > 0.1) ctx.restore();
+
+    } else if (STATE.gameOver) {
+        ui.overlay.style.display = 'flex';
+        ui.overlay.querySelector('h1').innerText = "Wasted for Democracy";
+        ui.overlay.querySelector('button').innerText = "REINFORCE";
     }
-    // Cleanup old chunks
-    if (chunks.length > 5) chunks.shift();
 
-    // Update particles
-    particles.forEach((p, i) => {
-        p.update();
-        if (p.life <= 0) particles.splice(i, 1);
-    });
-
-    // Score based on distance
-    if (player.x > score) score = player.x;
-    hud.innerText = `DISTANCE: ${Math.floor(score / 10)}m`;
+    requestAnimationFrame(loop);
 }
 
-function draw() {
-    // Clear & Background Gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grad.addColorStop(0, CONFIG.COLORS.bgTop);
-    grad.addColorStop(1, CONFIG.COLORS.bgBottom);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Parallax background elements
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
-    for(let i=0; i<20; i++) {
-        let px = (i * 400 - (camera.x * 0.2)) % (canvas.width + 400);
-        ctx.fillRect(px, 100 + (i*50), 100, 300);
-    }
-
-    // Draw world
-    chunks.forEach(chunk => chunk.draw());
-    
-    // Draw particles
-    particles.forEach(p => p.draw());
-
-    // Draw player
-    player.draw();
-
-    // Post-processing: Vignette
-    const vig = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-    vig.addColorStop(0, 'transparent');
-    vig.addColorStop(1, 'rgba(0,0,0,0.7)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+function varColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function gameLoop(time) {
-    if (gameState === 'GAMEOVER') return;
-    
-    const dt = time - lastTime;
-    lastTime = time;
-
-    update(dt);
-    draw();
-
-    requestAnimationFrame(gameLoop);
-}
-
-// Handle resizing for iPad rotation
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// --- INITIALIZATION ---
+document.getElementById('start-btn').addEventListener('click', () => {
+    AudioEngine.ctx.resume();
+    resetGame();
 });
 
-// Initialization
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-draw(); // Draw initial frame
+Input.init();
+requestAnimationFrame(loop);
 
 </script>
 </body>
