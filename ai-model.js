@@ -1,73 +1,84 @@
 const CustomAI = (function() {
-    // Persistent Knowledge Map
-    let memory = JSON.parse(localStorage.getItem('smart_brain')) || {
-        concepts: {}, // Stores: { "fire": ["hot", "dangerous"] }
-        history: []   // Remembers the last few topics
+    // Advanced Memory: Facts + Triggers
+    let memory = JSON.parse(localStorage.getItem('nexus_v3_brain')) || {
+        facts: {},       // Definitions (X is Y)
+        triggers: {},    // Behaviors (When I say X, you do Y)
+        vocabulary: []
     };
 
-    // Words to ignore for "Thinking" (Stop Words)
-    const noise = ["the", "is", "a", "an", "are", "of", "to", "it", "this", "that", "do", "you", "what", "how"];
-
     function save() {
-        localStorage.setItem('smart_brain', JSON.stringify(memory));
+        localStorage.setItem('nexus_v3_brain', JSON.stringify(memory));
     }
 
-    function clean(text) {
-        return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
+    function clean(t) {
+        return t.toLowerCase().replace(/[^\w\s']/g, '').trim();
     }
 
     return {
         process: function(input) {
-            const words = clean(input);
-            const coreConcepts = words.filter(w => !noise.includes(w));
-            
-            // --- LOGIC 1: LEARNING (Example: "Fire is hot") ---
-            if (words.includes("is") || words.includes("are")) {
-                let subject = coreConcepts[0];
-                let trait = coreConcepts.slice(1).join(' ');
+            const raw = input;
+            const text = clean(input);
+            const words = text.split(/\s+/);
 
-                if (subject && trait) {
-                    if (!memory.concepts[subject]) memory.concepts[subject] = [];
-                    if (!memory.concepts[subject].includes(trait)) {
-                        memory.concepts[subject].push(trait);
+            // --- 1. COMMAND LEARNING (e.g., "Respond to 'Hi' with 'Hello friend!'") ---
+            if (text.includes("respond to") && text.includes("with")) {
+                try {
+                    // Extract parts using regex or split
+                    const triggerMatch = raw.match(/respond to ['"](.+?)['"]/i) || raw.match(/respond to (.+?) with/i);
+                    const responseMatch = raw.match(/with ['"](.+?)['"]/i) || raw.match(/with (.+)/i);
+                    
+                    if (triggerMatch && responseMatch) {
+                        const trigger = clean(triggerMatch[1]);
+                        const response = responseMatch[1];
+                        memory.triggers[trigger] = response;
+                        save();
+                        return `Protocol Updated. When you say "${trigger}", I will respond with "${response}".`;
                     }
+                } catch(e) { return "I almost had that command, but the phrasing was tricky. Try: Respond to 'Hi' with 'Hello!'"; }
+            }
+
+            // --- 2. FACT LEARNING (e.g., "Fire is hot") ---
+            if (words.includes("is") || words.includes("are")) {
+                const isIndex = words.indexOf("is") !== -1 ? words.indexOf("is") : words.indexOf("are");
+                const subject = words.slice(0, isIndex).join(' ');
+                const trait = words.slice(isIndex + 1).join(' ');
+
+                if (subject && trait && !text.includes("what is")) {
+                    if (!memory.facts[subject]) memory.facts[subject] = [];
+                    memory.facts[subject].push(trait);
                     save();
-                    memory.history.push(subject);
-                    return `Understood. I have linked [${subject}] with the property: ${trait}.`;
+                    return `I have internalized that ${subject} is ${trait}.`;
                 }
             }
 
-            // --- LOGIC 2: RETRIEVAL (Example: "What do you know about fire?") ---
-            // Look for known subjects in the user's question
-            let foundSubject = coreConcepts.find(w => memory.concepts[w]);
-            
-            // If the user didn't name a subject, maybe they are using "it" (context)
-            if (!foundSubject && (words.includes("it") || words.includes("this"))) {
-                foundSubject = memory.history[memory.history.length - 1];
+            // --- 3. TRIGGER EXECUTION (Social Layer) ---
+            // If the user said exactly a learned trigger (like "Hi")
+            if (memory.triggers[text]) {
+                return memory.triggers[text];
             }
 
-            if (foundSubject) {
-                const traits = memory.concepts[foundSubject];
-                const responseMap = [
-                    `My data shows ${foundSubject} is characterized by ${traits.join(' and ')}.`,
-                    `Based on what I've learned, ${foundSubject} is ${traits[Math.floor(Math.random()*traits.length)]}.`,
-                    `Regarding ${foundSubject}: it is ${traits.join(', ')}.`
+            // --- 4. FACT RETRIEVAL ---
+            for (let subject in memory.facts) {
+                if (text.includes(subject)) {
+                    const info = memory.facts[subject].join(' and ');
+                    return `Based on our conversations, I know that ${subject} is ${info}.`;
+                }
+            }
+
+            // --- 5. FALLBACK / CURIOSITY ---
+            if (words.length > 0) {
+                const unknown = words[words.length-1];
+                const prompts = [
+                    `I hear you, but I don't have a specific response for "${text}". Should I learn one?`,
+                    `I'm still a blank slate regarding "${unknown}". Tell me more about it.`,
+                    `Understood. But how should I respond to that in the future?`
                 ];
-                memory.history.push(foundSubject);
-                return responseMap[Math.floor(Math.random() * responseMap.length)];
+                return prompts[Math.floor(Math.random() * prompts.length)];
             }
-
-            // --- LOGIC 3: CURIOSITY (If it doesn't know) ---
-            if (coreConcepts.length > 0) {
-                const unknown = coreConcepts[0];
-                return `I am unfamiliar with "${unknown}". Is it a concept I should define? Tell me: "${unknown} is..."`;
-            }
-
-            return "My neural network is active, but I require more specific logical input.";
         },
 
-        getK: function() {
-            return Object.keys(memory.concepts).length;
+        getComplexity: function() {
+            return Object.keys(memory.triggers).length + Object.keys(memory.facts).length;
         }
     };
 })();
