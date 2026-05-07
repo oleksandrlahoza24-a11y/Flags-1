@@ -2,274 +2,653 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Jungle Storm: Ancient Ascent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SakugaFlow | Professional Anime Studio</title>
     <style>
-        :root { --vignette-opacity: 0.4; }
+        :root {
+            --bg-color: #1e1e1e;
+            --panel-color: #2d2d2d;
+            --accent-color: #0078d4;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --active-color: #ffca28;
+        }
+
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #050a05;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-user-select: none; touch-action: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
+
+        /* Top Header */
+        header {
+            height: 40px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border-color);
+            justify-content: space-between;
+        }
+
+        .logo { font-weight: bold; color: var(--active-color); letter-spacing: 1px; }
+
+        /* Main Workspace */
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Sidebar Tools */
+        #toolbar {
+            width: 60px;
+            background: var(--panel-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+            gap: 15px;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            background: #3d3d3d;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover { background: #555; }
+        .tool-btn.active { background: var(--accent-color); border-color: white; }
+
+        /* Canvas Area */
+        #viewport {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+            position: relative;
+            outline: none;
+            cursor: crosshair;
+        }
+
+        #canvas-stack {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            background: white; /* Paper color */
+        }
+
         canvas {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: pixelated;
         }
-        #webgl-canvas { z-index: 1; }
-        #ui-canvas { z-index: 2; pointer-events: none; }
-        #loading-screen {
-            position: absolute; z-index: 10; width: 100%; height: 100%;
-            background: radial-gradient(circle, #1a2a1a 0%, #050a05 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #d4af37; transition: opacity 1s ease-out;
+
+        /* Properties Panel */
+        #props-panel {
+            width: 240px;
+            background: var(--panel-color);
+            border-left: 1px solid var(--border-color);
+            padding: 15px;
+            font-size: 13px;
         }
-        .loader-bar {
-            width: 300px; height: 4px; background: #111;
-            margin-top: 20px; border-radius: 2px; overflow: hidden;
+
+        .prop-group { margin-bottom: 20px; }
+        .prop-group label { display: block; margin-bottom: 5px; color: #888; }
+
+        /* Timeline Area */
+        #timeline-container {
+            height: 180px;
+            background: var(--panel-color);
+            border-top: 2px solid #111;
+            display: flex;
+            flex-direction: column;
         }
-        #loader-progress {
-            width: 0%; height: 100%; background: #d4af37;
-            box-shadow: 0 0 15px #d4af37; transition: width 0.1s linear;
+
+        #timeline-controls {
+            height: 40px;
+            background: #252525;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
         }
+
+        #frame-strip {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 5px;
+            background: #1a1a1a;
+        }
+
+        .frame-thumb {
+            min-width: 80px;
+            height: 45px;
+            background: #333;
+            border: 2px solid #444;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            color: #777;
+        }
+
+        .frame-thumb.active { border-color: var(--active-color); background: #444; color: white; }
+
+        /* Feedback Notifications */
+        #toast {
+            position: fixed;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Layer List */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #383838;
+            margin-bottom: 4px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .layer-item.active { background: var(--accent-color); }
+        .layer-item span { flex: 1; margin-left: 10px; }
+
+        input[type="range"] { width: 100%; }
     </style>
 </head>
 <body>
 
-<div id="loading-screen">
-    <h1 style="letter-spacing: 4px; font-weight: 200;">JUNGLE STORM</h1>
-    <div class="loader-bar"><div id="loader-progress"></div></div>
-    <p id="loader-status" style="font-size: 10px; margin-top: 10px; opacity: 0.6;">INITIALIZING SEED...</p>
+<header>
+    <div class="logo">SAKUGA FLOW Pro v1.0</div>
+    <div class="menu-bar">
+        <button onclick="app.exportProject()">Export Project</button>
+        <button onclick="app.clearProject()" style="color: #ff6b6b;">New Project</button>
+    </div>
+</header>
+
+<div id="main-container">
+    <div id="toolbar">
+        <div class="tool-btn active" data-tool="brush" title="Brush (B)">🖌️</div>
+        <div class="tool-btn" data-tool="eraser" title="Eraser (E)">🧽</div>
+        <div class="tool-btn" data-tool="picker" title="Color Picker (P)">🧪</div>
+        <div style="margin-top: auto; padding-bottom: 20px;">
+            <div class="tool-btn" onclick="app.undo()" title="Undo (Ctrl+Z)">↩️</div>
+        </div>
+    </div>
+
+    <div id="viewport" tabindex="0">
+        <div id="canvas-stack">
+            <!-- Layers will be injected here by JS -->
+        </div>
+    </div>
+
+    <div id="props-panel">
+        <div class="prop-group">
+            <label>Color</label>
+            <input type="color" id="colorPicker" value="#000000">
+        </div>
+        <div class="prop-group">
+            <label>Brush Size (<span id="sizeVal">5</span>px)</label>
+            <input type="range" id="sizeSlider" min="1" max="50" value="5">
+        </div>
+        <div class="prop-group">
+            <label>Layers</label>
+            <div id="layer-list">
+                <div class="layer-item active" data-layer="2"><span>Lineart (Main)</span></div>
+                <div class="layer-item" data-layer="1"><span>Color (Base)</span></div>
+                <div class="layer-item" data-layer="0"><span>Sketch (Rough)</span></div>
+            </div>
+        </div>
+        <div class="prop-group">
+            <label>Onion Skinning</label>
+            <input type="checkbox" id="onionToggle" checked> Enable
+        </div>
+    </div>
 </div>
 
-<canvas id="webgl-canvas"></canvas>
-<canvas id="ui-canvas"></canvas>
+<div id="timeline-container">
+    <div id="timeline-controls">
+        <button onclick="app.playPause()" id="playBtn">▶ Play</button>
+        <button onclick="app.addNewFrame()">➕ New Frame</button>
+        <button onclick="app.deleteCurrentFrame()">🗑️ Delete</button>
+        <div style="margin-left: 20px;">
+            FPS: <input type="number" id="fpsInput" value="12" style="width: 40px; background: #333; color: white; border: 1px solid #555;">
+        </div>
+        <div id="playback-status" style="margin-left: auto; font-family: monospace;">Frame: 1 / 1</div>
+    </div>
+    <div id="frame-strip">
+        <!-- Frame thumbnails will be injected here -->
+    </div>
+</div>
 
-<script id="math-lib">
+<div id="toast">Message</div>
+
+<script>
 /**
- * AAA Engine Math Library
- * Implements PRNG, Perlin Noise, and Vector Math from first principles.
+ * SAKUGA FLOW PROFESSIONAL 
+ * A high-end 2D animation engine written in pure JavaScript.
  */
-class EngineMath {
-    /** Mulberry32 PRNG for deterministic procedural generation */
-    static mulberry32(a) {
-        return function() {
-            var t = a += 0x6D2B79F5;
-            t = Math.imul(t ^ t >>> 15, t | 1);
-            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        }
-    }
 
-    /** Full 6-Octave Perlin Noise Implementation */
-    static Perlin = class {
-        constructor(seed) {
-            this.p = new Uint8Array(512);
-            const rand = EngineMath.mulberry32(seed);
-            for(let i=0; i<256; i++) this.p[i] = i;
-            for(let i=255; i>0; i--) {
-                const r = Math.floor(rand() * (i+1));
-                [this.p[i], this.p[r]] = [this.p[r], this.p[i]];
-            }
-            for(let i=0; i<256; i++) this.p[256+i] = this.p[i];
-        }
-        fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-        lerp(t, a, b) { return a + t * (b - a); }
-        grad(hash, x, y, z) {
-            const h = hash & 15;
-            const u = h < 8 ? x : y;
-            const v = h < 4 ? y : h === 12 || h === 14 ? x : z;
-            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
-        }
-        noise(x, y, z = 0) {
-            const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
-            x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
-            const u = this.fade(x), v = this.fade(y), w = this.fade(z);
-            const A = this.p[X]+Y, AA = this.p[A]+Z, AB = this.p[A+1]+Z;
-            const B = this.p[X+1]+Y, BA = this.p[B]+Z, BB = this.p[B+1]+Z;
-            return this.lerp(w, this.lerp(v, this.lerp(u, this.grad(this.p[AA], x, y, z), this.grad(this.p[BA], x-1, y, z)),
-                this.lerp(u, this.grad(this.p[AB], x, y-1, z), this.grad(this.p[BB], x-1, y-1, z))),
-                this.lerp(v, this.lerp(u, this.grad(this.p[AA+1], x, y, z-1), this.grad(this.p[BA+1], x-1, y, z-1)),
-                this.lerp(u, this.grad(this.p[AB+1], x, y-1, z-1), this.grad(this.p[BB+1], x-1, y-1, z-1))));
-        }
-        fbm(x, y, octaves = 6) {
-            let total = 0, frequency = 1, amplitude = 1, maxValue = 0;
-            for(let i=0; i<octaves; i++) {
-                total += this.noise(x * frequency, y * frequency) * amplitude;
-                maxValue += amplitude;
-                amplitude *= 0.5;
-                frequency *= 2;
-            }
-            return total / maxValue;
-        }
-    }
-}
-</script>
-
-<script id="glsl-shaders">
-/**
- * AAA Shader Library
- * Contains GLSL source for G-Buffer, Lighting, and Water.
- */
-const SHADERS = {
-    VERTEX_BASE: `#version 300 es
-        layout(location = 0) in vec3 aPosition;
-        layout(location = 1) in vec2 aTexCoord;
-        layout(location = 2) in vec3 aNormal;
-        uniform mat4 uProjection;
-        uniform mat4 uView;
-        uniform mat4 uModel;
-        out vec2 vTexCoord;
-        out vec3 vNormal;
-        out vec4 vWorldPos;
-        void main() {
-            vTexCoord = aTexCoord;
-            vNormal = (uModel * vec4(aNormal, 0.0)).xyz;
-            vWorldPos = uModel * vec4(aPosition, 1.0);
-            gl_Position = uProjection * uView * vWorldPos;
-        }`,
-    FRAGMENT_WATER: `#version 300 es
-        precision highp float;
-        in vec2 vTexCoord;
-        in vec4 vWorldPos;
-        uniform sampler2D uSceneTexture;
-        uniform float uTime;
-        uniform float uStormIntensity;
-        layout(location = 0) out vec4 outColor;
-        void main() {
-            float wave = sin(vWorldPos.x * 0.05 + uTime * 2.0) * 2.0;
-            vec2 distortion = vec2(sin(uTime + vWorldPos.x * 0.1), cos(uTime + vWorldPos.z * 0.1)) * 0.01;
-            vec4 screenCol = texture(uSceneTexture, (gl_FragCoord.xy / vec2(1024, 768)) + distortion);
-            vec4 waterCol = vec4(0.05, 0.15, 0.2, 0.8);
-            outColor = mix(waterCol, screenCol, 0.3) + (uStormIntensity * 0.1);
-        }`
-};
-</script>
-
-<script id="engine-core">
-/**
- * Rainforest Survival Engine
- * Core Systems, Physics, and Rendering Pipeline.
- */
-class RainforestEngine {
+class AnimeStudio {
     constructor() {
-        this.webglCanvas = document.getElementById('webgl-canvas');
-        this.uiCanvas = document.getElementById('ui-canvas');
-        this.gl = this.webglCanvas.getContext('webgl2', { antialias: false });
-        this.ctx = this.uiCanvas.getContext('2d');
+        // Configuration
+        this.width = 1920;
+        this.height = 1080;
+        this.aspectRatio = this.width / this.height;
         
-        this.lastTime = 0;
-        this.stormIntensity = 0.1;
-        this.player = { x: 100, y: 500, vx: 0, vy: 0 };
-        this.waterHeightField = new Float32Array(512).fill(0);
+        // State Management
+        this.frames = []; // Array of Frame objects
+        this.currentFrameIndex = 0;
+        this.currentLayerIndex = 2; // Default to Lineart
+        this.isDrawing = false;
+        this.isPlaying = false;
+        this.playInterval = null;
+        this.tool = 'brush';
+        this.brushColor = '#000000';
+        this.brushSize = 5;
+        this.zoom = 0.4; // Initial zoom to fit screen
         
-        this.initResize();
-        this.initAudio();
-        this.startLoop();
+        // Undo System
+        this.undoStack = [];
+
+        // Core Systems Initialization
+        this.initDOM();
+        this.initCanvasStack();
+        this.addNewFrame(); // Start with one empty frame
+        this.setupEventListeners();
+        this.renderTimeline();
+        
+        this.showToast("Studio Ready - Welcome back, Animator.");
     }
 
-    initResize() {
-        const resize = () => {
-            const dpr = window.devicePixelRatio || 1;
-            this.webglCanvas.width = window.innerWidth * dpr;
-            this.webglCanvas.height = window.innerHeight * dpr;
-            this.uiCanvas.width = window.innerWidth * dpr;
-            this.uiCanvas.height = window.innerHeight * dpr;
-            this.gl.viewport(0, 0, this.webglCanvas.width, this.webglCanvas.height);
-        };
-        window.addEventListener('resize', resize);
-        resize();
+    initDOM() {
+        this.viewport = document.getElementById('viewport');
+        this.canvasStack = document.getElementById('canvas-stack');
+        this.frameStrip = document.getElementById('frame-strip');
+        this.playBtn = document.getElementById('playBtn');
+        this.statusText = document.getElementById('playback-status');
+        
+        // Set physical size of stack
+        this.canvasStack.style.width = this.width + 'px';
+        this.canvasStack.style.height = this.height + 'px';
+        this.updateZoom();
     }
 
-    initAudio() {
-        this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        // Procedureal Rain Synthesis
-        this.rainNode = this.audioCtx.createBiquadFilter();
-        this.rainNode.type = 'lowpass';
-        this.rainNode.frequency.value = 800;
-        // White noise buffer generation for rain
-        const bufferSize = 2 * this.audioCtx.sampleRate;
-        const noiseBuffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-        this.whiteNoise = this.audioCtx.createBufferSource();
-        this.whiteNoise.buffer = noiseBuffer;
-        this.whiteNoise.loop = true;
-        this.whiteNoise.connect(this.rainNode).connect(this.audioCtx.destination);
-    }
+    initCanvasStack() {
+        // We create 5 canvases: 
+        // 0: Onion Skin Back, 1: Sketch, 2: Paint, 3: Lineart, 4: Onion Skin Front, 5: UI/Preview
+        this.layers = [];
+        this.canvasStack.innerHTML = '';
+        
+        for(let i = 0; i < 6; i++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.width;
+            canvas.height = this.height;
+            canvas.id = `layer-${i}`;
+            
+            // Interaction logic only on the top-most visible layer
+            if(i === 5) {
+                canvas.style.zIndex = 10;
+            } else {
+                canvas.style.pointerEvents = 'none';
+            }
 
-    updatePhysics(dt) {
-        // Shallow Water Wave Equation Implementation
-        const c = 0.5; // wave speed
-        const damping = 0.98;
-        for (let i = 1; i < 511; i++) {
-            const accel = c * (this.waterHeightField[i-1] - 2 * this.waterHeightField[i] + this.waterHeightField[i+1]);
-            this.waterHeightField[i] = (this.waterHeightField[i] + accel) * damping;
+            this.canvasStack.appendChild(canvas);
+            this.layers.push({
+                el: canvas,
+                ctx: canvas.getContext('2d', { willReadFrequently: true })
+            });
         }
         
-        // Storm Intensity Progression
-        this.stormIntensity = Math.min(1.0, this.stormIntensity + dt * 0.001);
-        this.rainNode.frequency.value = 800 + (this.stormIntensity * 1200);
+        // Labeling layers for logic
+        this.ctxOnionBack = this.layers[0].ctx;
+        this.ctxSketch = this.layers[1].ctx;
+        this.ctxPaint = this.layers[2].ctx;
+        this.ctxLine = this.layers[3].ctx;
+        this.ctxOnionFront = this.layers[4].ctx;
+        this.ctxUI = this.layers[5].ctx;
+        
+        this.activeCtxs = [this.ctxSketch, this.ctxPaint, this.ctxLine];
     }
 
-    render(time) {
-        const dt = (time - this.lastTime) / 1000;
-        this.lastTime = time;
-
-        this.updatePhysics(dt);
-
-        // Clear WebGL
-        this.gl.clearColor(0.02 * this.stormIntensity, 0.05 * this.stormIntensity, 0.02, 1.0);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
-        // Render UI / HUD
-        this.ctx.clearRect(0, 0, this.uiCanvas.width, this.uiCanvas.height);
-        this.drawUI();
-
-        requestAnimationFrame((t) => this.render(t));
+    updateZoom() {
+        const availableWidth = this.viewport.clientWidth - 100;
+        const availableHeight = this.viewport.clientHeight - 100;
+        const scale = Math.min(availableWidth / this.width, availableHeight / this.height);
+        this.canvasStack.style.transform = `scale(${scale})`;
     }
 
-    drawUI() {
-        const scale = window.devicePixelRatio;
-        this.ctx.save();
-        this.ctx.scale(scale, scale);
+    // --- State Management ---
+
+    addNewFrame() {
+        const frameData = {
+            layers: [null, null, null], // To be stored as ImageBitmap or DataURL
+            duration: 1
+        };
         
-        // Storm Meter
-        this.ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        this.ctx.strokeRect(20, 20, 200, 10);
-        this.ctx.fillStyle = `rgb(${100 + 155 * this.stormIntensity}, 100, 100)`;
-        this.ctx.fillRect(20, 20, 200 * this.stormIntensity, 10);
+        // Insert frame after current index
+        this.frames.splice(this.currentFrameIndex + 1, 0, frameData);
+        if (this.frames.length > 1) this.currentFrameIndex++;
         
-        this.ctx.fillStyle = "white";
-        this.ctx.font = "10px monospace";
-        this.ctx.fillText("STORM SEVERITY", 20, 15);
-        
-        this.ctx.restore();
+        this.clearCanvasInternal();
+        this.renderTimeline();
+        this.updateUI();
+        this.showToast("New Frame Added");
     }
 
-    startLoop() {
-        document.getElementById('loading-screen').style.opacity = '0';
-        setTimeout(() => document.getElementById('loading-screen').remove(), 1000);
-        requestAnimationFrame((t) => this.render(t));
+    deleteCurrentFrame() {
+        if (this.frames.length <= 1) return;
+        
+        this.frames.splice(this.currentFrameIndex, 1);
+        this.currentFrameIndex = Math.max(0, this.currentFrameIndex - 1);
+        this.loadFrame(this.currentFrameIndex);
+        this.renderTimeline();
+        this.showToast("Frame Deleted");
+    }
+
+    saveCurrentFrameState() {
+        // Saves canvas pixels into the frame object
+        const frame = this.frames[this.currentFrameIndex];
+        this.activeCtxs.forEach((ctx, idx) => {
+            frame.layers[idx] = ctx.getImageData(0, 0, this.width, this.height);
+        });
+    }
+
+    loadFrame(index) {
+        this.saveCurrentFrameState(); // Save old one before switching
+        this.currentFrameIndex = index;
+        const frame = this.frames[index];
+        
+        this.clearCanvasInternal();
+        
+        frame.layers.forEach((data, idx) => {
+            if (data) this.activeCtxs[idx].putImageData(data, 0, 0);
+        });
+
+        this.renderOnionSkin();
+        this.renderTimeline();
+        this.updateUI();
+    }
+
+    clearCanvasInternal() {
+        this.layers.forEach(l => l.ctx.clearRect(0, 0, this.width, this.height));
+    }
+
+    // --- Rendering Logic ---
+
+    renderOnionSkin() {
+        this.ctxOnionBack.clearRect(0, 0, this.width, this.height);
+        this.ctxOnionFront.clearRect(0, 0, this.width, this.height);
+
+        if (!document.getElementById('onionToggle').checked) return;
+
+        // Previous Frame (Reddish tint)
+        if (this.currentFrameIndex > 0) {
+            this.drawGhost(this.currentFrameIndex - 1, this.ctxOnionBack, 'rgba(255, 0, 0, 0.2)');
+        }
+
+        // Next Frame (Greenish tint)
+        if (this.currentFrameIndex < this.frames.length - 1) {
+            this.drawGhost(this.currentFrameIndex + 1, this.ctxOnionFront, 'rgba(0, 255, 0, 0.2)');
+        }
+    }
+
+    drawGhost(frameIdx, targetCtx, tint) {
+        const frame = this.frames[frameIdx];
+        targetCtx.globalAlpha = 0.3;
+        frame.layers.forEach(data => {
+            if (data) {
+                // Create a temporary canvas to apply tint
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = this.width;
+                tempCanvas.height = this.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(data, 0, 0);
+                
+                targetCtx.drawImage(tempCanvas, 0, 0);
+            }
+        });
+        targetCtx.globalAlpha = 1.0;
+    }
+
+    // --- Input Handling ---
+
+    setupEventListeners() {
+        const uiCanvas = this.layers[5].el;
+
+        uiCanvas.addEventListener('pointerdown', (e) => this.startDrawing(e));
+        window.addEventListener('pointermove', (e) => this.draw(e));
+        window.addEventListener('pointerup', () => this.stopDrawing());
+
+        // UI Listeners
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.tool = btn.dataset.tool;
+            });
+        });
+
+        document.querySelectorAll('.layer-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.layer-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                this.currentLayerIndex = parseInt(item.dataset.layer);
+                this.showToast(`Layer Switched: ${item.innerText}`);
+            });
+        });
+
+        document.getElementById('colorPicker').addEventListener('input', (e) => {
+            this.brushColor = e.target.value;
+        });
+
+        document.getElementById('sizeSlider').addEventListener('input', (e) => {
+            this.brushSize = e.target.value;
+            document.getElementById('sizeVal').innerText = e.target.value;
+        });
+
+        // Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') this.undo();
+            if (e.key === 'b') document.querySelector('[data-tool="brush"]').click();
+            if (e.key === 'e') document.querySelector('[data-tool="eraser"]').click();
+            if (e.key === ' ') { e.preventDefault(); this.playPause(); }
+        });
+
+        window.addEventListener('resize', () => this.updateZoom());
+    }
+
+    getPointerPos(e) {
+        const rect = this.layers[5].el.getBoundingClientRect();
+        const scale = this.width / rect.width;
+        return {
+            x: (e.clientX - rect.left) * scale,
+            y: (e.clientY - rect.top) * scale,
+            pressure: e.pressure || 1.0
+        };
+    }
+
+    startDrawing(e) {
+        if (this.isPlaying) return;
+        this.isDrawing = true;
+        this.viewport.focus();
+        
+        // Save state for undo before modification
+        this.saveUndoState();
+
+        const pos = this.getPointerPos(e);
+        const ctx = this.activeCtxs[this.currentLayerIndex];
+        
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+
+    draw(e) {
+        if (!this.isDrawing) return;
+
+        const pos = this.getPointerPos(e);
+        const ctx = this.activeCtxs[this.currentLayerIndex];
+        
+        // Dynamic brush size based on pressure
+        const currentSize = this.brushSize * (0.5 + pos.pressure);
+
+        ctx.strokeStyle = this.tool === 'eraser' ? '#ffffff' : this.brushColor;
+        ctx.globalCompositeOperation = this.tool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.lineWidth = currentSize;
+
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        // Re-draw line to fix gaps
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    stopDrawing() {
+        if (!this.isDrawing) return;
+        this.isDrawing = false;
+        this.renderOnionSkin(); // Update skins if modified
+    }
+
+    // --- Playback System ---
+
+    playPause() {
+        if (this.isPlaying) {
+            clearInterval(this.playInterval);
+            this.isPlaying = false;
+            this.playBtn.innerText = "▶ Play";
+            this.showToast("Playback Paused");
+        } else {
+            this.saveCurrentFrameState();
+            const fps = parseInt(document.getElementById('fpsInput').value) || 12;
+            this.isPlaying = true;
+            this.playBtn.innerText = "⏸ Stop";
+            this.playInterval = setInterval(() => {
+                let nextFrame = this.currentFrameIndex + 1;
+                if (nextFrame >= this.frames.length) nextFrame = 0;
+                this.loadFrame(nextFrame);
+            }, 1000 / fps);
+            this.showToast("Playing Animation...");
+        }
+    }
+
+    // --- UI Helpers ---
+
+    renderTimeline() {
+        this.frameStrip.innerHTML = '';
+        this.frames.forEach((frame, idx) => {
+            const thumb = document.createElement('div');
+            thumb.className = `frame-thumb ${idx === this.currentFrameIndex ? 'active' : ''}`;
+            thumb.innerText = idx + 1;
+            thumb.onclick = () => this.loadFrame(idx);
+            this.frameStrip.appendChild(thumb);
+        });
+        this.statusText.innerText = `Frame: ${this.currentFrameIndex + 1} / ${this.frames.length}`;
+    }
+
+    updateUI() {
+        // Highlight active layers or tools if they change via shortcuts
+    }
+
+    showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.opacity = 1;
+        setTimeout(() => t.style.opacity = 0, 2000);
+    }
+
+    saveUndoState() {
+        // Simple pixel-based undo (Memory intensive but stable for one file)
+        const frameClone = JSON.parse(JSON.stringify(this.frames[this.currentFrameIndex]));
+        this.undoStack.push({
+            index: this.currentFrameIndex,
+            data: frameClone
+        });
+        if (this.undoStack.length > 20) this.undoStack.shift();
+    }
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+        const state = this.undoStack.pop();
+        this.frames[state.index] = state.data;
+        this.loadFrame(state.index);
+        this.showToast("Undo Successful");
+    }
+
+    exportProject() {
+        this.saveCurrentFrameState();
+        const projectData = {
+            version: "1.0",
+            frames: this.frames.map(f => ({
+                duration: f.duration,
+                layers: f.layers.map(l => l ? this.imageDataToDataURL(l) : null)
+            }))
+        };
+        
+        const blob = new Blob([JSON.stringify(projectData)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `anime_project_${Date.now()}.json`;
+        a.click();
+    }
+
+    imageDataToDataURL(imgData) {
+        const canvas = document.createElement('canvas');
+        canvas.width = imgData.width;
+        canvas.height = imgData.height;
+        canvas.getContext('2d').putImageData(imgData, 0, 0);
+        return canvas.toDataURL();
+    }
+
+    clearProject() {
+        if (confirm("Delete everything and start over?")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
 }
 
-// Global Engine Entry
-window.addEventListener('load', () => {
-    const progress = document.getElementById('loader-progress');
-    const status = document.getElementById('loader-status');
-    
-    let p = 0;
-    const interval = setInterval(() => {
-        p += Math.random() * 15;
-        progress.style.width = Math.min(p, 100) + '%';
-        if (p >= 100) {
-            clearInterval(interval);
-            window.GameEngine = new RainforestEngine();
-        }
-    }, 100);
-});
-</script>
+// Initialize the engine
+const app = new AnimeStudio();
 
+</script>
 </body>
 </html>
