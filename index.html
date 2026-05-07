@@ -2,236 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Kyoshiki: Murasaki</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom AI Assistant</title>
     <style>
-        body {
-            margin: 0;
-            background: #020205;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            cursor: pointer;
-        }
-        canvas {
-            display: block;
-        }
-        #ui {
-            position: absolute;
-            color: white;
-            font-family: 'Cinzel', serif;
-            letter-spacing: 5px;
-            pointer-events: none;
-            text-transform: uppercase;
-            opacity: 0.5;
-            bottom: 30px;
-        }
-        /* Screen Shake Effect */
-        .shake {
-            animation: shake 0.1s infinite;
-        }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            40% { transform: translate(3px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            80% { transform: translate(3px, 1px) rotate(-1deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #chat-container { width: 400px; height: 600px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        #chat-header { background: #007bff; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; font-size: 0.95rem; }
+        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai-msg { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
+        #input-area { border-top: 1px solid #eee; padding: 15px; display: flex; gap: 10px; }
+        #user-input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; }
+        #send-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        #send-btn:hover { background: #0056b3; }
     </style>
 </head>
-<body id="body">
-    <div id="ui">Click to Release Hollow Purple</div>
-    <canvas id="canvas"></canvas>
+<body>
+
+<div id="chat-container">
+    <div id="chat-header">Nexus AI (Custom Model)</div>
+    <div id="chat-window">
+        <div class="message ai-msg">Hello! I am Nexus, a custom-coded AI. How can I help you today?</div>
+    </div>
+    <form id="input-area">
+        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
+        <button type="submit" id="send-btn">Send</button>
+    </form>
+</div>
+
+<!-- Link the custom AI model script -->
+<script src="ai-model.js"></script>
 
 <script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const body = document.getElementById('body');
+    const chatWindow = document.getElementById('chat-window');
+    const inputForm = document.getElementById('input-area');
+    const userInput = document.getElementById('user-input');
 
-let width, height, particles = [], arcs = [];
-let state = 'IDLE'; // IDLE, CHARGING, PURPLE
-let frame = 0;
-
-const COLORS = {
-    blue: 'rgba(0, 150, 255, ',
-    red: 'rgba(255, 0, 80, ',
-    purple: 'rgba(180, 0, 255, ',
-    white: 'rgba(255, 255, 255, '
-};
-
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-class Particle {
-    constructor(x, y, color, type) {
-        this.reset(x, y, color, type);
-    }
-    reset(x, y, color, type) {
-        this.x = x + (Math.random() - 0.5) * 40;
-        this.y = y + (Math.random() - 0.5) * 40;
-        this.color = color;
-        this.type = type;
-        this.size = Math.random() * 3 + 1;
-        this.life = 1;
-        this.decay = Math.random() * 0.02 + 0.01;
-        this.angle = Math.random() * Math.PI * 2;
-        this.speed = Math.random() * 5 + 2;
-    }
-    draw() {
-        ctx.fillStyle = this.color + this.life + ')';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    update(targetX, targetY) {
-        if (state === 'CHARGING') {
-            let dx = targetX - this.x;
-            let dy = targetY - this.y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            this.x += dx / 10 + (Math.random() - 0.5) * 10;
-            this.y += dy / 10 + (Math.random() - 0.5) * 10;
-            if (dist < 10) this.life = 0;
-        } else {
-            this.x += Math.cos(this.angle) * this.speed;
-            this.y += Math.sin(this.angle) * this.speed;
-            this.life -= this.decay;
-        }
-    }
-}
-
-function drawLightning(x1, y1, x2, y2, color) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = color;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    let steps = 5;
-    for (let i = 1; i <= steps; i++) {
-        let tx = x1 + (x2 - x1) * (i / steps) + (Math.random() - 0.5) * 50;
-        let ty = y1 + (y2 - y1) * (i / steps) + (Math.random() - 0.5) * 50;
-        ctx.lineTo(tx, ty);
-    }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-}
-
-function animate() {
-    ctx.fillStyle = 'rgba(2, 2, 5, 0.2)'; // Motion blur trail
-    ctx.fillRect(0, 0, width, height);
-    frame++;
-
-    const centerX = width / 2;
-    const centerY = height / 2;
-
-    if (state === 'CHARGING') {
-        const progress = Math.min(frame / 120, 1);
-        const gap = 300 * (1 - progress);
-        
-        const bX = centerX - gap;
-        const rX = centerX + gap;
-
-        // Draw Orbs
-        const glow = 50 + Math.sin(frame * 0.2) * 20;
-        
-        ctx.globalCompositeOperation = 'lighter';
-        
-        // Blue (Laplace)
-        ctx.shadowBlur = glow;
-        ctx.shadowColor = '#0096ff';
-        ctx.fillStyle = COLORS.blue + '0.8)';
-        ctx.beginPath(); ctx.arc(bX, centerY, 15, 0, Math.PI*2); ctx.fill();
-
-        // Red (Reversal)
-        ctx.shadowColor = '#ff0050';
-        ctx.fillStyle = COLORS.red + '0.8)';
-        ctx.beginPath(); ctx.arc(rX, centerY, 15, 0, Math.PI*2); ctx.fill();
-
-        // Arcs between spheres
-        if (progress > 0.5 && Math.random() > 0.5) {
-            drawLightning(bX, centerY, rX, centerY, progress > 0.8 ? '#bc00ff' : '#fff');
-        }
-
-        // Add particles
-        for(let i=0; i<5; i++) {
-            particles.push(new Particle(Math.random()*width, Math.random()*height, COLORS.blue, 'blue'));
-            particles.push(new Particle(Math.random()*width, Math.random()*height, COLORS.red, 'red'));
-        }
-
-        particles.forEach((p, i) => {
-            p.update(p.type === 'blue' ? bX : rX, centerY);
-            p.draw();
-            if (p.life <= 0) particles.splice(i, 1);
-        });
-
-        if (progress >= 1) triggerPurple();
-
-    } else if (state === 'PURPLE') {
-        body.classList.add('shake');
-        
-        // The Hollow Purple Beam Core
-        ctx.globalCompositeOperation = 'lighter';
-        
-        let grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 400);
-        grad.addColorStop(0, '#fff');
-        grad.addColorStop(0.2, '#bc00ff');
-        grad.addColorStop(0.4, 'rgba(70, 0, 150, 0.8)');
-        grad.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 500, 0, Math.PI*2);
-        ctx.fill();
-
-        // High speed beam particles
-        for(let i=0; i<20; i++) {
-            let p = new Particle(centerX, centerY, COLORS.purple, 'purple');
-            p.speed = Math.random() * 40 + 20;
-            p.angle = (Math.random() - 0.5) * 0.3; // Forward directional
-            particles.push(p);
-        }
-
-        particles.forEach((p, i) => {
-            p.update();
-            p.draw();
-            if (p.life <= 0) particles.splice(i, 1);
-        });
-
-        if (frame > 100) {
-            state = 'IDLE';
-            body.classList.remove('shake');
-            ctx.globalCompositeOperation = 'source-over';
-        }
+    function appendMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}-msg`;
+        msgDiv.innerText = text;
+        chatWindow.appendChild(msgDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    requestAnimationFrame(animate);
-}
+    inputForm.onsubmit = (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
 
-function triggerPurple() {
-    state = 'PURPLE';
-    frame = 0;
-    // Massive explosion particles
-    for(let i=0; i<200; i++) {
-        let p = new Particle(width/2, height/2, COLORS.white, 'purple');
-        p.speed = Math.random() * 25;
-        particles.push(p);
-    }
-}
+        // User Message
+        appendMessage(text, 'user');
+        userInput.value = '';
 
-canvas.addEventListener('mousedown', () => {
-    if (state !== 'IDLE') return;
-    state = 'CHARGING';
-    frame = 0;
-    particles = [];
-});
-
-animate();
+        // AI "Thinking" and Response
+        setTimeout(() => {
+            // Call the function from ai-model.js
+            const response = NexusAI.process(text);
+            appendMessage(response, 'ai');
+        }, 500);
+    };
 </script>
+
 </body>
 </html>
