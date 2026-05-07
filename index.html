@@ -2,257 +2,236 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JJK: Hollow Purple Animation</title>
+    <title>Kyoshiki: Murasaki</title>
     <style>
-        :root {
-            --red-color: #ff003c;
-            --blue-color: #0084ff;
-            --purple-color: #bc00ff;
-            --bg-color: #050505;
-        }
-
-        body, html {
+        body {
             margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
+            background: #020205;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        #scene {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
             cursor: pointer;
         }
-
-        /* Gojo Silhouette / Center Point */
-        #gojo {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            z-index: 10;
-        }
-
-        /* Orbs */
-        .orb {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            filter: blur(5px);
-            opacity: 0;
-            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
-        }
-
-        #blue-orb {
-            background: var(--blue-color);
-            box-shadow: 0 0 40px var(--blue-color), 0 0 80px var(--blue-color);
-            transform: translateX(-300px);
-        }
-
-        #red-orb {
-            background: var(--red-color);
-            box-shadow: 0 0 40px var(--red-color), 0 0 80px var(--red-color);
-            transform: translateX(300px);
-        }
-
-        /* Impact Flash */
-        #flash {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            opacity: 0;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        /* Canvas for Particles & Beam */
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 5;
+            display: block;
         }
-
-        #ui-text {
+        #ui {
             position: absolute;
-            bottom: 50px;
             color: white;
-            font-size: 14px;
-            letter-spacing: 2px;
-            opacity: 0.6;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 5px;
+            pointer-events: none;
             text-transform: uppercase;
+            opacity: 0.5;
+            bottom: 30px;
         }
-
-        /* Animation States */
-        .active #blue-orb, .active #red-orb {
-            opacity: 1;
+        /* Screen Shake Effect */
+        .shake {
+            animation: shake 0.1s infinite;
         }
-
-        .converge #blue-orb, .converge #red-orb {
-            transform: translateX(0px) scale(1.5);
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            40% { transform: translate(3px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            80% { transform: translate(3px, 1px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
     </style>
 </head>
-<body>
-
-<div id="scene">
-    <div id="ui-text">Click to activate: Hollow Purple</div>
-    <div id="gojo"></div>
-    <div id="blue-orb" class="orb"></div>
-    <div id="red-orb" class="orb"></div>
-    <div id="flash"></div>
+<body id="body">
+    <div id="ui">Click to Release Hollow Purple</div>
     <canvas id="canvas"></canvas>
-</div>
 
 <script>
-    const scene = document.getElementById('scene');
-    const flash = document.getElementById('flash');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const body = document.getElementById('body');
 
-    let particles = [];
-    let beamActive = false;
-    let animationFrame;
+let width, height, particles = [], arcs = [];
+let state = 'IDLE'; // IDLE, CHARGING, PURPLE
+let frame = 0;
 
-    // Resize canvas
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+const COLORS = {
+    blue: 'rgba(0, 150, 255, ',
+    red: 'rgba(255, 0, 80, ',
+    purple: 'rgba(180, 0, 255, ',
+    white: 'rgba(255, 255, 255, '
+};
+
+function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+class Particle {
+    constructor(x, y, color, type) {
+        this.reset(x, y, color, type);
     }
-    window.addEventListener('resize', resize);
-    resize();
-
-    class Particle {
-        constructor(x, y, color, speed, angle, size) {
-            this.x = x;
-            this.y = y;
-            this.color = color;
-            this.vx = Math.cos(angle) * speed;
-            this.vy = Math.sin(angle) * speed;
-            this.size = size;
-            this.life = 1;
-            this.decay = Math.random() * 0.02 + 0.005;
-        }
-
-        draw() {
-            ctx.globalAlpha = this.life;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-            // Glow effect
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = this.color;
-        }
-
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
+    reset(x, y, color, type) {
+        this.x = x + (Math.random() - 0.5) * 40;
+        this.y = y + (Math.random() - 0.5) * 40;
+        this.color = color;
+        this.type = type;
+        this.size = Math.random() * 3 + 1;
+        this.life = 1;
+        this.decay = Math.random() * 0.02 + 0.01;
+        this.angle = Math.random() * Math.PI * 2;
+        this.speed = Math.random() * 5 + 2;
+    }
+    draw() {
+        ctx.fillStyle = this.color + this.life + ')';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    update(targetX, targetY) {
+        if (state === 'CHARGING') {
+            let dx = targetX - this.x;
+            let dy = targetY - this.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            this.x += dx / 10 + (Math.random() - 0.5) * 10;
+            this.y += dy / 10 + (Math.random() - 0.5) * 10;
+            if (dist < 10) this.life = 0;
+        } else {
+            this.x += Math.cos(this.angle) * this.speed;
+            this.y += Math.sin(this.angle) * this.speed;
             this.life -= this.decay;
         }
     }
+}
 
-    function createExplosion(x, y, color, count = 50) {
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 8 + 2;
-            const size = Math.random() * 4 + 1;
-            particles.push(new Particle(x, y, color, speed, angle, size));
+function drawLightning(x1, y1, x2, y2, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    let steps = 5;
+    for (let i = 1; i <= steps; i++) {
+        let tx = x1 + (x2 - x1) * (i / steps) + (Math.random() - 0.5) * 50;
+        let ty = y1 + (y2 - y1) * (i / steps) + (Math.random() - 0.5) * 50;
+        ctx.lineTo(tx, ty);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
+function animate() {
+    ctx.fillStyle = 'rgba(2, 2, 5, 0.2)'; // Motion blur trail
+    ctx.fillRect(0, 0, width, height);
+    frame++;
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    if (state === 'CHARGING') {
+        const progress = Math.min(frame / 120, 1);
+        const gap = 300 * (1 - progress);
+        
+        const bX = centerX - gap;
+        const rX = centerX + gap;
+
+        // Draw Orbs
+        const glow = 50 + Math.sin(frame * 0.2) * 20;
+        
+        ctx.globalCompositeOperation = 'lighter';
+        
+        // Blue (Laplace)
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = '#0096ff';
+        ctx.fillStyle = COLORS.blue + '0.8)';
+        ctx.beginPath(); ctx.arc(bX, centerY, 15, 0, Math.PI*2); ctx.fill();
+
+        // Red (Reversal)
+        ctx.shadowColor = '#ff0050';
+        ctx.fillStyle = COLORS.red + '0.8)';
+        ctx.beginPath(); ctx.arc(rX, centerY, 15, 0, Math.PI*2); ctx.fill();
+
+        // Arcs between spheres
+        if (progress > 0.5 && Math.random() > 0.5) {
+            drawLightning(bX, centerY, rX, centerY, progress > 0.8 ? '#bc00ff' : '#fff');
+        }
+
+        // Add particles
+        for(let i=0; i<5; i++) {
+            particles.push(new Particle(Math.random()*width, Math.random()*height, COLORS.blue, 'blue'));
+            particles.push(new Particle(Math.random()*width, Math.random()*height, COLORS.red, 'red'));
+        }
+
+        particles.forEach((p, i) => {
+            p.update(p.type === 'blue' ? bX : rX, centerY);
+            p.draw();
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+
+        if (progress >= 1) triggerPurple();
+
+    } else if (state === 'PURPLE') {
+        body.classList.add('shake');
+        
+        // The Hollow Purple Beam Core
+        ctx.globalCompositeOperation = 'lighter';
+        
+        let grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 400);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(0.2, '#bc00ff');
+        grad.addColorStop(0.4, 'rgba(70, 0, 150, 0.8)');
+        grad.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 500, 0, Math.PI*2);
+        ctx.fill();
+
+        // High speed beam particles
+        for(let i=0; i<20; i++) {
+            let p = new Particle(centerX, centerY, COLORS.purple, 'purple');
+            p.speed = Math.random() * 40 + 20;
+            p.angle = (Math.random() - 0.5) * 0.3; // Forward directional
+            particles.push(p);
+        }
+
+        particles.forEach((p, i) => {
+            p.update();
+            p.draw();
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+
+        if (frame > 100) {
+            state = 'IDLE';
+            body.classList.remove('shake');
+            ctx.globalCompositeOperation = 'source-over';
         }
     }
 
-    function fireBeam() {
-        beamActive = true;
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
+    requestAnimationFrame(animate);
+}
 
-        // Sound simulation or intensity frames could go here
-        let frameCount = 0;
-        
-        function animateBeam() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (beamActive) {
-                frameCount++;
-                
-                // Draw Purple Core
-                const gradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 150 + Math.random() * 50);
-                gradient.addColorStop(0, '#fff');
-                gradient.addColorStop(0.2, '#bc00ff');
-                gradient.addColorStop(0.5, 'rgba(188, 0, 255, 0.4)');
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 200, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Fire particles forward (simulating the destruction path)
-                for(let i=0; i<15; i++){
-                    const pX = centerX;
-                    const pY = centerY;
-                    const angle = (Math.random() - 0.5) * 0.5; // Narrow spread
-                    const speed = Math.random() * 20 + 10;
-                    particles.push(new Particle(pX, pY, '#bc00ff', speed, angle, Math.random() * 8));
-                }
-            }
-
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-
-            if (frameCount < 120) { // Duration of the beam
-                animationFrame = requestAnimationFrame(animateBeam);
-            } else {
-                beamActive = false;
-                setTimeout(() => {
-                    scene.classList.remove('active', 'converge');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    particles = [];
-                }, 1000);
-            }
-        }
-        animateBeam();
+function triggerPurple() {
+    state = 'PURPLE';
+    frame = 0;
+    // Massive explosion particles
+    for(let i=0; i<200; i++) {
+        let p = new Particle(width/2, height/2, COLORS.white, 'purple');
+        p.speed = Math.random() * 25;
+        particles.push(p);
     }
+}
 
-    scene.addEventListener('click', () => {
-        if (scene.classList.contains('active')) return;
+canvas.addEventListener('mousedown', () => {
+    if (state !== 'IDLE') return;
+    state = 'CHARGING';
+    frame = 0;
+    particles = [];
+});
 
-        // Phase 1: Summon Blue and Red
-        scene.classList.add('active');
-        
-        setTimeout(() => {
-            // Phase 2: Converge
-            scene.classList.add('converge');
-        }, 1000);
-
-        setTimeout(() => {
-            // Phase 3: Collision & Flash
-            flash.style.opacity = '1';
-            createExplosion(window.innerWidth/2, window.innerHeight/2, '#ffffff', 100);
-            
-            setTimeout(() => {
-                flash.style.opacity = '0';
-                // Phase 4: Release Hollow Purple
-                fireBeam();
-            }, 100);
-        }, 2500); // Timing of collision
-    });
+animate();
 </script>
-
 </body>
 </html>
