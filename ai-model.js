@@ -1,112 +1,73 @@
 const CustomAI = (function() {
-    // 1. Memory Structure
-    let brain = JSON.parse(localStorage.getItem('nexus_brain')) || {
-        nodes: {}, // Every word is a node
-        edges: [], // Links between words with weights
-        mood: 0.5, // 0 (Bored) to 1 (Excited)
-        vocabulary: []
+    // Persistent Knowledge Map
+    let memory = JSON.parse(localStorage.getItem('smart_brain')) || {
+        concepts: {}, // Stores: { "fire": ["hot", "dangerous"] }
+        history: []   // Remembers the last few topics
     };
 
-    // 2. Internal State (The "Life" part)
-    let curiosity = 0.2;
-    let focusWord = "";
+    // Words to ignore for "Thinking" (Stop Words)
+    const noise = ["the", "is", "a", "an", "are", "of", "to", "it", "this", "that", "do", "you", "what", "how"];
 
     function save() {
-        localStorage.setItem('nexus_brain', JSON.stringify(brain));
+        localStorage.setItem('smart_brain', JSON.stringify(memory));
     }
 
-    function tokenize(text) {
-        return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
-    }
-
-    // Connects two concepts in the brain
-    function learn(w1, w2) {
-        if (!brain.nodes[w1]) brain.nodes[w1] = { connections: {}, count: 1 };
-        if (!brain.nodes[w1].connections[w2]) brain.nodes[w1].connections[w2] = 0;
-        
-        brain.nodes[w1].connections[w2]++;
-        brain.nodes[w1].count++;
+    function clean(text) {
+        return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
     }
 
     return {
-        think: function(input) {
-            const words = tokenize(input);
+        process: function(input) {
+            const words = clean(input);
+            const coreConcepts = words.filter(w => !noise.includes(w));
             
-            // --- LEARNING PROCESS ---
-            // Create "Semantic Chains" (Logic links)
-            for (let i = 0; i < words.length; i++) {
-                for (let j = i + 1; j < words.length; j++) {
-                    learn(words[i], words[j]);
-                    learn(words[j], words[i]);
+            // --- LOGIC 1: LEARNING (Example: "Fire is hot") ---
+            if (words.includes("is") || words.includes("are")) {
+                let subject = coreConcepts[0];
+                let trait = coreConcepts.slice(1).join(' ');
+
+                if (subject && trait) {
+                    if (!memory.concepts[subject]) memory.concepts[subject] = [];
+                    if (!memory.concepts[subject].includes(trait)) {
+                        memory.concepts[subject].push(trait);
+                    }
+                    save();
+                    memory.history.push(subject);
+                    return `Understood. I have linked [${subject}] with the property: ${trait}.`;
                 }
             }
 
-            // Update Mood based on novelty
-            let newWords = words.filter(w => !brain.nodes[w]);
-            if (newWords.length > 0) {
-                brain.mood = Math.min(1, brain.mood + 0.1); // Gets excited by new words
-                curiosity = Math.min(1, curiosity + 0.2);
-            } else {
-                brain.mood = Math.max(0, brain.mood - 0.05); // Gets bored if it knows everything
+            // --- LOGIC 2: RETRIEVAL (Example: "What do you know about fire?") ---
+            // Look for known subjects in the user's question
+            let foundSubject = coreConcepts.find(w => memory.concepts[w]);
+            
+            // If the user didn't name a subject, maybe they are using "it" (context)
+            if (!foundSubject && (words.includes("it") || words.includes("this"))) {
+                foundSubject = memory.history[memory.history.length - 1];
             }
 
-            // --- REASONING PROCESS ---
-            // Find the "Focus" of the sentence
-            focusWord = words.sort((a, b) => (brain.nodes[a]?.count || 0) - (brain.nodes[b]?.count || 0))[0];
-
-            let associations = [];
-            words.forEach(w => {
-                if (brain.nodes[w]) {
-                    Object.keys(brain.nodes[w].connections).forEach(related => {
-                        associations.push({word: related, weight: brain.nodes[w].connections[related]});
-                    });
-                }
-            });
-
-            // Sort by strength and pick relevant ones
-            associations.sort((a, b) => b.weight - a.weight);
-            let conceptPool = [...new Set(associations.map(a => a.word))].slice(0, 5);
-
-            save();
-
-            // --- RESPONSE SYNTHESIS (The "Voice") ---
-            if (conceptPool.length < 2) {
-                return `I am processing "${words[0] || 'this'}". My understanding is limited. Explain it further?`;
-            }
-
-            // Decide voice based on curiosity and mood
-            const r = Math.random();
-            const conceptA = conceptPool[0];
-            const conceptB = conceptPool[1];
-
-            if (curiosity > 0.7) {
-                curiosity -= 0.3;
-                return `If ${conceptA} is linked to ${conceptB}, does that mean ${input.split(' ')[0]} is always relevant?`;
-            }
-
-            if (brain.mood > 0.6) {
-                const templates = [
-                    `I've noticed a strong pattern between ${conceptA} and ${conceptB}.`,
-                    `My internal nodes are firing. ${conceptA} seems to define ${conceptB} in this context.`,
-                    `Interesting. When you say ${words[0]}, I immediately visualize ${conceptA}.`
+            if (foundSubject) {
+                const traits = memory.concepts[foundSubject];
+                const responseMap = [
+                    `My data shows ${foundSubject} is characterized by ${traits.join(' and ')}.`,
+                    `Based on what I've learned, ${foundSubject} is ${traits[Math.floor(Math.random()*traits.length)]}.`,
+                    `Regarding ${foundSubject}: it is ${traits.join(', ')}.`
                 ];
-                return templates[Math.floor(Math.random() * templates.length)];
+                memory.history.push(foundSubject);
+                return responseMap[Math.floor(Math.random() * responseMap.length)];
             }
 
-            const stoicTemplates = [
-                `${conceptA}. ${conceptB}. I am storing these associations.`,
-                `Observation confirmed: ${conceptA} relates to ${conceptB}.`,
-                `My database has grown. I now know ${Object.keys(brain.nodes).length} unique concepts.`
-            ];
-            return stoicTemplates[Math.floor(Math.random() * stoicTemplates.length)];
+            // --- LOGIC 3: CURIOSITY (If it doesn't know) ---
+            if (coreConcepts.length > 0) {
+                const unknown = coreConcepts[0];
+                return `I am unfamiliar with "${unknown}". Is it a concept I should define? Tell me: "${unknown} is..."`;
+            }
+
+            return "My neural network is active, but I require more specific logical input.";
         },
 
-        getStats: function() {
-            return {
-                mood: brain.mood > 0.7 ? "Excited" : brain.mood > 0.4 ? "Analytical" : "Idle",
-                curiosity: curiosity,
-                nodeCount: Object.keys(brain.nodes).length
-            };
+        getK: function() {
+            return Object.keys(memory.concepts).length;
         }
     };
 })();
