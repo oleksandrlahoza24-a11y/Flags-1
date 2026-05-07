@@ -2,414 +2,257 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>HELLDIVERS 3D: SUPER-EARTH COMMAND</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJK: Hollow Purple Animation</title>
     <style>
         :root {
-            --hd-yellow: #ffee00;
-            --hd-cyan: #00f2ff;
-            --hd-bg: #030508;
+            --red-color: #ff003c;
+            --blue-color: #0084ff;
+            --purple-color: #bc00ff;
+            --bg-color: #050505;
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background: var(--hd-bg);
-            font-family: 'Segoe UI', sans-serif;
-            user-select: none; touch-action: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        canvas { display: block; width: 100%; height: 100%; filter: contrast(1.1) brightness(1.1); }
-
-        /* --- UI OVERLAY --- */
-        #hud {
-            position: absolute; inset: 0; pointer-events: none;
-            color: var(--hd-yellow); font-weight: bold;
+        #scene {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
         }
 
-        #mission-card {
-            position: absolute; top: 40px; left: 40px;
-            padding: 15px; background: rgba(0,0,0,0.7);
-            border-left: 5px solid var(--hd-yellow);
+        /* Gojo Silhouette / Center Point */
+        #gojo {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            z-index: 10;
         }
 
-        /* STRATAGEM CONSOLE */
-        #stratagem-console {
-            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
-            width: 300px; padding: 20px; background: rgba(5, 10, 15, 0.95);
-            border: 2px solid var(--hd-yellow); display: none;
-            flex-direction: column; align-items: center; pointer-events: auto;
+        /* Orbs */
+        .orb {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            filter: blur(5px);
+            opacity: 0;
+            transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
         }
 
-        .code-display { display: flex; gap: 10px; margin-top: 15px; font-size: 30px; }
-
-        /* IPAD CONTROLS */
-        .joystick-container {
-            position: absolute; bottom: 50px; width: 180px; height: 180px;
-            background: rgba(255,255,255,0.05); border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
-        }
-        #move-ctrl { left: 50px; }
-        #aim-ctrl { right: 50px; }
-        .knob {
-            position: absolute; width: 60px; height: 60px; background: var(--hd-yellow);
-            border-radius: 50%; top: 60px; left: 60px; box-shadow: 0 0 20px var(--hd-yellow);
+        #blue-orb {
+            background: var(--blue-color);
+            box-shadow: 0 0 40px var(--blue-color), 0 0 80px var(--blue-color);
+            transform: translateX(-300px);
         }
 
-        #strat-btn {
-            position: absolute; bottom: 250px; left: 70px;
-            width: 100px; height: 100px; background: rgba(0, 242, 255, 0.2);
-            border: 2px solid var(--hd-cyan); border-radius: 20%;
-            color: var(--hd-cyan); display: flex; align-items: center;
-            justify-content: center; pointer-events: auto; font-size: 14px;
+        #red-orb {
+            background: var(--red-color);
+            box-shadow: 0 0 40px var(--red-color), 0 0 80px var(--red-color);
+            transform: translateX(300px);
         }
 
-        /* D-PAD FOR STRATAGEMS */
-        #dpad {
-            position: absolute; bottom: 50px; left: 50px; width: 220px; height: 220px;
-            display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; pointer-events: auto;
+        /* Impact Flash */
+        #flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
         }
-        .d-btn { background: rgba(255, 238, 0, 0.15); border: 2px solid var(--hd-yellow); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--hd-yellow); }
 
-        #start-screen {
-            position: absolute; inset: 0; background: black; z-index: 1000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        /* Canvas for Particles & Beam */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
         }
-        .btn-main { padding: 20px 60px; background: var(--hd-yellow); border: none; font-weight: 900; font-size: 20px; cursor: pointer; }
+
+        #ui-text {
+            position: absolute;
+            bottom: 50px;
+            color: white;
+            font-size: 14px;
+            letter-spacing: 2px;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+
+        /* Animation States */
+        .active #blue-orb, .active #red-orb {
+            opacity: 1;
+        }
+
+        .converge #blue-orb, .converge #red-orb {
+            transform: translateX(0px) scale(1.5);
+        }
     </style>
 </head>
 <body>
 
-<div id="start-screen">
-    <h1 style="color:white; letter-spacing: 15px;">HELLDIVERS</h1>
-    <h3 style="color:var(--hd-yellow); margin-bottom: 40px;">SUPER-EARTH ENGINE 3D</h3>
-    <button class="btn-main" onclick="startGame()">DIVE INTO HELL</button>
+<div id="scene">
+    <div id="ui-text">Click to activate: Hollow Purple</div>
+    <div id="gojo"></div>
+    <div id="blue-orb" class="orb"></div>
+    <div id="red-orb" class="orb"></div>
+    <div id="flash"></div>
+    <canvas id="canvas"></canvas>
 </div>
-
-<div id="hud">
-    <div id="mission-card">
-        <div style="font-size: 10px; opacity: 0.7;">CURRENT SECTOR</div>
-        <div>MALEVOLON CREEK</div>
-        <div id="stratagem-active-name" style="color:var(--hd-cyan); margin-top: 5px;">SUPER DESTROYER: SES PATRIOT OF PRIDE</div>
-    </div>
-
-    <div id="stratagem-console">
-        <div id="current-strat-name">ORBITAL LASER</div>
-        <div id="current-strat-code" class="code-display"></div>
-    </div>
-
-    <div id="move-ctrl" class="joystick-container"><div class="knob"></div></div>
-    <div id="aim-ctrl" class="joystick-container"><div class="knob"></div></div>
-    <div id="strat-btn">HOLD FOR<br>STRATAGEM</div>
-
-    <div id="dpad">
-        <div></div><div class="d-btn" data-dir="UP">↑</div><div></div>
-        <div class="d-btn" data-dir="LEFT">←</div><div class="d-btn" style="border:none"></div><div class="d-btn" data-dir="RIGHT">→</div>
-        <div></div><div class="d-btn" data-dir="DOWN">↓</div><div></div>
-    </div>
-</div>
-
-<canvas id="renderTarget"></canvas>
 
 <script>
-/**
- * CUSTOM 3D SOFTWARE RASTERIZER: "DEMOCRACY-3D"
- * Architected for iPad hardware without WebGL.
- */
+    const scene = document.getElementById('scene');
+    const flash = document.getElementById('flash');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
 
-const canvas = document.getElementById('renderTarget');
-const ctx = canvas.getContext('2d', { alpha: false });
-let width, height;
+    let particles = [];
+    let beamActive = false;
+    let animationFrame;
 
-// --- 3D MATH & ENGINE UTILS ---
-class Vec3 {
-    constructor(x, y, z) { this.x = x; this.y = y; this.z = z; }
-    static sub(a, b) { return new Vec3(a.x - b.x, a.y - b.y, a.z - b.z); }
-    static cross(a, b) {
-        return new Vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    // Resize canvas
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
-    static dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-    normalize() {
-        const mag = Math.sqrt(this.x**2 + this.y**2 + this.z**2);
-        this.x /= mag; this.y /= mag; this.z /= mag;
-        return this;
-    }
-}
-
-// Model structures: [x,y,z] vertices and [v1,v2,v3, color] faces
-const MODELS = {
-    // A more complex Super Destroyer shape
-    destroyer: {
-        verts: [
-            new Vec3(0, 0, 150), new Vec3(-40, 20, 0), new Vec3(40, 20, 0), new Vec3(0, -30, 0), // Nose/Body
-            new Vec3(-80, 10, -100), new Vec3(80, 10, -100), new Vec3(0, 40, -120) // Wings/Tail
-        ],
-        faces: [
-            [0, 1, 3, '#333'], [0, 2, 3, '#444'], [1, 2, 3, '#222'],
-            [1, 4, 6, '#333'], [2, 5, 6, '#333'], [4, 5, 6, '#111']
-        ]
-    },
-    hellpod: {
-        verts: [
-            new Vec3(-5, -20, -5), new Vec3(5, -20, -5), new Vec3(5, -20, 5), new Vec3(-5, -20, 5),
-            new Vec3(0, 0, 0)
-        ],
-        faces: [ [0,1,4, '#666'], [1,2,4, '#777'], [2,3,4, '#666'], [3,0,4, '#555'] ]
-    },
-    tree: {
-        verts: [ new Vec3(0, -60, 0), new Vec3(-15, 0, -15), new Vec3(15, 0, -15), new Vec3(0, 0, 15) ],
-        faces: [ [0,1,2, '#1a3300'], [0,2,3, '#2d5a00'], [0,3,1, '#1a3300'] ]
-    }
-};
-
-// --- GAME STATE ---
-const STATE = {
-    running: false,
-    camera: { x: 0, y: -200, z: -500, pitch: 0.3, yaw: 0 },
-    player: { x: 0, y: 0, z: 0, yaw: 0 },
-    objects: [], // {pos, model, color_mod}
-    planets: [
-        { x: 2000, y: -1000, z: 5000, r: 800, col: '#ff5722' },
-        { x: -3000, y: -1500, z: 8000, r: 1200, col: '#2196f3' }
-    ],
-    stratMode: false,
-    inputBuffer: [],
-    currentStratIdx: 0,
-    frame: 0
-};
-
-const STRATAGEMS = [];
-const DIRS = ["UP", "DOWN", "LEFT", "RIGHT"];
-for(let i=0; i<100; i++) {
-    let c = []; for(let j=0; j<5; j++) c.push(DIRS[Math.floor(Math.random()*4)]);
-    STRATAGEMS.push({ name: `STRATAGEM ${i+1}`, code: c });
-}
-
-// --- CORE ENGINE PIPELINE ---
-function project(v) {
-    // Camera Transform
-    let x = v.x - STATE.camera.x;
-    let y = v.y - STATE.camera.y;
-    let z = v.z - STATE.camera.z;
-
-    // Rotation (Yaw)
-    let cosY = Math.cos(STATE.camera.yaw);
-    let sinY = Math.sin(STATE.camera.yaw);
-    let nx = x * cosY - z * sinY;
-    let nz = x * sinY + z * cosY;
-
-    // Rotation (Pitch)
-    let cosP = Math.cos(STATE.camera.pitch);
-    let sinP = Math.sin(STATE.camera.pitch);
-    let ny = y * cosP - nz * sinP;
-    nz = y * sinP + nz * cosP;
-
-    if (nz < 10) return null; // Near-plane clipping
-
-    const fov = width * 0.8;
-    return {
-        x: (width / 2) + (nx * fov / nz),
-        y: (height / 2) + (ny * fov / nz),
-        z: nz
-    };
-}
-
-function render() {
-    ctx.fillStyle = '#030508';
-    ctx.fillRect(0, 0, width, height);
-
-    // 1. Draw Planets (Simple 3D Circles)
-    STATE.planets.forEach(p => {
-        const proj = project(p);
-        if (proj) {
-            const size = (p.r * (width * 0.8)) / proj.z;
-            const grad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, size);
-            grad.addColorStop(0, p.col);
-            grad.addColorStop(1, 'black');
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(proj.x, proj.y, size, 0, Math.PI*2); ctx.fill();
-        }
-    });
-
-    // 2. Collect all triangles for Z-sorting
-    const sceneTriangles = [];
-
-    // Add Super Destroyer (Floating High)
-    addModelToScene(MODELS.destroyer, new Vec3(0, -600, 1200), sceneTriangles);
-
-    // Add Procedural Forest
-    STATE.objects.forEach(obj => {
-        addModelToScene(MODELS[obj.type], obj.pos, sceneTriangles);
-    });
-
-    // 3. Painter's Algorithm: Sort by depth
-    sceneTriangles.sort((a, b) => b.zAvg - a.zAvg);
-
-    // 4. Rasterize Triangles with Lambert Shading
-    const lightDir = new Vec3(1, -1, 1).normalize();
-    sceneTriangles.forEach(tri => {
-        // Calculate Light Intensity
-        const v1 = Vec3.sub(tri.v2_orig, tri.v1_orig);
-        const v2 = Vec3.sub(tri.v3_orig, tri.v1_orig);
-        const normal = Vec3.cross(v1, v2).normalize();
-        const intensity = Math.max(0.2, Vec3.dot(normal, lightDir));
-
-        ctx.fillStyle = tri.color;
-        ctx.globalAlpha = 1.0;
-        
-        // Simple shade simulation
-        ctx.beginPath();
-        ctx.moveTo(tri.v1.x, tri.v1.y);
-        ctx.lineTo(tri.v2.x, tri.v2.y);
-        ctx.lineTo(tri.v3.x, tri.v3.y);
-        ctx.closePath();
-        
-        // Final pixel push
-        ctx.fill();
-        
-        // Add wireframe highlight for "tech" look
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        ctx.stroke();
-    });
-
-    STATE.frame++;
-    if (STATE.running) requestAnimationFrame(render);
-}
-
-function addModelToScene(model, pos, triangleBuffer) {
-    const projectedVerts = model.verts.map(v => {
-        const worldPos = new Vec3(v.x + pos.x, v.y + pos.y, v.z + pos.z);
-        return { proj: project(worldPos), orig: worldPos };
-    });
-
-    model.faces.forEach(f => {
-        const p1 = projectedVerts[f[0]];
-        const p2 = projectedVerts[f[1]];
-        const p3 = projectedVerts[f[2]];
-
-        if (p1.proj && p2.proj && p3.proj) {
-            triangleBuffer.push({
-                v1: p1.proj, v2: p2.proj, v3: p3.proj,
-                v1_orig: p1.orig, v2_orig: p2.orig, v3_orig: p3.orig,
-                zAvg: (p1.proj.z + p2.proj.z + p3.proj.z) / 3,
-                color: f[3]
-            });
-        }
-    });
-}
-
-// --- INPUT & GAME LOGIC ---
-function initInput() {
-    const stratBtn = document.getElementById('strat-btn');
-    const dpad = document.getElementById('dpad');
-    const moveCtrl = document.getElementById('move-ctrl');
-
-    stratBtn.addEventListener('touchstart', (e) => {
-        STATE.stratMode = true;
-        dpad.style.display = 'grid';
-        moveCtrl.style.display = 'none';
-        document.getElementById('stratagem-console').style.display = 'flex';
-        STATE.inputBuffer = [];
-        updateStratUI();
-    });
-
-    stratBtn.addEventListener('touchend', () => {
-        STATE.stratMode = false;
-        dpad.style.display = 'none';
-        moveCtrl.style.display = 'block';
-        document.getElementById('stratagem-console').style.display = 'none';
-    });
-
-    document.querySelectorAll('.d-btn').forEach(btn => {
-        btn.addEventListener('touchstart', (e) => {
-            const dir = e.target.dataset.dir;
-            const strat = STRATAGEMS[STATE.currentStratIdx];
-            if(strat.code[STATE.inputBuffer.length] === dir) {
-                STATE.inputBuffer.push(dir);
-                if(STATE.inputBuffer.length === strat.code.length) {
-                    callHellpod();
-                    STATE.currentStratIdx = (STATE.currentStratIdx + 1) % 100;
-                    stratBtn.dispatchEvent(new Event('touchend'));
-                }
-            } else {
-                STATE.inputBuffer = [];
-            }
-            updateStratUI();
-        });
-    });
-
-    // Simple Joystick Logic
-    setupJoystick('move-ctrl', (x, y) => {
-        if(!STATE.stratMode) {
-            STATE.camera.x += x * 10;
-            STATE.camera.z += -y * 10;
-        }
-    });
-}
-
-function updateStratUI() {
-    const strat = STRATAGEMS[STATE.currentStratIdx];
-    document.getElementById('current-strat-name').innerText = strat.name;
-    document.getElementById('current-strat-code').innerHTML = strat.code.map((d, i) => {
-        const col = i < STATE.inputBuffer.length ? 'var(--hd-yellow)' : '#444';
-        const sym = {UP:'↑', DOWN:'↓', LEFT:'←', RIGHT:'→'}[d];
-        return `<span style="color:${col}">${sym}</span>`;
-    }).join('');
-}
-
-function callHellpod() {
-    // Spawn a falling hellpod from the Destroyer's height
-    const pod = { pos: new Vec3(STATE.camera.x, -600, STATE.camera.z + 200), type: 'hellpod' };
-    STATE.objects.push(pod);
-    const fallInt = setInterval(() => {
-        pod.pos.y += 20;
-        if(pod.pos.y >= 0) {
-            pod.pos.y = 0;
-            clearInterval(fallInt);
-            spawnTree(pod.pos.x, pod.pos.z); // Deploy something
-        }
-    }, 16);
-}
-
-function spawnTree(x, z) {
-    STATE.objects.push({ pos: new Vec3(x, 0, z), type: 'tree' });
-}
-
-function setupJoystick(id, cb) {
-    const el = document.getElementById(id);
-    const knob = el.querySelector('.knob');
-    el.addEventListener('touchmove', (e) => {
-        const r = el.getBoundingClientRect();
-        const t = e.touches[0];
-        let dx = t.clientX - (r.left + 90);
-        let dy = t.clientY - (r.top + 90);
-        const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 60);
-        const ang = Math.atan2(dy, dx);
-        knob.style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
-        cb(Math.cos(ang)*dist/60, Math.sin(ang)*dist/60);
-    });
-    el.addEventListener('touchend', () => { knob.style.transform = `translate(0,0)`; });
-}
-
-function startGame() {
-    document.getElementById('start-screen').style.display = 'none';
+    window.addEventListener('resize', resize);
     resize();
-    STATE.running = true;
-    
-    // Seed the forest
-    for(let i=0; i<30; i++) {
-        spawnTree((Math.random()-0.5)*2000, (Math.random()-0.5)*2000);
+
+    class Particle {
+        constructor(x, y, color, speed, angle, size) {
+            this.x = x;
+            this.y = y;
+            this.color = color;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+            this.size = size;
+            this.life = 1;
+            this.decay = Math.random() * 0.02 + 0.005;
+        }
+
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            // Glow effect
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = this.color;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= this.decay;
+        }
     }
-    
-    initInput();
-    render();
-}
 
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
+    function createExplosion(x, y, color, count = 50) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 8 + 2;
+            const size = Math.random() * 4 + 1;
+            particles.push(new Particle(x, y, color, speed, angle, size));
+        }
+    }
 
+    function fireBeam() {
+        beamActive = true;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Sound simulation or intensity frames could go here
+        let frameCount = 0;
+        
+        function animateBeam() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (beamActive) {
+                frameCount++;
+                
+                // Draw Purple Core
+                const gradient = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 150 + Math.random() * 50);
+                gradient.addColorStop(0, '#fff');
+                gradient.addColorStop(0.2, '#bc00ff');
+                gradient.addColorStop(0.5, 'rgba(188, 0, 255, 0.4)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 200, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Fire particles forward (simulating the destruction path)
+                for(let i=0; i<15; i++){
+                    const pX = centerX;
+                    const pY = centerY;
+                    const angle = (Math.random() - 0.5) * 0.5; // Narrow spread
+                    const speed = Math.random() * 20 + 10;
+                    particles.push(new Particle(pX, pY, '#bc00ff', speed, angle, Math.random() * 8));
+                }
+            }
+
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            if (frameCount < 120) { // Duration of the beam
+                animationFrame = requestAnimationFrame(animateBeam);
+            } else {
+                beamActive = false;
+                setTimeout(() => {
+                    scene.classList.remove('active', 'converge');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles = [];
+                }, 1000);
+            }
+        }
+        animateBeam();
+    }
+
+    scene.addEventListener('click', () => {
+        if (scene.classList.contains('active')) return;
+
+        // Phase 1: Summon Blue and Red
+        scene.classList.add('active');
+        
+        setTimeout(() => {
+            // Phase 2: Converge
+            scene.classList.add('converge');
+        }, 1000);
+
+        setTimeout(() => {
+            // Phase 3: Collision & Flash
+            flash.style.opacity = '1';
+            createExplosion(window.innerWidth/2, window.innerHeight/2, '#ffffff', 100);
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                // Phase 4: Release Hollow Purple
+                fireBeam();
+            }, 100);
+        }, 2500); // Timing of collision
+    });
 </script>
+
 </body>
 </html>
