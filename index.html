@@ -3,67 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom AI Assistant</title>
+    <title>Generative Custom AI</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #chat-container { width: 400px; height: 600px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
-        #chat-header { background: #007bff; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2rem; }
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; font-size: 0.95rem; }
-        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .ai-msg { background: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
-        #input-area { border-top: 1px solid #eee; padding: 15px; display: flex; gap: 10px; }
-        #user-input { flex: 1; border: 1px solid #ddd; padding: 10px; border-radius: 20px; outline: none; }
-        #send-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-        #send-btn:hover { background: #0056b3; }
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #38bdf8; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #chat-container { width: 450px; height: 70vh; background: var(--card); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #334155; }
+        #header { padding: 20px; background: #0ea5e9; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; text-align: center; }
+        #chat-window { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .msg { padding: 12px 16px; border-radius: 15px; max-width: 85%; font-size: 0.95rem; animation: slide 0.3s ease-out; }
+        @keyframes slide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 2px; }
+        .ai { align-self: flex-start; background: #334155; color: white; border-bottom-left-radius: 2px; border: 1px solid #475569; }
+        #input-form { display: flex; padding: 15px; background: #1e293b; border-top: 1px solid #334155; gap: 10px; }
+        #user-input { flex: 1; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px 18px; border-radius: 30px; outline: none; }
+        #user-input:focus { border-color: var(--accent); }
+        button { background: var(--accent); border: none; color: white; padding: 0 20px; border-radius: 30px; cursor: pointer; font-weight: 600; }
+        .status { font-size: 0.7rem; color: #64748b; padding: 5px 20px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    <div id="chat-header">Nexus AI (Custom Model)</div>
+    <div id="header">BrainJS-Custom v1.0 (Generative)</div>
     <div id="chat-window">
-        <div class="message ai-msg">Hello! I am Nexus, a custom-coded AI. How can I help you today?</div>
+        <div class="msg ai">Systems initialized. I am ready to learn. Talk to me!</div>
     </div>
-    <form id="input-area">
-        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
-        <button type="submit" id="send-btn">Send</button>
+    <div class="status" id="brain-size">Brain Knowledge: 0 links</div>
+    <form id="input-form">
+        <input type="text" id="user-input" placeholder="Type something to teach me..." autocomplete="off">
+        <button type="submit">Send</button>
     </form>
 </div>
 
-<!-- Link the custom AI model script -->
 <script src="ai-model.js"></script>
-
 <script>
-    const chatWindow = document.getElementById('chat-window');
-    const inputForm = document.getElementById('input-area');
-    const userInput = document.getElementById('user-input');
+    const chat = document.getElementById('chat-window');
+    const form = document.getElementById('input-form');
+    const input = document.getElementById('user-input');
+    const brainInfo = document.getElementById('brain-size');
 
-    function appendMessage(text, sender) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${sender}-msg`;
-        msgDiv.innerText = text;
-        chatWindow.appendChild(msgDiv);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+    function updateBrainInfo() {
+        brainInfo.innerText = `Brain Knowledge: ${CustomAI.getStats()} associations`;
     }
 
-    inputForm.onsubmit = (e) => {
+    form.onsubmit = (e) => {
         e.preventDefault();
-        const text = userInput.value.trim();
+        const text = input.value.trim();
         if (!text) return;
 
-        // User Message
-        appendMessage(text, 'user');
-        userInput.value = '';
+        // Add user message
+        const userDiv = document.createElement('div');
+        userDiv.className = 'msg user';
+        userDiv.innerText = text;
+        chat.appendChild(userDiv);
+        
+        input.value = '';
+        chat.scrollTop = chat.scrollHeight;
 
-        // AI "Thinking" and Response
+        // Process and Respond
         setTimeout(() => {
-            // Call the function from ai-model.js
-            const response = NexusAI.process(text);
-            appendMessage(response, 'ai');
-        }, 500);
+            const response = CustomAI.generateResponse(text);
+            const aiDiv = document.createElement('div');
+            aiDiv.className = 'msg ai';
+            aiDiv.innerText = response;
+            chat.appendChild(aiDiv);
+            chat.scrollTop = chat.scrollHeight;
+            updateBrainInfo();
+        }, 600);
     };
-</script>
 
+    updateBrainInfo();
+</script>
 </body>
 </html>
