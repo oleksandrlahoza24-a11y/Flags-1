@@ -3,188 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <!-- iPad Standalone Mode Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Cozy Screen">
-    
-    <title>Cozy Floating Shapes</title>
+    <title>Cozy Liquid</title>
     <style>
         :root {
-            /* Warm, cozy palette: Cream, Peach, Soft Terracotta, Dust */
-            --bg-color: #fdf6ec;
-            --shape-1: rgba(232, 202, 166, 0.5);
-            --shape-2: rgba(211, 154, 106, 0.4);
-            --shape-3: rgba(164, 96, 61, 0.3);
-            --dust-color: rgba(74, 43, 34, 0.15);
+            /* Warm "Sunset & Oat" Palette */
+            --bg: #1a1614;
+            --color1: #ff8c61; /* Soft Peach */
+            --color2: #ce5a5a; /* Muted Terracotta */
+            --color3: #4a5d4a; /* Sage Dust */
+            --color4: #e8cca6; /* Creamy Sand */
+            --glass: rgba(255, 255, 255, 0.03);
         }
 
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg);
             overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Container for the blobs */
-        .stage {
+        /* The Liquid Container - Uses the SVG filter defined below */
+        .liquid-container {
             position: absolute;
             width: 100%;
             height: 100%;
-            filter: blur(40px); /* Creates the soft, organic "melting" look */
-            z-index: 1;
+            filter: url('#gooey');
+            overflow: hidden;
         }
 
-        /* Large morphing blobs */
+        /* The Grain Texture Overlay (Makes it look like high-end paper/film) */
+        .grain {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Large Realistic Blobs */
         .blob {
             position: absolute;
-            border-radius: 50%;
-            background: var(--shape-1);
-            animation: float 25s infinite ease-in-out alternate, morph 15s infinite ease-in-out alternate;
+            background: linear-gradient(135deg, var(--color1), var(--color2));
+            width: 70vw;
+            height: 70vw;
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            filter: blur(40px);
+            opacity: 0.7;
+            animation: 
+                move 35s infinite ease-in-out alternate,
+                morph 18s infinite ease-in-out alternate;
+            will-change: transform, border-radius;
         }
 
         .blob:nth-child(2) {
-            background: var(--shape-2);
-            width: 400px;
-            height: 400px;
-            left: 10%;
-            top: 20%;
-            animation-duration: 35s, 20s;
+            background: linear-gradient(135deg, var(--color3), var(--color4));
+            width: 80vw;
+            height: 80vw;
+            right: -10%;
+            top: -10%;
+            animation-duration: 45s, 25s;
+            opacity: 0.5;
         }
 
         .blob:nth-child(3) {
-            background: var(--shape-3);
-            width: 350px;
-            height: 350px;
-            right: 15%;
-            bottom: 10%;
-            animation-duration: 45s, 25s;
+            background: radial-gradient(circle, var(--color2), transparent);
+            width: 60vw;
+            height: 60vw;
+            left: 20%;
+            bottom: -20%;
+            animation-duration: 40s, 22s;
+            opacity: 0.6;
         }
 
-        @keyframes float {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(100px, 50px) rotate(90deg); }
-            100% { transform: translate(-50px, 150px) rotate(180deg); }
+        /* Premium Glassmorphism Card (Centered focus) */
+        .glass-overlay {
+            position: relative;
+            width: 85%;
+            height: 85%;
+            background: var(--glass);
+            backdrop-filter: blur(80px);
+            -webkit-backdrop-filter: blur(80px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 60px; /* Squircle-like radius */
+            z-index: 5;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes move {
+            0% { transform: translate(-10%, -10%) rotate(0deg); }
+            50% { transform: translate(20%, 15%) rotate(90deg); }
+            100% { transform: translate(-5%, 20%) rotate(180deg); }
         }
 
         @keyframes morph {
-            0% { border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%; }
-            33% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
-            66% { border-radius: 30% 70% 70% 30% / 50% 50% 30% 30%; }
-            100% { border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%; }
+            0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+            100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
         }
 
-        /* Dust particles (Canvas) */
-        #dustCanvas {
+        #hint {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* Subtle Instruction Overlay */
-        #ui-overlay {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: rgba(0,0,0,0.2);
-            font-size: 14px;
-            z-index: 10;
-            transition: opacity 2s;
+            bottom: 40px;
+            color: rgba(255,255,255,0.2);
+            font-family: -apple-system, sans-serif;
+            font-weight: 300;
+            letter-spacing: 1px;
+            font-size: 12px;
+            z-index: 20;
+            transition: opacity 1s;
         }
     </style>
 </head>
 <body>
 
-    <div class="stage">
-        <div class="blob" style="width: 500px; height: 500px; left: 30%; top: 40%;"></div>
+    <div class="grain"></div>
+    
+    <div class="liquid-container">
+        <div class="blob"></div>
         <div class="blob"></div>
         <div class="blob"></div>
     </div>
 
-    <canvas id="dustCanvas"></canvas>
+    <div class="glass-overlay"></div>
 
-    <div id="ui-overlay">Tap once to keep screen awake</div>
+    <div id="hint">Tap to keep screen awake</div>
+
+    <!-- The "Gooey" SVG Filter: This makes the shapes melt together -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display:none;">
+        <defs>
+            <filter id="gooey">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="25" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 40 -15" result="goo" />
+                <feBlend in="SourceGraphic" in2="goo" />
+            </filter>
+        </defs>
+    </svg>
 
     <script>
-        const canvas = document.getElementById('dustCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        // Resize canvas to iPad screen
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // Create "Dust" particles
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2 + 1;
-                this.speedX = Math.random() * 0.2 - 0.1;
-                this.speedY = Math.random() * 0.2 - 0.1;
-                this.opacity = Math.random() * 0.5;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.x < 0) this.x = canvas.width;
-                if (this.y > canvas.height) this.y = 0;
-                if (this.y < 0) this.y = canvas.height;
-            }
-            draw() {
-                ctx.fillStyle = `rgba(74, 43, 34, ${this.opacity})`;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        for (let i = 0; i < 60; i++) {
-            particles.push(new Particle());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // Prevent Screen Dimming (Screen Wake Lock API)
+        // Screen Wake Lock to keep the iPad on
         let wakeLock = null;
         const requestWakeLock = async () => {
             try {
                 wakeLock = await navigator.wakeLock.request('screen');
-                document.getElementById('ui-overlay').style.opacity = '0';
-                console.log('Wake Lock active');
+                document.getElementById('hint').style.opacity = '0';
             } catch (err) {
-                console.error(`${err.name}, ${err.message}`);
+                console.log(err);
             }
         };
 
-        // Needs a user gesture to start
-        window.addEventListener('click', () => {
-            requestWakeLock();
-        });
-
-        // Re-request if app is minimized and opened again
+        window.addEventListener('click', requestWakeLock);
+        
+        // Re-enable if the user leaves and comes back
         document.addEventListener('visibilitychange', () => {
             if (wakeLock !== null && document.visibilityState === 'visible') {
                 requestWakeLock();
