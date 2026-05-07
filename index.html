@@ -3,526 +3,406 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>HELLDIVERS 2: MOBILE ASCENDANT</title>
+    <title>HELLDIVERS 3D: CUSTOM ENGINE</title>
     <style>
         :root {
-            --hd-yellow: #ffeb3b;
-            --hd-cyan: #00e5ff;
-            --hd-red: #ff1744;
-            --hd-bg: #05070a;
-            --ui-font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --hd-yellow: #ffee00;
+            --hd-cyan: #00f2ff;
+            --hd-red: #ff3300;
+            --hd-bg: #020406;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: var(--hd-bg);
-            font-family: var(--ui-font); user-select: none; touch-action: none;
+            overflow: hidden; background: var(--hd-bg);
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none; touch-action: none;
         }
 
-        canvas { display: block; width: 100vw; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        /* --- TACTICAL UI --- */
-        #ui-root {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 100;
+        /* UI HUD */
+        #hud {
+            position: absolute; inset: 0; pointer-events: none;
+            color: var(--hd-yellow); text-shadow: 0 0 5px black;
         }
 
-        /* Stratagem Input Overlay - CENTERED FOR VISIBILITY */
-        #stratagem-display {
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center;
-            opacity: 0; transition: opacity 0.2s, transform 0.2s;
+        .stratagem-overlay {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: column; align-items: center;
+            background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid var(--hd-yellow);
+            border-radius: 10px; pointer-events: auto;
         }
 
-        .code-container {
-            display: flex; gap: 10px; margin-top: 10px;
+        .code-row { display: flex; gap: 10px; margin-top: 10px; font-size: 30px; }
+
+        /* CONTROLS */
+        .ctrl-zone {
+            position: absolute; bottom: 40px; width: 200px; height: 200px;
+            background: rgba(255,255,255,0.05); border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.1); pointer-events: auto;
         }
-
-        .arrow-key {
-            width: 50px; height: 50px; border: 2px solid rgba(255, 235, 59, 0.3);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; color: rgba(255, 235, 59, 0.3);
-            background: rgba(0,0,0,0.5); border-radius: 5px;
-        }
-
-        .arrow-key.active {
-            color: var(--hd-yellow); border-color: var(--hd-yellow);
-            box-shadow: 0 0 15px var(--hd-yellow); transform: scale(1.1);
-        }
-
-        /* HUGE TOUCH PAD FOR IPAD */
-        #touch-controls {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 100%;
-        }
-
-        .joystick {
-            position: absolute; width: 180px; height: 180px;
-            background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 50%; pointer-events: auto;
-        }
-
-        #move-joy { bottom: 60px; left: 60px; }
-        #aim-joy { bottom: 60px; right: 60px; }
-
+        #move-zone { left: 40px; }
+        #aim-zone { right: 40px; }
         .knob {
-            position: absolute; width: 70px; height: 70px;
-            background: rgba(255,255,255,0.2); border-radius: 50%;
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; width: 60px; height: 60px; background: var(--hd-yellow);
+            border-radius: 50%; top: 70px; left: 70px; box-shadow: 0 0 20px var(--hd-yellow);
         }
 
-        #strat-hold-btn {
-            position: absolute; bottom: 280px; left: 80px;
-            width: 100px; height: 100px; background: rgba(0, 229, 255, 0.2);
-            border: 2px solid var(--hd-cyan); border-radius: 15px;
-            color: var(--hd-cyan); display: flex; align-items: center;
-            justify-content: center; font-weight: bold; pointer-events: auto;
-            text-align: center; font-size: 12px;
+        #action-buttons {
+            position: absolute; bottom: 260px; right: 40px; display: flex; flex-direction: column; gap: 20px;
         }
 
-        /* Tactile D-PAD that appears on left side when holding Strat button */
-        #tactile-dpad {
-            position: absolute; bottom: 60px; left: 60px;
-            width: 200px; height: 200px; display: none;
-            grid-template-columns: repeat(3, 1fr); gap: 10px;
-            pointer-events: auto; z-index: 1000;
+        .btn {
+            width: 80px; height: 80px; border-radius: 15px; border: 2px solid var(--hd-yellow);
+            background: rgba(0,0,0,0.6); color: var(--hd-yellow); font-weight: bold;
+            pointer-events: auto; display: flex; align-items: center; justify-content: center;
         }
 
-        .d-btn {
-            background: rgba(255, 235, 59, 0.1); border: 2px solid var(--hd-yellow);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            color: var(--hd-yellow); font-size: 30px;
+        #stratagem-dpad {
+            position: absolute; bottom: 40px; left: 40px; width: 250px; height: 250px;
+            display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; pointer-events: auto;
         }
-
-        /* LOADING / START SCREENS */
-        #overlay-screen {
-            position: absolute; inset: 0; background: black;
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; z-index: 2000; pointer-events: auto;
-        }
-
-        .mission-btn {
-            padding: 20px 50px; background: var(--hd-yellow); color: black;
-            border: none; font-weight: 900; font-size: 24px; cursor: pointer;
-            margin-top: 30px; letter-spacing: 2px;
-        }
+        .d-btn { background: rgba(255, 238, 0, 0.2); border: 2px solid var(--hd-yellow); color: white; display: flex; align-items: center; justify-content: center; font-size: 32px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div id="ui-root">
-    <div id="overlay-screen">
-        <div style="color:var(--hd-yellow); font-size: 12px; letter-spacing: 10px;">SUPER EARTH COMMAND</div>
-        <h1 style="color:white; font-size: 64px; margin: 10px 0;">HELLDIVERS</h1>
-        <div style="color:var(--hd-cyan); font-style: italic;">"Freedom is a full magazine."</div>
-        <button class="mission-btn" id="start-btn">DEPLOY TO MALEVOLON CREEK</button>
+<canvas id="screen"></canvas>
+
+<div id="hud">
+    <div id="stratagem-ui" class="stratagem-overlay">
+        <div id="strat-name">ORBITAL PRECISION STRIKE</div>
+        <div id="strat-code" class="code-row"></div>
     </div>
 
-    <div id="stratagem-display">
-        <div id="strat-name" style="color:var(--hd-yellow); font-weight: bold; font-size: 24px; text-shadow: 0 0 10px black;">ORBITAL PRECISION STRIKE</div>
-        <div class="code-container" id="strat-code-row"></div>
+    <div id="move-zone" class="ctrl-zone"><div class="knob"></div></div>
+    <div id="aim-zone" class="ctrl-zone"><div class="knob"></div></div>
+
+    <div id="stratagem-dpad">
+        <div></div><div class="d-btn" data-dir="UP">↑</div><div></div>
+        <div class="d-btn" data-dir="LEFT">←</div><div class="d-btn" style="border:none"></div><div class="d-btn" data-dir="RIGHT">→</div>
+        <div></div><div class="d-btn" data-dir="DOWN">↓</div><div></div>
     </div>
 
-    <div id="touch-controls">
-        <div id="move-joy" class="joystick"><div class="knob"></div></div>
-        <div id="aim-joy" class="joystick"><div class="knob"></div></div>
-        <div id="strat-hold-btn">HOLD FOR<br>STRATAGEM</div>
-        
-        <div id="tactile-dpad">
-            <div></div><div class="d-btn" data-dir="UP">↑</div><div></div>
-            <div class="d-btn" data-dir="LEFT">←</div><div class="d-btn" style="border:none; background:none"></div><div class="d-btn" data-dir="RIGHT">→</div>
-            <div></div><div class="d-btn" data-dir="DOWN">↓</div><div></div>
-        </div>
+    <div id="action-buttons">
+        <div id="btn-strat" class="btn">STRAT</div>
+        <div id="btn-dive" class="btn">DIVE</div>
+    </div>
+
+    <div style="position:absolute; top:20px; left:20px;">
+        <div>OBJECTIVE: ELIMINATE XENO MENACE</div>
+        <div id="ammo">AMMO: 30 / 30</div>
     </div>
 </div>
 
-<canvas id="gameCanvas"></canvas>
-
 <script>
 /**
- * HELLDIVERS 3.0 ENGINE
- * Features: High-resolution Canvas, Procedural 100 Stratagem List,
- * Dynamic Lighting, Verlet-simulated Cape, and Tactile iPad input.
+ * CUSTOM 3D ENGINE - "DEMOCRACY RASTERIZER"
+ * No WebGL. No libraries. Pure Canvas 2D math.
  */
 
-const CONFIG = {
-    PLAYER_SPEED: 4.5,
-    BULLET_SPEED: 18,
-    ENEMY_MAX: 25,
-    DIVE_FORCE: 12,
-    COLOR_YELLOW: '#ffeb3b',
-    COLOR_CYAN: '#00e5ff',
-    COLOR_RED: '#ff1744'
+// --- 1. VECTOR & MATRIX MATH LIBRARY ---
+const M3D = {
+    project(v, camera, w, h) {
+        // Translate relative to camera
+        let x = v.x - camera.x;
+        let y = v.y - camera.y;
+        let z = v.z - camera.z;
+
+        // Rotate based on camera yaw (horizontal)
+        let cos = Math.cos(camera.yaw);
+        let sin = Math.sin(camera.yaw);
+        let tx = x * cos - z * sin;
+        let tz = x * sin + z * cos;
+        
+        // Simple perspective projection
+        if (tz < 0.1) return null; // Clipping
+        const fov = 400;
+        const scale = fov / tz;
+        return {
+            x: (w / 2) + tx * scale,
+            y: (h / 2) + y * scale,
+            scale: scale,
+            z: tz
+        };
+    }
 };
 
-// --- DATA: 100 STRATAGEMS ---
-const STRATAGEM_LIBRARY = [];
-const Prefixes = ["Orbital", "Eagle", "Sentry", "Supply", "Precision", "Tesla", "Jump-Pack"];
-const Suffixes = ["Strike", "Barrage", "Gun", "Pod", "Laser", "Explosion", "Wall", "Relay"];
-const Directions = ["UP", "DOWN", "LEFT", "RIGHT"];
-
-for (let i = 0; i < 100; i++) {
-    const codeLength = 3 + Math.floor(i / 20);
-    const code = [];
-    for(let j=0; j<codeLength; j++) code.push(Directions[Math.floor(Math.random()*4)]);
-    
-    STRATAGEM_LIBRARY.push({
-        name: `${Prefixes[i % Prefixes.length]} ${Suffixes[i % Suffixes.length]} ${i+1}`,
+// --- 2. GAME CONFIG & 100 STRATAGEMS ---
+const STRATAGEMS = [];
+const DIRS = ["UP", "DOWN", "LEFT", "RIGHT"];
+for(let i=0; i<100; i++) {
+    let code = [];
+    for(let j=0; j<4+(i%4); j++) code.push(DIRS[Math.floor(Math.random()*4)]);
+    STRATAGEMS.push({
+        name: `COMMAND ${101+i}: ${["STRIKE", "POD", "SENTRY", "BOMB"][i%4]}`,
         code: code,
-        type: i % 4 === 0 ? 'red' : 'blue',
-        cooldown: 0
+        type: i % 2 === 0 ? 'ATTACK' : 'SUPPORT'
     });
 }
 
-// --- ENGINE STATE ---
-const STATE = {
-    running: false,
-    player: {
-        x: 0, y: 0, 
-        angle: 0, 
-        ammo: 45, 
-        health: 100, 
-        isDiving: false,
-        lastShot: 0,
-        cape: [] // Verlet points
-    },
-    input: {
-        move: { x: 0, y: 0 },
-        aim: { x: 0, y: 0 },
-        isFiring: false,
-        isStratMode: false,
-        stratIndex: 0,
-        codeProgress: 0
-    },
-    entities: {
-        enemies: [],
-        bullets: [],
-        particles: [],
-        stratBeams: []
-    },
-    camera: { x: 0, y: 0, shake: 0 }
-};
-
-// --- CORE SYSTEMS ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
+// --- 3. ENGINE STATE ---
+const canvas = document.getElementById('screen');
+const ctx = canvas.getContext('2d');
 let width, height;
 
+const STATE = {
+    camera: { x: 0, y: -200, z: -400, yaw: 0 },
+    player: { x: 0, y: 0, z: 0, yaw: 0, ammo: 30 },
+    input: { move: {x:0, y:0}, aim: {x:0, y:0}, stratMode: false, codeIdx: 0, activeStrat: 0 },
+    entities: [], // {x, y, z, type, model}
+    bullets: [],
+    frame: 0
+};
+
+// Procedural Models (Vertices)
+const MODELS = {
+    player: [[-10,0,-10], [10,0,-10], [10,0,10], [-10,0,10], [0,-40,0]], // Pyramid
+    enemy: [[-15,0,0], [0,0,15], [15,0,0], [0,0,-15], [0,-30,0]],
+    pod: [[-20,-100,-20], [20,-100,-20], [20,0,20], [-20,0,20]], // Dropping Box
+    beacon: [[-2,-2,-2], [2,2,2]]
+};
+
+// --- 4. CORE ENGINE FUNCTIONS ---
 function resize() {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-    STATE.player.x = width/2;
-    STATE.player.y = height/2;
-    initCape();
 }
-
 window.addEventListener('resize', resize);
 resize();
 
-// --- AUDIO (Synthesized) ---
-const AudioEngine = {
-    ctx: new (window.AudioContext || window.webkitAudioContext)(),
-    play(freq, type, decay, vol) {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = type;
-        o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        o.frequency.exponentialRampToValueAtTime(1, this.ctx.currentTime + decay);
-        g.gain.setValueAtTime(vol, this.ctx.currentTime);
-        g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + decay);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(); o.stop(this.ctx.currentTime + decay);
-    },
-    shoot() { this.play(400, 'triangle', 0.1, 0.2); },
-    stratSuccess() { this.play(800, 'sine', 0.5, 0.3); },
-    explosion() { this.play(60, 'sawtooth', 1.0, 0.4); }
-};
-
-// --- PLAYER CAPE PHYSICS (Verlet Integration) ---
-function initCape() {
-    STATE.player.cape = [];
-    for(let i=0; i<6; i++) {
-        STATE.player.cape.push({ x: STATE.player.x, y: STATE.player.y, oldX: STATE.player.x, oldY: STATE.player.y });
-    }
-}
-
-function updateCape() {
-    const head = STATE.player.cape[0];
-    // Attach to player back
-    const offsetX = Math.cos(STATE.player.angle + Math.PI) * 10;
-    const offsetY = Math.sin(STATE.player.angle + Math.PI) * 10;
-    head.x = STATE.player.x + offsetX;
-    head.y = STATE.player.y + offsetY;
-
-    for (let i = 1; i < STATE.player.cape.length; i++) {
-        const p = STATE.player.cape[i];
-        const prev = STATE.player.cape[i-1];
-        
-        // Physics
-        const vx = (p.x - p.oldX) * 0.9;
-        const vy = (p.y - p.oldY) * 0.9;
-        p.oldX = p.x; p.oldY = p.y;
-        p.x += vx; p.y += vy;
-        p.y += 0.2; // Gravity simulation
-
-        // Constrain
-        const dx = p.x - prev.x;
-        const dy = p.y - prev.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const error = dist - 6;
-        p.x -= (dx/dist) * error;
-        p.y -= (dy/dist) * error;
-    }
-}
-
-// --- DRAWING ENGINE ---
-function drawWorld() {
-    // Background Grid
-    ctx.fillStyle = '#05070a';
-    ctx.fillRect(0,0,width,height);
-    
-    ctx.strokeStyle = '#101520';
-    ctx.lineWidth = 1;
-    for(let i=0; i<width; i+=80) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
-    }
-    for(let i=0; i<height; i+=80) {
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
-    }
-
-    // Dynamic Lighting Pass (Flashlight)
-    const grd = ctx.createRadialGradient(STATE.player.x, STATE.player.y, 20, STATE.player.x, STATE.player.y, 400);
-    grd.addColorStop(0, 'rgba(0, 229, 255, 0.15)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,width,height);
-
-    // Stratagem Beams
-    STATE.entities.stratBeams.forEach((beam, idx) => {
-        const alpha = Math.sin(Date.now() / 100);
-        ctx.strokeStyle = beam.type === 'red' ? `rgba(255, 23, 68, ${0.5 + alpha * 0.5})` : `rgba(0, 229, 255, 0.8)`;
-        ctx.lineWidth = 10;
-        ctx.shadowBlur = 20; ctx.shadowColor = ctx.strokeStyle;
-        ctx.beginPath(); ctx.moveTo(beam.x, beam.y); ctx.lineTo(beam.x, beam.y - 1000); ctx.stroke();
-        ctx.shadowBlur = 0;
-        
-        beam.timer--;
-        if(beam.timer <= 0) {
-            AudioEngine.explosion();
-            STATE.camera.shake = 30;
-            // Clear enemies near beam
-            STATE.entities.enemies = STATE.entities.enemies.filter(e => {
-                const d = Math.hypot(e.x - beam.x, e.y - beam.y);
-                return d > 150;
-            });
-            STATE.entities.stratBeams.splice(idx, 1);
-        }
-    });
-
-    // Cape
-    ctx.strokeStyle = CONFIG.COLOR_YELLOW;
-    ctx.lineWidth = 12;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(STATE.player.cape[0].x, STATE.player.cape[0].y);
-    for(let i=1; i<STATE.player.cape.length; i++) ctx.lineTo(STATE.player.cape[i].x, STATE.player.cape[i].y);
-    ctx.stroke();
-
-    // Player
-    ctx.save();
-    ctx.translate(STATE.player.x, STATE.player.y);
-    ctx.rotate(STATE.player.angle);
-    ctx.fillStyle = '#111';
-    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = CONFIG.COLOR_YELLOW;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    // Helmet
-    ctx.fillStyle = '#222';
-    ctx.fillRect(5, -8, 8, 16);
-    ctx.restore();
-
-    // Enemies
-    STATE.entities.enemies.forEach(e => {
-        ctx.fillStyle = CONFIG.COLOR_RED;
-        ctx.shadowBlur = 10; ctx.shadowColor = 'red';
-        ctx.beginPath(); ctx.moveTo(e.x, e.y-12); ctx.lineTo(e.x+12, e.y+12); ctx.lineTo(e.x-12, e.y+12); ctx.fill();
-        ctx.shadowBlur = 0;
-    });
-
-    // Bullets
-    ctx.fillStyle = CONFIG.COLOR_YELLOW;
-    STATE.entities.bullets.forEach(b => {
-        ctx.fillRect(b.x, b.y, 4, 4);
+function spawnEnemy() {
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 600 + Math.random() * 400;
+    STATE.entities.push({
+        x: Math.cos(ang) * dist,
+        y: 0,
+        z: Math.sin(ang) * dist,
+        type: 'enemy',
+        hp: 3
     });
 }
 
-// --- LOGIC LOOP ---
 function update() {
-    if (!STATE.running) return;
+    // 1. Move Player
+    const moveX = STATE.input.move.x * 5;
+    const moveZ = -STATE.input.move.y * 5;
+    STATE.player.x += moveX;
+    STATE.player.z += moveZ;
 
-    // Shake Decay
-    STATE.camera.shake *= 0.9;
+    // 2. Camera follows player
+    STATE.camera.x += (STATE.player.x - STATE.camera.x) * 0.1;
+    STATE.camera.z += (STATE.player.z - 400 - STATE.camera.z) * 0.1;
 
-    // Movement
-    if (!STATE.input.isStratMode) {
-        STATE.player.x += STATE.input.move.x * CONFIG.PLAYER_SPEED;
-        STATE.player.y += STATE.input.move.y * CONFIG.PLAYER_SPEED;
-    }
-
-    // Aiming
+    // 3. Bullets
     if (Math.abs(STATE.input.aim.x) > 0.1 || Math.abs(STATE.input.aim.y) > 0.1) {
-        STATE.player.angle = Math.atan2(STATE.input.aim.y, STATE.input.aim.x);
-        // Auto-fire
-        if (Date.now() - STATE.player.lastShot > 150 && !STATE.input.isStratMode) {
-            STATE.entities.bullets.push({
-                x: STATE.player.x, y: STATE.player.y,
-                vx: Math.cos(STATE.player.angle) * CONFIG.BULLET_SPEED,
-                vy: Math.sin(STATE.player.angle) * CONFIG.BULLET_SPEED
+        STATE.player.yaw = Math.atan2(STATE.input.aim.x, -STATE.input.aim.y);
+        if (STATE.frame % 10 === 0 && STATE.player.ammo > 0) {
+            STATE.bullets.push({
+                x: STATE.player.x, y: -20, z: STATE.player.z,
+                vx: Math.sin(STATE.player.yaw) * 15,
+                vz: Math.cos(STATE.player.yaw) * 15,
+                life: 60
             });
-            STATE.player.lastShot = Date.now();
-            AudioEngine.shoot();
+            STATE.player.ammo--;
         }
     }
+    if (STATE.player.ammo <= 0 && STATE.frame % 120 === 0) STATE.player.ammo = 30;
 
-    // Physics
-    STATE.entities.bullets.forEach((b, i) => {
-        b.x += b.vx; b.y += b.vy;
-        if (b.x < 0 || b.x > width || b.y < 0 || b.y > height) STATE.entities.bullets.splice(i, 1);
+    STATE.bullets.forEach((b, i) => {
+        b.x += b.vx; b.z += b.vz; b.life--;
+        if(b.life <= 0) STATE.bullets.splice(i, 1);
     });
 
-    // Enemy AI
-    if (STATE.entities.enemies.length < CONFIG.ENEMY_MAX && Math.random() < 0.05) {
-        STATE.entities.enemies.push({ x: Math.random() * width, y: -20, hp: 2 });
-    }
-    STATE.entities.enemies.forEach((e, i) => {
-        const ang = Math.atan2(STATE.player.y - e.y, STATE.player.x - e.x);
-        e.x += Math.cos(ang) * 2; e.y += Math.sin(ang) * 2;
+    // 4. Enemy Logic
+    STATE.entities.forEach((e, i) => {
+        if(e.type === 'enemy') {
+            const dx = STATE.player.x - e.x;
+            const dz = STATE.player.z - e.z;
+            const dist = Math.hypot(dx, dz);
+            e.x += (dx / dist) * 2;
+            e.z += (dz / dist) * 2;
+
+            // Collision with bullets
+            STATE.bullets.forEach((b, bi) => {
+                if(Math.hypot(e.x - b.x, e.z - b.z) < 30) {
+                    e.hp--;
+                    STATE.bullets.splice(bi, 1);
+                    if(e.hp <= 0) STATE.entities.splice(i, 1);
+                }
+            });
+        }
         
-        // Bullet collision
-        STATE.entities.bullets.forEach((b, bi) => {
-            if (Math.hypot(e.x - b.x, e.y - b.y) < 20) {
-                e.hp--;
-                STATE.entities.bullets.splice(bi, 1);
-                if (e.hp <= 0) STATE.entities.enemies.splice(i, 1);
+        // Stratagem Pod Logic
+        if(e.type === 'pod') {
+            if(e.y < 0) e.y += 20; // Falling physics
+            else {
+                // Slam effect
+                if(!e.landed) { e.landed = true; spawnExplosion(e.x, e.z); }
             }
-        });
+        }
     });
 
-    updateCape();
+    if(STATE.frame % 100 === 0 && STATE.entities.length < 20) spawnEnemy();
+    STATE.frame++;
 }
 
-// --- INPUT HANDLING (REBUILT FOR STRATAGEM CLARITY) ---
-function initInput() {
-    const joyMove = document.getElementById('move-joy');
-    const joyAim = document.getElementById('aim-joy');
-    const stratBtn = document.getElementById('strat-hold-btn');
-    const dPad = document.getElementById('tactile-dpad');
-    const stratOverlay = document.getElementById('stratagem-display');
-    const stratCodeRow = document.getElementById('strat-code-row');
+function render() {
+    // Clear
+    ctx.fillStyle = '#020406';
+    ctx.fillRect(0,0,width,height);
 
-    const setupJoystick = (el, type) => {
-        el.addEventListener('touchstart', (e) => handleJoy(e, el, type));
-        el.addEventListener('touchmove', (e) => handleJoy(e, el, type));
-        el.addEventListener('touchend', () => {
-            STATE.input[type] = { x: 0, y: 0 };
-            el.querySelector('.knob').style.transform = `translate(-50%, -50%)`;
+    // Draw Floor (3D Grid)
+    ctx.strokeStyle = '#0a1520';
+    ctx.lineWidth = 1;
+    for(let i=-2000; i<=2000; i+=100) {
+        // X lines
+        drawLine3D(i, 0, -2000, i, 0, 2000, '#0a1520');
+        // Z lines
+        drawLine3D(-2000, 0, i, 2000, 0, i, '#0a1520');
+    }
+
+    // Render Entities
+    const allDrawables = [
+        ...STATE.entities,
+        {x: STATE.player.x, y: STATE.player.y, z: STATE.player.z, type: 'player'}
+    ];
+
+    // Z-Sorting (Painter's Algorithm)
+    allDrawables.sort((a, b) => {
+        const distA = Math.hypot(a.x - STATE.camera.x, a.z - STATE.camera.z);
+        const distB = Math.hypot(b.x - STATE.camera.x, b.z - STATE.camera.z);
+        return distB - distA;
+    });
+
+    allDrawables.forEach(e => {
+        const model = MODELS[e.type];
+        if(!model) return;
+        
+        const color = e.type === 'player' ? '#ffee00' : (e.type === 'enemy' ? '#ff3300' : '#00f2ff');
+        
+        // Draw Model Wireframe
+        for(let i=0; i<model.length; i++) {
+            const p1 = model[i];
+            const p2 = model[(i+1)%model.length];
+            drawLine3D(e.x+p1[0], e.y+p1[1], e.z+p1[2], e.x+p2[0], e.y+p2[1], e.z+p2[2], color);
+        }
+    });
+
+    // Draw Bullets
+    STATE.bullets.forEach(b => {
+        drawLine3D(b.x, b.y, b.z, b.x-b.vx, b.y, b.z-b.vz, '#fff');
+    });
+
+    document.getElementById('ammo').innerText = `AMMO: ${STATE.player.ammo} / 30`;
+    requestAnimationFrame(() => { update(); render(); });
+}
+
+function drawLine3D(x1, y1, z1, x2, y2, z2, color) {
+    const p1 = M3D.project({x:x1, y:y1, z:z1}, STATE.camera, width, height);
+    const p2 = M3D.project({x:x2, y:y2, z:z2}, STATE.camera, width, height);
+
+    if (p1 && p2) {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    }
+}
+
+function spawnExplosion(x, z) {
+    // Visual wipe of nearby enemies
+    STATE.entities.forEach((e, i) => {
+        if(e.type === 'enemy' && Math.hypot(e.x - x, e.z - z) < 150) {
+            STATE.entities.splice(i, 1);
+        }
+    });
+}
+
+// --- 5. INPUT SYSTEM ---
+function initInput() {
+    const setupJoy = (id, key) => {
+        const zone = document.getElementById(id);
+        zone.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = zone.getBoundingClientRect();
+            const process = (t) => {
+                const dx = t.clientX - (rect.left + 100);
+                const dy = t.clientY - (rect.top + 100);
+                const dist = Math.min(Math.hypot(dx, dy), 70);
+                const ang = Math.atan2(dy, dx);
+                STATE.input[key] = { x: (Math.cos(ang)*dist)/70, y: (Math.sin(ang)*dist)/70 };
+                zone.querySelector('.knob').style.transform = `translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist}px)`;
+            };
+            process(touch);
+            const moveSub = (me) => process(me.touches[0]);
+            const endSub = () => {
+                STATE.input[key] = {x:0, y:0};
+                zone.querySelector('.knob').style.transform = `translate(0,0)`;
+                window.removeEventListener('touchmove', moveSub);
+                window.removeEventListener('touchend', endSub);
+            };
+            window.addEventListener('touchmove', moveSub);
+            window.addEventListener('touchend', endSub);
         });
     };
 
-    const handleJoy = (e, el, type) => {
-        const rect = el.getBoundingClientRect();
-        const touch = e.touches[0];
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const dx = touch.clientX - cx;
-        const dy = touch.clientY - cy;
-        const dist = Math.min(Math.hypot(dx, dy), 80);
-        const ang = Math.atan2(dy, dx);
-        
-        const kx = Math.cos(ang) * dist;
-        const ky = Math.sin(ang) * dist;
-        el.querySelector('.knob').style.transform = `translate(calc(-50% + ${kx}px), calc(-50% + ${ky}px))`;
-        STATE.input[type] = { x: kx / 80, y: ky / 80 };
-    };
+    setupJoy('move-zone', 'move');
+    setupJoy('aim-zone', 'aim');
 
-    setupJoystick(joyMove, 'move');
-    setupJoystick(joyAim, 'aim');
-
-    // STRATAGEM HOLD LOGIC
-    stratBtn.addEventListener('touchstart', (e) => {
-        STATE.input.isStratMode = true;
-        STATE.input.codeProgress = 0;
-        dPad.style.display = 'grid';
-        joyMove.style.display = 'none';
-        stratOverlay.style.opacity = '1';
-        updateStratUI();
+    // Stratagem Toggle
+    document.getElementById('btn-strat').addEventListener('touchstart', () => {
+        STATE.input.stratMode = !STATE.input.stratMode;
+        document.getElementById('stratagem-ui').style.display = STATE.input.stratMode ? 'flex' : 'none';
+        document.getElementById('stratagem-dpad').style.display = STATE.input.stratMode ? 'grid' : 'none';
+        document.getElementById('move-zone').style.display = STATE.input.stratMode ? 'none' : 'block';
+        if(STATE.input.stratMode) {
+            STATE.input.activeStrat = Math.floor(Math.random()*100);
+            STATE.input.codeIdx = 0;
+            renderStratCode();
+        }
     });
 
-    stratBtn.addEventListener('touchend', () => {
-        STATE.input.isStratMode = false;
-        dPad.style.display = 'none';
-        joyMove.style.display = 'block';
-        stratOverlay.style.opacity = '0';
-    });
-
-    // D-PAD TAP LOGIC
     document.querySelectorAll('.d-btn').forEach(btn => {
         btn.addEventListener('touchstart', (e) => {
             const dir = e.target.dataset.dir;
-            if(!dir) return;
-            
-            const currentStrat = STRATAGEM_LIBRARY[STATE.input.stratIndex];
-            if(currentStrat.code[STATE.input.codeProgress] === dir) {
-                STATE.input.codeProgress++;
-                AudioEngine.play(600 + (STATE.input.codeProgress * 100), 'sine', 0.1, 0.2);
-                
-                if(STATE.input.codeProgress === currentStrat.code.length) {
-                    // Success!
-                    STATE.entities.stratBeams.push({
-                        x: STATE.player.x + (Math.random() - 0.5) * 100,
-                        y: STATE.player.y + (Math.random() - 0.5) * 100,
-                        type: currentStrat.type,
-                        timer: 120
+            const strat = STRATAGEMS[STATE.input.activeStrat];
+            if(strat.code[STATE.input.codeIdx] === dir) {
+                STATE.input.codeIdx++;
+                if(STATE.input.codeIdx === strat.code.length) {
+                    // CALL DOWN POD
+                    STATE.entities.push({
+                        x: STATE.player.x + Math.sin(STATE.player.yaw)*100,
+                        y: -1000, // Sky
+                        z: STATE.player.z + Math.cos(STATE.player.yaw)*100,
+                        type: 'pod'
                     });
-                    AudioEngine.stratSuccess();
-                    STATE.input.codeProgress = 0;
-                    // Rotate to next random stratagem from the 100
-                    STATE.input.stratIndex = Math.floor(Math.random() * 100);
+                    // Close UI
+                    document.getElementById('btn-strat').dispatchEvent(new Event('touchstart'));
                 }
             } else {
-                STATE.input.codeProgress = 0; // Fail reset
-                AudioEngine.play(150, 'sawtooth', 0.2, 0.2);
+                STATE.input.codeIdx = 0;
             }
-            updateStratUI();
+            renderStratCode();
         });
     });
-
-    function updateStratUI() {
-        const current = STRATAGEM_LIBRARY[STATE.input.stratIndex];
-        document.getElementById('strat-name').innerText = current.name;
-        stratCodeRow.innerHTML = current.code.map((dir, i) => {
-            const sym = { UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→' }[dir];
-            const active = i < STATE.input.codeProgress ? 'active' : '';
-            return `<div class="arrow-key ${active}">${sym}</div>`;
-        }).join('');
-    }
 }
 
-// --- START ---
-document.getElementById('start-btn').onclick = () => {
-    AudioEngine.ctx.resume();
-    STATE.running = true;
-    document.getElementById('overlay-screen').style.display = 'none';
-    STATE.input.stratIndex = Math.floor(Math.random() * 100);
-    initInput();
-    loop();
-};
-
-function loop() {
-    update();
-    drawWorld();
-    requestAnimationFrame(loop);
+function renderStratCode() {
+    const strat = STRATAGEMS[STATE.input.activeStrat];
+    document.getElementById('strat-name').innerText = strat.name;
+    document.getElementById('strat-code').innerHTML = strat.code.map((d, i) => {
+        const color = i < STATE.input.codeIdx ? 'var(--hd-yellow)' : '#333';
+        const sym = {UP:'↑', DOWN:'↓', LEFT:'←', RIGHT:'→'}[d];
+        return `<span style="color:${color}">${sym}</span>`;
+    }).join('');
 }
+
+// Start Engine
+initInput();
+render();
 
 </script>
 </body>
