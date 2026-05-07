@@ -3,221 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pixel Picker Game</title>
+    <title>PIXEL FEAST</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #2c3e50;
+            background-color: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
-            touch-action: none; /* Prevents scrolling on iPad */
+            font-family: 'Press+Start+2P', cursive;
+            touch-action: none;
         }
 
-        #game-container {
+        #game-wrapper {
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            border: 4px solid #ecf0f1;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #2ecc71 0%, #27ae60 100%);
         }
 
         canvas {
-            background-color: #27ae60; /* Grass color */
-            display: block;
-            image-rendering: pixelated; /* Keeps it pixelated */
+            image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
         }
 
-        #ui {
+        #overlay {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
             color: white;
-            font-size: 24px;
-            text-shadow: 2px 2px #000;
-            pointer-events: none;
+            z-index: 10;
+            text-align: center;
         }
 
-        #message {
+        .btn {
+            background: #e67e22;
+            border: 4px solid #d35400;
+            color: white;
+            padding: 20px 40px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        #hud {
             position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
+            top: 20px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 16px;
+            pointer-events: none;
+            text-shadow: 3px 3px 0px #000;
+            z-index: 5;
         }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="ui">Score: 0</div>
+<div id="game-wrapper">
+    <div id="hud">
+        <div id="score-display">SCORE: 0</div>
+        <div id="timer-display">TIME: 30</div>
+    </div>
+
+    <div id="overlay">
+        <h1 style="font-size: 40px; color: #f1c40f; margin-bottom: 10px;">PIXEL FEAST</h1>
+        <p style="font-size: 12px; line-height: 2;">PICK COTTON • EAT CHICKEN • MUNCH MELONS</p>
+        <button class="btn" onclick="startGame()">Start Game</button>
+    </div>
+    
     <canvas id="gameCanvas"></canvas>
-    <div id="message">Touch & Drag to Move</div>
 </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const scoreElement = document.getElementById('ui');
+    const overlay = document.getElementById('overlay');
+    const scoreDisplay = document.getElementById('score-display');
+    const timerDisplay = document.getElementById('timer-display');
 
-    // Sprite Data (8x8 pixel grids)
+    // Game Constants
+    let score = 0;
+    let timeLeft = 30;
+    let gameActive = false;
+    let particles = [];
+    let floatingTexts = [];
+    let items = [];
+    let gameLoopReq;
+
+    // Sprite Data
+    const SPRITE_SIZE = 12; // Base size
+    const SCALE = 5;      // Draw scale
+
     const Sprites = {
         player: [
-            "  XXXX  ",
-            " XXXXXX ",
-            "XXYXYYXX",
-            "XXXXXXXX",
-            " XXXXXX ",
-            "  BBBB  ",
-            " BBBBBB ",
-            " B    B "
+            "   XXXXXX   ",
+            "  XXXXXXXX  ",
+            " XXOXXXXOXX ",
+            " XXXXXXXXXX ",
+            " XXXXXXXXXX ",
+            "  XXXXXXXX  ",
+            "   BBBBBB   ",
+            "  BBBBBBBB  ",
+            "  BB    BB  ",
+            "  BB    BB  "
         ],
         cotton: [
-            "  WWWW  ",
-            " WWWWWW ",
-            "WWWWWWWW",
-            "WWWWWWWW",
-            "WWWWWWWW",
-            "WWWWWWWW",
-            " WWWWWW ",
-            "  WWWW  "
+            "    WWWW    ",
+            "  WWWWWWWW  ",
+            " WWWWWWWWWW ",
+            "WWWWWWWWWWWW",
+            "WWWWWWWWWWWW",
+            " WWWWWWWWWW ",
+            "  WWWWWWWW  ",
+            "    WWWW    "
         ],
         watermelon: [
-            "  GGGG  ",
-            " GGGGGG ",
-            "GRRRRRRG",
-            "GRRRRRRG",
-            "GRRRRRRG",
-            "GRRRRRRG",
-            " GGGGGG ",
-            "  GGGG  "
+            "   GGGGGG   ",
+            " GGGGGGGGGG ",
+            "GGRRRRRRRRGG",
+            "GRRRRRRRRRRG",
+            "GRRRRRRRRRRG",
+            "GGRRRRRRRRGG",
+            " GGGGGGGGGG ",
+            "   GGGGGG   "
         ],
         chicken: [
-            "  RR    ",
-            " CCCCC  ",
-            "CCCCCCC ",
-            "CCYCCCCC",
-            " CCCCCCC",
-            "  CCCCC ",
-            "   Y Y  ",
-            "   Y Y  "
+            "      YYYY  ",
+            "  CCCCYYYYY ",
+            "CCCCCCCCCCC ",
+            "CCCCCCCCCCC ",
+            " CCCCCCCCC  ",
+            "  CCCCCCC   ",
+            "   O   O    ",
+            "   O   O    "
         ]
     };
 
     const Colors = {
-        'X': '#f1c40f', // Yellow Skin
-        'Y': '#e67e22', // Orange/Beak
-        'B': '#2980b9', // Blue Pants
-        'W': '#ecf0f1', // White Cotton
-        'G': '#2ecc71', // Green Rind
-        'R': '#e74c3c', // Red Watermelon/Comb
-        'C': '#ffffff', // Chicken White
-        ' ': null       // Transparent
+        'X': '#FFDBAC', 'O': '#333', 'B': '#2980b9', 
+        'W': '#FFFFFF', 'G': '#1e8449', 'R': '#e74c3c', 
+        'C': '#e67e22', 'Y': '#d35400', ' ': null
     };
 
-    let score = 0;
-    let width, height;
-    let items = [];
-    const player = { x: 0, y: 0, size: 40, targetX: 0, targetY: 0 };
-    const pixelSize = 5; // Scale for the 8x8 sprites
+    const player = {
+        x: 0, y: 0, 
+        w: 12 * SCALE, h: 10 * SCALE,
+        targetX: 0, targetY: 0,
+        eyeOffset: 0
+    };
 
-    function init() {
-        // Adjust for iPad screen size
-        width = window.innerWidth * 0.9;
-        height = window.innerHeight * 0.8;
-        canvas.width = width;
-        canvas.height = height;
-
-        player.x = width / 2;
-        player.y = height / 2;
+    function initCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        player.x = canvas.width / 2;
+        player.y = canvas.height / 2;
         player.targetX = player.x;
         player.targetY = player.y;
-
-        // Start spawning items
-        for(let i = 0; i < 5; i++) spawnItem();
-        
-        requestAnimationFrame(gameLoop);
     }
 
-    function drawSprite(spriteKey, x, y) {
-        const sprite = Sprites[spriteKey];
-        sprite.forEach((row, rowIndex) => {
-            row.split('').forEach((pixel, colIndex) => {
-                const color = Colors[pixel];
-                if (color) {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x + colIndex * pixelSize, y + rowIndex * pixelSize, pixelSize, pixelSize);
-                }
-            });
-        });
+    window.addEventListener('resize', initCanvas);
+    initCanvas();
+
+    // Particle System
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y;
+            this.color = color;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0;
+            this.size = Math.random() * 8 + 4;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.life -= 0.03;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.life;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    class FloatingText {
+        constructor(x, y, text) {
+            this.x = x; this.y = y;
+            this.text = text;
+            this.life = 1.0;
+        }
+        update() { this.y -= 2; this.life -= 0.02; }
     }
 
     function spawnItem() {
         const types = ['cotton', 'watermelon', 'chicken'];
         const type = types[Math.floor(Math.random() * types.length)];
         items.push({
-            x: Math.random() * (width - 40),
-            y: Math.random() * (height - 40),
+            x: Math.random() * (canvas.width - 100) + 50,
+            y: Math.random() * (canvas.height - 100) + 50,
             type: type,
-            id: Date.now() + Math.random()
+            bounce: 0
         });
     }
 
+    function drawSprite(key, x, y, customScale = SCALE) {
+        const data = Sprites[key];
+        data.forEach((row, rowIndex) => {
+            row.split('').forEach((pixel, colIndex) => {
+                const color = Colors[pixel];
+                if (color) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x + (colIndex * customScale), y + (rowIndex * customScale), customScale, customScale);
+                }
+            });
+        });
+    }
+
+    function startGame() {
+        score = 0;
+        timeLeft = 30;
+        items = [];
+        particles = [];
+        floatingTexts = [];
+        gameActive = true;
+        overlay.style.display = 'none';
+        scoreDisplay.innerText = `SCORE: ${score}`;
+        
+        for(let i=0; i<6; i++) spawnItem();
+        
+        // Timer countdown
+        const timerInt = setInterval(() => {
+            if(!gameActive) { clearInterval(timerInt); return; }
+            timeLeft--;
+            timerDisplay.innerText = `TIME: ${timeLeft}`;
+            if(timeLeft <= 0) endGame();
+        }, 1000);
+
+        gameLoop();
+    }
+
+    function endGame() {
+        gameActive = false;
+        overlay.style.display = 'flex';
+        overlay.innerHTML = `
+            <h1 style="color:#f1c40f">TIME'S UP!</h1>
+            <p>YOU COLLECTED</p>
+            <h2 style="font-size:40px">${score}</h2>
+            <button class="btn" onclick="location.reload()">Try Again</button>
+        `;
+    }
+
     function gameLoop() {
-        // Clear screen
-        ctx.fillStyle = '#27ae60'; // Grass
-        ctx.fillRect(0, 0, width, height);
+        if(!gameActive) return;
 
-        // Move Player towards target (Touch location)
-        const dx = player.targetX - (player.x + 20);
-        const dy = player.targetY - (player.y + 20);
-        player.x += dx * 0.15;
-        player.y += dy * 0.15;
+        // Background
+        ctx.fillStyle = '#27ae60';
+        ctx.fillRect(0,0, canvas.width, canvas.height);
 
-        // Draw and Check Items
+        // Move Player
+        player.x += (player.targetX - (player.x + player.w/2)) * 0.15;
+        player.y += (player.targetY - (player.y + player.h/2)) * 0.15;
+
+        // Items logic
         items.forEach((item, index) => {
-            drawSprite(item.type, item.x, item.y);
+            item.bounce += 0.1;
+            const yOffset = Math.sin(item.bounce) * 10;
+            drawSprite(item.type, item.x, item.y + yOffset, 4);
 
-            // Simple Circle Collision
-            const dist = Math.hypot((player.x + 20) - (item.x + 20), (player.y + 20) - (item.y + 20));
-            if (dist < 30) {
+            // Collision
+            const dx = (player.x + player.w/2) - (item.x + 20);
+            const dy = (player.y + player.h/2) - (item.y + 20);
+            if(Math.hypot(dx, dy) < 50) {
+                // Explode particles
+                const pColor = item.type === 'cotton' ? '#fff' : (item.type === 'watermelon' ? '#e74c3c' : '#e67e22');
+                for(let i=0; i<10; i++) particles.push(new Particle(item.x+20, item.y+20, pColor));
+                
+                // Floating text
+                floatingTexts.push(new FloatingText(item.x, item.y, "+10"));
+
                 items.splice(index, 1);
                 score += 10;
-                scoreElement.innerText = `Score: ${score}`;
+                scoreDisplay.innerText = `SCORE: ${score}`;
                 spawnItem();
             }
         });
 
-        // Draw Player
+        // Draw Player (with little eye wiggle)
         drawSprite('player', player.x, player.y);
+
+        // Draw Particles
+        particles = particles.filter(p => p.life > 0);
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        // Draw Floating Text
+        ctx.font = '12px "Press Start 2P"';
+        floatingTexts = floatingTexts.filter(t => t.life > 0);
+        floatingTexts.forEach(t => {
+            t.update();
+            ctx.fillStyle = `rgba(255, 255, 255, ${t.life})`;
+            ctx.fillText(t.text, t.x, t.y);
+        });
 
         requestAnimationFrame(gameLoop);
     }
 
-    // Touch Event Listeners for iPad
-    function handleTouch(e) {
-        e.preventDefault();
-        const touch = e.touches[0];
+    // iPad Controls
+    function handleInput(e) {
+        const t = e.touches ? e.touches[0] : e;
         const rect = canvas.getBoundingClientRect();
-        player.targetX = touch.clientX - rect.left;
-        player.targetY = touch.clientY - rect.top;
+        player.targetX = t.clientX - rect.left;
+        player.targetY = t.clientY - rect.top;
+        if(gameActive) e.preventDefault();
     }
 
-    canvas.addEventListener('touchstart', handleTouch);
-    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchstart', handleInput, {passive: false});
+    canvas.addEventListener('touchmove', handleInput, {passive: false});
+    canvas.addEventListener('mousemove', handleInput);
 
-    // Mouse support for testing on computer
-    canvas.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        player.targetX = e.clientX - rect.left;
-        player.targetY = e.clientY - rect.top;
-    });
-
-    window.onload = init;
 </script>
-
 </body>
 </html>
