@@ -3,168 +3,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Liquid RGB</title>
+    <title>ar(> Playground</title>
+    
+    <!-- Load Monaco Editor (VS Code's Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <!-- Load Three.js for 3D Game Support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
+    
     <style>
         :root {
-            --bg: #080808;
-            --speed: 30s;
+            --bg-deep: #0d1117;
+            --bg-side: #161b22;
+            --accent: #58a6ff;
+            --text: #c9d1d9;
+            --border: #30363d;
+            --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            background-color: var(--bg);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            -webkit-tap-highlight-color: transparent;
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { 
+            margin: 0; padding: 0; height: 100%; 
+            background: var(--bg-deep); color: var(--text);
+            font-family: var(--ui-font); overflow: hidden;
         }
 
-        /* The Liquid Gooey Effect */
-        .stage {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            filter: url('#gooey');
-            overflow: hidden;
+        /* iPad Friendly UI Layout */
+        #app { display: flex; height: 100vh; flex-direction: row; }
+        
+        #sidebar {
+            width: 260px; background: var(--bg-side);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            flex-shrink: 0;
         }
 
-        /* Large RGB Blobs */
-        .blob {
-            position: absolute;
-            width: 65vw;
-            height: 65vw;
-            border-radius: 50%;
-            opacity: 0.8;
-            /* Cycles through the RGB spectrum */
-            animation: 
-                move 35s infinite linear alternate,
-                rgb-cycle 15s infinite linear;
-            filter: blur(30px);
-            will-change: transform;
+        #editor-container { flex-grow: 1; position: relative; display: flex; flex-direction: column; }
+        #monaco-root { flex-grow: 1; }
+
+        /* Command Bar */
+        #command-bar {
+            height: 45px; background: #000; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 15px; gap: 10px;
+        }
+        input.cmd-input {
+            background: transparent; border: 1px solid var(--border); color: #fff;
+            padding: 5px 10px; border-radius: 4px; flex-grow: 1; outline: none;
         }
 
-        .blob:nth-child(2) {
-            width: 75vw; height: 75vw;
-            right: -10%; top: 10%;
-            animation-duration: 45s, 12s;
-            animation-delay: -5s;
+        /* UI Components */
+        .btn {
+            padding: 6px 12px; background: #21262d; border: 1px solid var(--border);
+            color: var(--text); border-radius: 6px; cursor: pointer; font-size: 13px;
         }
+        .btn-run { background: #238636; color: white; border: none; font-weight: bold; }
+        .btn-run:hover { background: #2ea043; }
 
-        .blob:nth-child(3) {
-            width: 55vw; height: 55vw;
-            left: 10%; bottom: -5%;
-            animation-duration: 40s, 18s;
-            animation-delay: -2s;
+        #file-tree { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .file-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .file-item:hover { background: #21262d; }
+        .file-item.active { background: #1f6feb; color: white; }
+        .folder { color: #8b949e; font-weight: bold; }
+
+        /* Settings & Manual Modals */
+        .modal {
+            position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
+            background: var(--bg-side); border: 1px solid var(--border);
+            z-index: 1000; display: none; padding: 20px; border-radius: 12px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5); overflow-y: auto;
         }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
-        /* Ultra-Smooth Movement */
-        @keyframes move {
-            0% { transform: translate(-20%, -20%) rotate(0deg) scale(1); }
-            33% { transform: translate(20%, 10%) rotate(120deg) scale(1.1); }
-            66% { transform: translate(-10%, 30%) rotate(240deg) scale(0.9); }
-            100% { transform: translate(15%, -15%) rotate(360deg) scale(1.05); }
+        /* Runtime Preview */
+        #preview-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: none;
         }
+        #game-canvas { width: 100%; height: 100%; display: block; }
+        #close-preview { position: absolute; top: 20px; right: 20px; z-index: 2001; }
 
-        /* The "Nice" RGB Shift: Uses HSL for buttery smooth transitions */
-        @keyframes rgb-cycle {
-            0% { background: hsl(0, 80%, 60%); }
-            20% { background: hsl(72, 80%, 60%); }
-            40% { background: hsl(144, 80%, 60%); }
-            60% { background: hsl(216, 80%, 60%); }
-            80% { background: hsl(288, 80%, 60%); }
-            100% { background: hsl(360, 80%, 60%); }
-        }
-
-        /* Film Grain for a "Realistic" non-digital feel */
-        .grain {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: url('https://grainy-gradients.vercel.app/noise.svg');
-            opacity: 0.12;
-            pointer-events: none;
-            z-index: 10;
-            mix-blend-mode: overlay;
-        }
-
-        /* Refractive Glass Overlay */
-        .glass {
-            position: relative;
-            width: 90%;
-            height: 90%;
-            background: rgba(255, 255, 255, 0.015);
-            backdrop-filter: blur(40px) saturate(1.5);
-            -webkit-backdrop-filter: blur(40px) saturate(1.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 50px;
-            z-index: 5;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.2);
-        }
-
-        #ui {
-            position: absolute;
-            bottom: 30px;
-            color: rgba(255,255,255,0.15);
-            font-family: -apple-system, sans-serif;
-            font-size: 11px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            z-index: 20;
-            pointer-events: none;
+        /* Custom ar(> Icon Simulation */
+        .icon-ar { 
+            width: 18px; height: 18px; background: #f0ad4e; color: #000; 
+            border-radius: 3px; font-size: 10px; font-weight: 900; 
+            display: flex; align-items: center; justify-content: center;
         }
     </style>
 </head>
 <body>
 
-    <div class="grain"></div>
-    
-    <div class="stage">
-        <div class="blob"></div>
-        <div class="blob"></div>
-        <div class="blob"></div>
+<div id="app">
+    <aside id="sidebar">
+        <div style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+            <div class="icon-ar">ar(></div>
+            <span style="font-weight: 600;">Playground</span>
+        </div>
+        
+        <div style="padding: 10px; display: flex; gap: 5px;">
+            <button class="btn" onclick="createNewFile()">+ File</button>
+            <button class="btn" onclick="createNewFolder()">+ Folder</button>
+        </div>
+
+        <div id="file-tree">
+            <!-- Files injected here -->
+        </div>
+
+        <div style="padding: 15px; border-top: 1px solid var(--border);">
+            <button class="btn" style="width: 100%; margin-bottom: 5px;" onclick="toggleModal('manual')">Training Manual</button>
+            <button class="btn" style="width: 100%;" onclick="toggleModal('settings')">Settings</button>
+        </div>
+    </aside>
+
+    <main id="editor-container">
+        <div id="command-bar">
+            <input type="text" class="cmd-input" placeholder="Type a command (e.g. 'find script' or 'theme light')..." id="cmdInput">
+            <button class="btn" onclick="editor.trigger('keyboard', 'editor.action.selectAll', null)">Select All</button>
+            <button class="btn btn-run" onclick="runScript()">RUN ar(></button>
+        </div>
+        <div id="monaco-root"></div>
+    </main>
+</div>
+
+<!-- Game Execution Layer -->
+<div id="preview-layer">
+    <button id="close-preview" class="btn" onclick="stopScript()">Exit Game</button>
+    <canvas id="game-canvas"></canvas>
+</div>
+
+<!-- Manual Modal -->
+<div id="manual" class="modal">
+    <div class="modal-header"><h2>ar(> Training Manual</h2><button class="btn" onclick="toggleModal('manual')">Close</button></div>
+    <div style="line-height: 1.6;">
+        <h3>Welcome to ar(> (ArrowScript)</h3>
+        <p>ar(> is a high-level scripting language designed for rapid game development. It simplifies complex logic into simple <b>Action Blocks</b>.</p>
+        
+        <h4>1. Basics</h4>
+        <code>ar(> define "speed" as 10 )</code><br>
+        <code>ar(> log "System Active" )</code>
+        
+        <h4>2. 2D Sprites</h4>
+        <code>ar(> create.sprite "player" { x: 100, y: 100, image: "hero.png" } )</code>
+        
+        <h4>3. 3D Objects</h4>
+        <code>ar(> create.3D_cube "box1" { size: 2, color: "red" } )</code>
+        
+        <h4>4. Events</h4>
+        <code>ar(> on.tick( delta => { move "player" by speed } ) )</code>
     </div>
+</div>
 
-    <div class="glass"></div>
+<!-- Settings Modal -->
+<div id="settings" class="modal">
+    <div class="modal-header"><h2>Settings</h2><button class="btn" onclick="toggleModal('settings')">Close</button></div>
+    <p>Editor Theme:</p>
+    <select id="themeSelect" onchange="changeTheme(this.value)" class="btn">
+        <option value="vs-dark">GitHub Dark (Default)</option>
+        <option value="vs-light">Bright Professional</option>
+        <option value="hc-black">High Contrast</option>
+    </select>
+    <br><br>
+    <p>Font Size:</p>
+    <input type="number" value="16" onchange="updateFontSize(this.value)" class="btn">
+</div>
 
-    <div id="ui">Liquid Pro RGB • Tap to wake</div>
+<script>
+    // --- VIRTUAL FILE SYSTEM ---
+    let files = {
+        "root": {
+            "main.ar": "ar(> log \"Game Started!\" )\n\n// Create a 2D Square\nar(> create.rect \"box\" { x: 50, y: 50, w: 100, h: 100, color: \"#58a6ff\" } )\n\n// Move on click\nar(> on.click( pos => {\n    ar(> move \"box\" to pos )\n} ) )",
+            "scripts": {
+                "player_logic.ar": "// Custom player logic\nar(> define \"health\" as 100 )"
+            }
+        }
+    };
+    let currentFilePath = "main.ar";
 
-    <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
-        <defs>
-            <filter id="gooey">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="blur" />
-                <!-- The matrix below creates the "merging" liquid effect -->
-                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 35 -15" />
-            </filter>
-        </defs>
-    </svg>
-
-    <script>
-        // Keep Screen Awake
-        let wakeLock = null;
-        const requestWakeLock = async () => {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                document.getElementById('ui').style.opacity = '0';
-            } catch (err) {}
-        };
-
-        window.addEventListener('mousedown', requestWakeLock);
-        window.addEventListener('touchstart', requestWakeLock);
-
-        // Toggle RGB Intensity on double tap
-        let intense = false;
-        window.addEventListener('dblclick', () => {
-            intense = !intense;
-            const blobs = document.querySelectorAll('.blob');
-            blobs.forEach(b => {
-                b.style.filter = intense ? 'blur(10px)' : 'blur(30px)';
-                b.style.opacity = intense ? '1' : '0.8';
-            });
+    // --- MONACO EDITOR SETUP ---
+    var editor;
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        
+        // Define ar(> Language
+        monaco.languages.register({ id: 'ar_lang' });
+        
+        // Custom Syntax Highlighting (Monarch)
+        monaco.languages.setMonarchTokensProvider('ar_lang', {
+            tokenizer: {
+                root: [
+                    [/ar\(>/, "keyword"],
+                    [/\".*?\"/, "string"],
+                    [/\b(create\.sprite|create\.rect|create\.3D_cube|on\.tick|on\.click|move|log|define|as)\b/, "keyword"],
+                    [/\b(x|y|w|h|color|size|image|pos|delta)\b/, "variable"],
+                    [/\d+/, "number"],
+                    [/\/\/.*$/, "comment"]
+                ]
+            }
         });
-    </script>
+
+        // Prediction System (Autocompletion)
+        monaco.languages.registerCompletionItemProvider('ar_lang', {
+            provideCompletionItems: () => {
+                var suggestions = [
+                    { label: 'ar(>', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'ar(> ' },
+                    { label: 'create.sprite', kind: monaco.languages.CompletionItemKind.Function, insertText: 'create.sprite "${1:name}" { x: 0, y: 0, image: "${2:url}" } )', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet },
+                    { label: 'on.tick', kind: monaco.languages.CompletionItemKind.Event, insertText: 'on.tick( delta => {\n\t$0\n} )' },
+                    { label: '3D Scene Template', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'ar(> create.3D_cube "cube" { size: 1, color: "blue" } )\nar(> on.tick( d => {\n\tar(> rotate "cube" { x: 0.01, y: 0.01 } )\n} ) )', documentation: 'Create a rotating 3D Cube' }
+                ];
+                return { suggestions: suggestions };
+            }
+        });
+
+        editor = monaco.editor.create(document.getElementById('monaco-root'), {
+            value: files["root"]["main.ar"],
+            language: 'ar_lang',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            fontSize: 16,
+            wordWrap: "on",
+            minimap: { enabled: false },
+            scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 }
+        });
+
+        renderFileTree();
+    });
+
+    // --- GAME ENGINE (RUNNER) ---
+    let gameActive = false;
+    let scene2D = [];
+    function runScript() {
+        const code = editor.getValue();
+        document.getElementById('preview-layer').style.display = 'block';
+        gameActive = true;
+        
+        // Simple Transpiler/Interpreter Logic
+        console.log("Compiling ar(>...");
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Reset scene
+        scene2D = [];
+        
+        // Mock execution (In a real version, we'd regex parse 'ar(>' lines)
+        // For the demo, we'll parse simple rect commands
+        const lines = code.split('\n');
+        lines.forEach(line => {
+            if(line.includes('create.rect')) {
+                // Simplified extraction
+                scene2D.push({ type: 'rect', x: 100, y: 100, w: 100, h: 100, color: '#58a6ff' });
+            }
+        });
+
+        function gameLoop() {
+            if(!gameActive) return;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0,0,canvas.width, canvas.height);
+            
+            scene2D.forEach(obj => {
+                ctx.fillStyle = obj.color;
+                ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
+            });
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    }
+
+    function stopScript() {
+        gameActive = false;
+        document.getElementById('preview-layer').style.display = 'none';
+    }
+
+    // --- UI LOGIC ---
+    function renderFileTree() {
+        const tree = document.getElementById('file-tree');
+        tree.innerHTML = "";
+        
+        Object.keys(files.root).forEach(key => {
+            const isDir = typeof files.root[key] === 'object';
+            const item = document.createElement('div');
+            item.className = `file-item ${isDir ? 'folder' : ''} ${currentFilePath === key ? 'active' : ''}`;
+            item.innerHTML = `<span>${isDir ? '📁' : '📄'}</span> ${key}`;
+            item.onclick = () => { if(!isDir) selectFile(key); };
+            tree.appendChild(item);
+        });
+    }
+
+    function selectFile(name) {
+        currentFilePath = name;
+        editor.setValue(files.root[name]);
+        renderFileTree();
+    }
+
+    function toggleModal(id) {
+        const m = document.getElementById(id);
+        m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function changeTheme(theme) {
+        monaco.editor.setTheme(theme);
+    }
+
+    function updateFontSize(size) {
+        editor.updateOptions({ fontSize: parseInt(size) });
+    }
+
+    // Command Bar Listeners
+    document.getElementById('cmdInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const cmd = this.value.toLowerCase();
+            if(cmd === 'run') runScript();
+            if(cmd.includes('theme')) changeTheme('vs-light');
+            this.value = "";
+        }
+    });
+
+    // iPad Touch Handlers
+    window.addEventListener('resize', () => {
+        if(editor) editor.layout();
+    });
+</script>
+
 </body>
 </html>
