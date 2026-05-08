@@ -1,327 +1,3344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ar(> Playground</title>
-    
-    <!-- Load Monaco Editor (VS Code's Engine) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-    <!-- Load Three.js for 3D Game Support -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.158.0/three.min.js"></script>
-    
-    <style>
-        :root {
-            --bg-deep: #0d1117;
-            --bg-side: #161b22;
-            --accent: #58a6ff;
-            --text: #c9d1d9;
-            --border: #30363d;
-            --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ar(> Playground</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap');
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { 
-            margin: 0; padding: 0; height: 100%; 
-            background: var(--bg-deep); color: var(--text);
-            font-family: var(--ui-font); overflow: hidden;
-        }
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161d;
+    --bg3: #1a1e28;
+    --bg4: #222736;
+    --panel: #16192200;
+    --border: #2a2f3d;
+    --accent: #4f9eff;
+    --accent2: #7b5cff;
+    --accent3: #ff6b6b;
+    --green: #4fffb0;
+    --yellow: #ffd04f;
+    --text: #e2e8f0;
+    --text2: #8892a4;
+    --text3: #4a5568;
+    --syntax-kw: #7b5cff;
+    --syntax-fn: #4f9eff;
+    --syntax-str: #4fffb0;
+    --syntax-num: #ffd04f;
+    --syntax-comment: #4a5a6a;
+    --syntax-type: #ff9b6b;
+    --syntax-op: #ff6b6b;
+    --sidebar-w: 220px;
+    --toolbar-h: 42px;
+    --tab-h: 36px;
+    --statusbar-h: 24px;
+    --font: 'JetBrains Mono', monospace;
+    --ui-font: 'Syne', sans-serif;
+  }
 
-        /* iPad Friendly UI Layout */
-        #app { display: flex; height: 100vh; flex-direction: row; }
-        
-        #sidebar {
-            width: 260px; background: var(--bg-side);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-            flex-shrink: 0;
-        }
+  .theme-light {
+    --bg: #f5f7fa;
+    --bg2: #edf0f5;
+    --bg3: #e2e8f0;
+    --bg4: #cbd5e0;
+    --border: #c8d0de;
+    --text: #1a202c;
+    --text2: #4a5568;
+    --text3: #a0aec0;
+    --syntax-comment: #8a9bae;
+  }
 
-        #editor-container { flex-grow: 1; position: relative; display: flex; flex-direction: column; }
-        #monaco-root { flex-grow: 1; }
+  .theme-midnight {
+    --bg: #050810;
+    --bg2: #080c18;
+    --bg3: #0d1225;
+    --bg4: #131930;
+    --border: #1e2640;
+    --accent: #5fc8ff;
+    --syntax-kw: #b56dff;
+    --syntax-fn: #5fc8ff;
+    --syntax-str: #5fffc8;
+  }
 
-        /* Command Bar */
-        #command-bar {
-            height: 45px; background: #000; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; padding: 0 15px; gap: 10px;
-        }
-        input.cmd-input {
-            background: transparent; border: 1px solid var(--border); color: #fff;
-            padding: 5px 10px; border-radius: 4px; flex-grow: 1; outline: none;
-        }
+  .theme-forest {
+    --bg: #0c1410;
+    --bg2: #111a14;
+    --bg3: #162118;
+    --bg4: #1e2e22;
+    --border: #253428;
+    --accent: #4fff90;
+    --accent2: #9bff6b;
+    --accent3: #ff9b4f;
+    --syntax-kw: #9bff6b;
+    --syntax-fn: #4fff90;
+    --syntax-str: #ffd04f;
+  }
 
-        /* UI Components */
-        .btn {
-            padding: 6px 12px; background: #21262d; border: 1px solid var(--border);
-            color: var(--text); border-radius: 6px; cursor: pointer; font-size: 13px;
-        }
-        .btn-run { background: #238636; color: white; border: none; font-weight: bold; }
-        .btn-run:hover { background: #2ea043; }
+  .theme-crimson {
+    --bg: #120809;
+    --bg2: #1a0d0e;
+    --bg3: #221214;
+    --bg4: #2e181a;
+    --border: #3d2225;
+    --accent: #ff4f6b;
+    --accent2: #ff6b9b;
+    --accent3: #ffd04f;
+    --syntax-kw: #ff4f6b;
+    --syntax-fn: #ff9b6b;
+    --syntax-str: #4fffb0;
+  }
 
-        #file-tree { flex-grow: 1; overflow-y: auto; padding: 10px; }
-        .file-item { padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-        .file-item:hover { background: #21262d; }
-        .file-item.active { background: #1f6feb; color: white; }
-        .folder { color: #8b949e; font-weight: bold; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-        /* Settings & Manual Modals */
-        .modal {
-            position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
-            background: var(--bg-side); border: 1px solid var(--border);
-            z-index: 1000; display: none; padding: 20px; border-radius: 12px;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.5); overflow-y: auto;
-        }
-        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  body {
+    font-family: var(--ui-font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
 
-        /* Runtime Preview */
-        #preview-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; display: none;
-        }
-        #game-canvas { width: 100%; height: 100%; display: block; }
-        #close-preview { position: absolute; top: 20px; right: 20px; z-index: 2001; }
+  /* ── TOOLBAR ── */
+  #toolbar {
+    height: var(--toolbar-h);
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 6px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
 
-        /* Custom ar(> Icon Simulation */
-        .icon-ar { 
-            width: 18px; height: 18px; background: #f0ad4e; color: #000; 
-            border-radius: 3px; font-size: 10px; font-weight: 900; 
-            display: flex; align-items: center; justify-content: center;
-        }
-    </style>
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 10px;
+    cursor: default;
+  }
+
+  .logo svg { width: 26px; height: 26px; }
+
+  .logo-text {
+    font-size: 16px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+  .tb-btn {
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: var(--ui-font);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .tb-btn:hover { background: var(--bg4); border-color: var(--accent); color: var(--accent); }
+  .tb-btn.run { background: linear-gradient(135deg, var(--green), #2dd68c); color: #0a1a0f; border-color: transparent; font-weight: 700; }
+  .tb-btn.run:hover { filter: brightness(1.15); }
+  .tb-btn.danger { color: var(--accent3); }
+
+  .tb-spacer { flex: 1; }
+
+  .tb-icon-btn {
+    width: 28px; height: 28px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .tb-icon-btn:hover { background: var(--bg4); color: var(--accent); border-color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: width 0.2s;
+  }
+
+  #sidebar.collapsed { width: 0; }
+
+  .sidebar-header {
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header button {
+    background: none; border: none; color: var(--text2); cursor: pointer; font-size: 14px; padding: 2px;
+  }
+
+  #file-tree {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+    font-family: var(--font);
+    font-size: 12px;
+  }
+
+  #file-tree::-webkit-scrollbar { width: 3px; }
+  #file-tree::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .tree-item {
+    padding: 4px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+    border-radius: 4px;
+    margin: 1px 4px;
+    transition: background 0.1s;
+    position: relative;
+  }
+
+  .tree-item:hover { background: var(--bg3); color: var(--text); }
+  .tree-item.active { background: rgba(79,158,255,0.15); color: var(--accent); }
+  .tree-item .item-icon { font-size: 13px; flex-shrink: 0; }
+  .tree-item .item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tree-item .item-actions { display: none; gap: 4px; }
+  .tree-item:hover .item-actions { display: flex; }
+  .tree-item .item-actions button {
+    background: none; border: none; color: var(--text3); cursor: pointer; font-size: 11px; padding: 1px 2px;
+    border-radius: 3px;
+  }
+  .tree-item .item-actions button:hover { color: var(--accent3); background: rgba(255,107,107,0.1); }
+
+  .tree-folder { padding-left: 4px; }
+  .tree-folder-children { padding-left: 12px; }
+  .tree-folder-children.collapsed { display: none; }
+
+  /* ── EDITOR AREA ── */
+  #editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* ── TABS ── */
+  #tabs {
+    height: var(--tab-h);
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
+
+  #tabs::-webkit-scrollbar { height: 2px; }
+  #tabs::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .tab {
+    height: 32px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font);
+    font-size: 11.5px;
+    color: var(--text2);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+    transition: all 0.1s;
+    position: relative;
+    background: var(--bg2);
+    flex-shrink: 0;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    margin-top: 4px;
+  }
+
+  .tab:hover { background: var(--bg3); color: var(--text); }
+  .tab.active {
+    background: var(--bg);
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    margin-bottom: -1px;
+  }
+
+  .tab .tab-close {
+    width: 16px; height: 16px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--text3);
+    transition: all 0.1s;
+    background: none; border: none; cursor: pointer;
+    line-height: 1;
+  }
+  .tab:hover .tab-close, .tab.active .tab-close { color: var(--text2); }
+  .tab .tab-close:hover { background: rgba(255,107,107,0.2); color: var(--accent3) !important; }
+
+  .tab .tab-modified { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* ── CODE EDITOR ── */
+  #editor-wrapper {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #line-numbers {
+    min-width: 46px;
+    padding: 14px 6px 14px 10px;
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text3);
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    user-select: none;
+    text-align: right;
+    overflow: hidden;
+    flex-shrink: 0;
+    letter-spacing: -0.3px;
+  }
+
+  #code-editor {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  #code-display {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding: 14px 16px;
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.65;
+    pointer-events: none;
+    white-space: pre;
+    overflow: auto;
+    z-index: 1;
+    tab-size: 2;
+  }
+
+  #code-display::-webkit-scrollbar { width: 8px; height: 8px; }
+  #code-display::-webkit-scrollbar-track { background: var(--bg2); }
+  #code-display::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  #code-textarea {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding: 14px 16px;
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.65;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--accent);
+    border: none;
+    outline: none;
+    resize: none;
+    z-index: 2;
+    white-space: pre;
+    overflow: auto;
+    tab-size: 2;
+    -webkit-overflow-scrolling: touch;
+    spellcheck: false;
+    autocomplete: off;
+    autocorrect: off;
+    autocapitalize: off;
+  }
+
+  /* Sync scrolling handled by JS */
+
+  /* ── AUTOCOMPLETE ── */
+  #autocomplete {
+    position: absolute;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 320px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+    font-family: var(--font);
+    font-size: 12px;
+  }
+
+  #autocomplete::-webkit-scrollbar { width: 3px; }
+  #autocomplete::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .ac-item {
+    padding: 7px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s;
+  }
+  .ac-item:hover, .ac-item.selected { background: rgba(79,158,255,0.15); }
+  .ac-item .ac-kind {
+    width: 18px; height: 18px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ac-item .ac-name { color: var(--text); flex: 1; }
+  .ac-item .ac-detail { color: var(--text3); font-size: 10px; }
+
+  .kind-kw { background: rgba(123,92,255,0.2); color: var(--accent2); }
+  .kind-fn { background: rgba(79,158,255,0.2); color: var(--accent); }
+  .kind-type { background: rgba(255,155,107,0.2); color: var(--syntax-type); }
+  .kind-snip { background: rgba(79,255,176,0.2); color: var(--green); }
+  .kind-var { background: rgba(255,208,79,0.2); color: var(--yellow); }
+
+  /* ── COMMAND BAR ── */
+  #command-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 80px;
+    backdrop-filter: blur(4px);
+  }
+  #command-overlay.open { display: flex; }
+
+  #command-bar {
+    width: min(580px, 92vw);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  }
+
+  #command-input {
+    width: 100%;
+    padding: 14px 18px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--ui-font);
+    font-size: 15px;
+    outline: none;
+  }
+
+  #command-results {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 6px;
+  }
+
+  .cmd-item {
+    padding: 10px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.1s;
+  }
+  .cmd-item:hover, .cmd-item.selected { background: rgba(79,158,255,0.15); }
+  .cmd-item .cmd-icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+  .cmd-item .cmd-label { color: var(--text); font-size: 13px; font-weight: 600; }
+  .cmd-item .cmd-sub { color: var(--text3); font-size: 11px; margin-left: auto; }
+  .cmd-item .cmd-kbd {
+    background: var(--bg4); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 4px; font-size: 10px; color: var(--text2);
+    font-family: var(--font); flex-shrink: 0;
+  }
+
+  /* ── OUTPUT PANEL ── */
+  #output-panel {
+    height: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: height 0.2s;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  #output-panel.open { height: 220px; }
+
+  .output-header {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--text2);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .output-header .out-tabs button {
+    background: none; border: none; color: var(--text3); cursor: pointer;
+    font-family: var(--ui-font); font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px;
+  }
+  .output-header .out-tabs button.active { background: rgba(79,158,255,0.15); color: var(--accent); }
+
+  #output-content {
+    flex: 1;
+    overflow: auto;
+    padding: 10px 14px;
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  #output-content::-webkit-scrollbar { width: 4px; }
+  #output-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .out-line { display: flex; gap: 8px; }
+  .out-line.error { color: var(--accent3); }
+  .out-line.warn { color: var(--yellow); }
+  .out-line.success { color: var(--green); }
+  .out-line.info { color: var(--accent); }
+  .out-line .out-ts { color: var(--text3); flex-shrink: 0; }
+
+  #run-frame-wrap {
+    flex: 1; overflow: hidden; display: none;
+  }
+  #run-frame-wrap.active { display: flex; }
+  #run-frame {
+    width: 100%; height: 100%; border: none;
+    background: white;
+  }
+
+  /* ── STATUS BAR ── */
+  #statusbar {
+    height: var(--statusbar-h);
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    color: rgba(255,255,255,0.9);
+    flex-shrink: 0;
+  }
+
+  #statusbar .sb-right { margin-left: auto; display: flex; gap: 12px; }
+  #statusbar span { cursor: default; }
+
+  /* ── SETTINGS PANEL ── */
+  #settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  #settings-overlay.open { display: flex; }
+
+  #settings-panel {
+    width: min(700px, 95vw);
+    height: min(85dvh, 600px);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    display: flex;
+    overflow: hidden;
+  }
+
+  .settings-nav {
+    width: 160px;
+    background: var(--bg3);
+    border-right: 1px solid var(--border);
+    padding: 16px 8px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .settings-nav h3 {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 6px 8px 10px;
+  }
+
+  .snav-item {
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.1s;
+  }
+  .snav-item:hover { background: var(--bg4); color: var(--text); }
+  .snav-item.active { background: rgba(79,158,255,0.15); color: var(--accent); }
+
+  .settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .settings-content::-webkit-scrollbar { width: 4px; }
+  .settings-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .settings-section { display: none; }
+  .settings-section.active { display: block; }
+
+  .settings-section h2 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+
+  .settings-row:last-child { border-bottom: none; }
+
+  .settings-row label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .settings-row .row-desc {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .settings-row .row-left { flex: 1; }
+
+  .settings-row select, .settings-row input[type=range], .settings-row input[type=number] {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--ui-font);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    min-width: 120px;
+  }
+
+  .toggle {
+    width: 40px; height: 22px;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle::after {
+    content: '';
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 20px; }
+
+  /* Theme cards */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .theme-card {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .theme-card:hover { border-color: var(--accent); transform: scale(1.02); }
+  .theme-card.selected { border-color: var(--accent); }
+  .theme-card .theme-preview {
+    height: 60px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    gap: 3px;
+  }
+  .theme-card .theme-bar { height: 8px; border-radius: 3px; }
+  .theme-card .theme-name {
+    padding: 6px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: center;
+    background: var(--bg4);
+  }
+
+  /* Preset cards */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .preset-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .preset-card:hover { border-color: var(--accent); background: var(--bg4); }
+  .preset-card .preset-icon { font-size: 24px; margin-bottom: 8px; }
+  .preset-card .preset-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .preset-card .preset-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
+
+  /* Training Manual */
+  .manual-section { margin-bottom: 24px; }
+  .manual-section h3 {
+    font-size: 14px; font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.3px;
+  }
+  .manual-section p, .manual-section li {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    margin-bottom: 4px;
+  }
+  .manual-section ul { padding-left: 16px; }
+  .manual-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--font);
+    font-size: 11.5px;
+    color: var(--green);
+    margin: 8px 0;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.7;
+  }
+
+  /* ── MOBILE / IPAD ── */
+  @media (max-width: 768px) {
+    #sidebar { width: 0; }
+    #sidebar.mobile-open { width: var(--sidebar-w); position: absolute; z-index: 200; height: 100%; top: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
+    :root { --sidebar-w: 260px; }
+    .tb-btn .btn-label { display: none; }
+    .tb-btn { padding: 0 8px; min-width: 28px; justify-content: center; }
+    .tb-btn.run .btn-label { display: inline; }
+    #code-textarea, #code-display { font-size: 12px; }
+    #line-numbers { font-size: 12px; min-width: 38px; }
+  }
+
+  /* ── MINI MODALS ── */
+  .mini-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .mini-modal.open { display: flex; }
+  .mini-modal-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: min(380px, 92vw);
+    box-shadow: 0 16px 50px rgba(0,0,0,0.6);
+  }
+  .mini-modal-box h3 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+  .mini-modal-box input {
+    width: 100%; padding: 10px 12px;
+    background: var(--bg4); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--ui-font); font-size: 13px;
+    border-radius: 7px; outline: none; margin-bottom: 14px;
+  }
+  .mini-modal-box input:focus { border-color: var(--accent); }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btns button {
+    padding: 8px 16px; border-radius: 7px;
+    font-family: var(--ui-font); font-size: 12px; font-weight: 700;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg4); color: var(--text);
+    transition: all 0.15s;
+  }
+  .modal-btns button.primary {
+    background: var(--accent); color: #0a0f1a; border-color: transparent;
+  }
+  .modal-btns button:hover { filter: brightness(1.15); }
+
+  /* ── FIND/REPLACE BAR ── */
+  #find-bar {
+    display: none;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 12px;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  #find-bar.open { display: flex; }
+  #find-bar input {
+    background: var(--bg4); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font); font-size: 12px;
+    padding: 5px 10px; border-radius: 5px; outline: none; width: 180px;
+  }
+  #find-bar input:focus { border-color: var(--accent); }
+  #find-bar button {
+    background: var(--bg4); border: 1px solid var(--border);
+    color: var(--text2); font-family: var(--ui-font); font-size: 11px; font-weight: 600;
+    padding: 5px 10px; border-radius: 5px; cursor: pointer;
+  }
+  #find-bar button:hover { color: var(--accent); border-color: var(--accent); }
+  #find-bar .find-sep { width: 1px; height: 18px; background: var(--border); }
+  #find-bar .find-count { font-size: 11px; color: var(--text3); font-family: var(--font); white-space: nowrap; }
+
+  /* Syntax highlight colors */
+  .hl-kw { color: var(--syntax-kw); font-weight: 600; }
+  .hl-fn { color: var(--syntax-fn); }
+  .hl-str { color: var(--syntax-str); }
+  .hl-num { color: var(--syntax-num); }
+  .hl-comment { color: var(--syntax-comment); font-style: italic; }
+  .hl-type { color: var(--syntax-type); }
+  .hl-op { color: var(--syntax-op); }
+  .hl-punc { color: var(--text2); }
+
+  /* No-file view */
+  #no-file {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text3);
+    font-size: 13px;
+    text-align: center;
+  }
+  #no-file.visible { display: flex; }
+  #no-file .nf-logo { font-size: 48px; opacity: 0.4; }
+  #no-file h3 { font-size: 18px; font-weight: 800; color: var(--text2); }
+  #no-file p { font-size: 12px; color: var(--text3); line-height: 1.8; }
+  #no-file .nf-btns { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+  #no-file .nf-btns button {
+    padding: 10px 18px; border-radius: 8px;
+    font-family: var(--ui-font); font-size: 12px; font-weight: 700;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text);
+  }
+  #no-file .nf-btns button:hover { border-color: var(--accent); color: var(--accent); }
+</style>
 </head>
 <body>
 
-<div id="app">
-    <aside id="sidebar">
-        <div style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
-            <div class="icon-ar">ar(></div>
-            <span style="font-weight: 600;">Playground</span>
-        </div>
-        
-        <div style="padding: 10px; display: flex; gap: 5px;">
-            <button class="btn" onclick="createNewFile()">+ File</button>
-            <button class="btn" onclick="createNewFolder()">+ Folder</button>
-        </div>
+<!-- ─────────────── TOOLBAR ─────────────── -->
+<div id="toolbar">
+  <div class="logo">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#4f9eff"/>
+          <stop offset="100%" stop-color="#7b5cff"/>
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#lg1)"/>
+      <text x="4" y="22" font-family="monospace" font-size="14" font-weight="900" fill="white">ar</text>
+      <text x="18" y="24" font-family="monospace" font-size="16" font-weight="900" fill="rgba(255,255,255,0.7">(></text>
+    </svg>
+    <span class="logo-text">ar(&gt;</span>
+  </div>
 
-        <div id="file-tree">
-            <!-- Files injected here -->
-        </div>
-
-        <div style="padding: 15px; border-top: 1px solid var(--border);">
-            <button class="btn" style="width: 100%; margin-bottom: 5px;" onclick="toggleModal('manual')">Training Manual</button>
-            <button class="btn" style="width: 100%;" onclick="toggleModal('settings')">Settings</button>
-        </div>
-    </aside>
-
-    <main id="editor-container">
-        <div id="command-bar">
-            <input type="text" class="cmd-input" placeholder="Type a command (e.g. 'find script' or 'theme light')..." id="cmdInput">
-            <button class="btn" onclick="editor.trigger('keyboard', 'editor.action.selectAll', null)">Select All</button>
-            <button class="btn btn-run" onclick="runScript()">RUN ar(></button>
-        </div>
-        <div id="monaco-root"></div>
-    </main>
+  <div class="tb-sep"></div>
+  <button class="tb-icon-btn" id="btn-sidebar" title="Toggle Sidebar">☰</button>
+  <button class="tb-btn" id="btn-new-file" title="New File">＋ <span class="btn-label">File</span></button>
+  <button class="tb-btn" id="btn-new-folder" title="New Folder">📁 <span class="btn-label">Folder</span></button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" id="btn-find" title="Find (Ctrl+F)">🔍 <span class="btn-label">Find</span></button>
+  <button class="tb-btn" id="btn-cmd" title="Command Bar (Ctrl+P)">⌘ <span class="btn-label">Commands</span></button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" id="btn-presets" title="Presets">📦 <span class="btn-label">Presets</span></button>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn" id="btn-run" style="min-width:60px">▶ <span class="btn-label">Run</span></button>
+  <button class="tb-btn run" id="btn-run-all">▶▶ <span class="btn-label">Run All</span></button>
+  <div class="tb-sep"></div>
+  <button class="tb-icon-btn" id="btn-settings" title="Settings">⚙</button>
 </div>
 
-<!-- Game Execution Layer -->
-<div id="preview-layer">
-    <button id="close-preview" class="btn" onclick="stopScript()">Exit Game</button>
-    <canvas id="game-canvas"></canvas>
-</div>
+<!-- ─────────────── MAIN ─────────────── -->
+<div id="main">
 
-<!-- Manual Modal -->
-<div id="manual" class="modal">
-    <div class="modal-header"><h2>ar(> Training Manual</h2><button class="btn" onclick="toggleModal('manual')">Close</button></div>
-    <div style="line-height: 1.6;">
-        <h3>Welcome to ar(> (ArrowScript)</h3>
-        <p>ar(> is a high-level scripting language designed for rapid game development. It simplifies complex logic into simple <b>Action Blocks</b>.</p>
-        
-        <h4>1. Basics</h4>
-        <code>ar(> define "speed" as 10 )</code><br>
-        <code>ar(> log "System Active" )</code>
-        
-        <h4>2. 2D Sprites</h4>
-        <code>ar(> create.sprite "player" { x: 100, y: 100, image: "hero.png" } )</code>
-        
-        <h4>3. 3D Objects</h4>
-        <code>ar(> create.3D_cube "box1" { size: 2, color: "red" } )</code>
-        
-        <h4>4. Events</h4>
-        <code>ar(> on.tick( delta => { move "player" by speed } ) )</code>
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <span>Explorer</span>
+      <button id="btn-refresh-tree" title="Refresh">↺</button>
     </div>
+    <div id="file-tree"></div>
+  </div>
+
+  <!-- EDITOR AREA -->
+  <div id="editor-area">
+    <!-- TABS -->
+    <div id="tabs"></div>
+
+    <!-- FIND BAR -->
+    <div id="find-bar">
+      <input id="find-input" placeholder="Find…" spellcheck="false">
+      <input id="replace-input" placeholder="Replace…" spellcheck="false">
+      <button id="btn-find-prev">↑</button>
+      <button id="btn-find-next">↓</button>
+      <div class="find-sep"></div>
+      <button id="btn-replace-one">Replace</button>
+      <button id="btn-replace-all">All</button>
+      <div class="find-sep"></div>
+      <span class="find-count" id="find-count">—</span>
+      <div style="flex:1"></div>
+      <button id="btn-find-close">✕</button>
+    </div>
+
+    <!-- EDITOR WRAPPER -->
+    <div id="editor-wrapper">
+      <!-- No file message -->
+      <div id="no-file" class="visible">
+        <div class="nf-logo">⌨️</div>
+        <h3>ar(&gt; Playground</h3>
+        <p>Create a new file or choose a preset to start coding.<br>Press <strong>⌘ Commands</strong> for quick actions.</p>
+        <div class="nf-btns">
+          <button onclick="newFile()">＋ New File</button>
+          <button onclick="openPresets()">📦 Presets</button>
+          <button onclick="openSettings('manual')">📖 Manual</button>
+        </div>
+      </div>
+
+      <div id="line-numbers"></div>
+      <div id="code-editor">
+        <div id="code-display" aria-hidden="true"></div>
+        <textarea id="code-textarea" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+      </div>
+
+      <!-- Autocomplete -->
+      <div id="autocomplete"></div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div id="output-panel">
+      <div class="output-header">
+        <span>Output</span>
+        <div class="out-tabs" style="display:flex;gap:4px;margin-left:8px">
+          <button id="out-tab-console" class="active" onclick="switchOutTab('console')">Console</button>
+          <button id="out-tab-preview" onclick="switchOutTab('preview')">Preview</button>
+        </div>
+        <div style="flex:1"></div>
+        <button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px" onclick="clearOutput()" title="Clear">🗑</button>
+        <button style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;margin-left:4px" onclick="closeOutput()">✕</button>
+      </div>
+      <div id="output-content"></div>
+      <div id="run-frame-wrap"><iframe id="run-frame" sandbox="allow-scripts allow-same-origin"></iframe></div>
+    </div>
+  </div>
 </div>
 
-<!-- Settings Modal -->
-<div id="settings" class="modal">
-    <div class="modal-header"><h2>Settings</h2><button class="btn" onclick="toggleModal('settings')">Close</button></div>
-    <p>Editor Theme:</p>
-    <select id="themeSelect" onchange="changeTheme(this.value)" class="btn">
-        <option value="vs-dark">GitHub Dark (Default)</option>
-        <option value="vs-light">Bright Professional</option>
-        <option value="hc-black">High Contrast</option>
-    </select>
-    <br><br>
-    <p>Font Size:</p>
-    <input type="number" value="16" onchange="updateFontSize(this.value)" class="btn">
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <span id="sb-lang">ar(&gt; Script</span>
+  <span id="sb-file">No file</span>
+  <div class="sb-right">
+    <span id="sb-pos">Ln 1, Col 1</span>
+    <span id="sb-words">0 tokens</span>
+    <span id="sb-enc">UTF-8</span>
+  </div>
+</div>
+
+<!-- ─────────────── COMMAND BAR ─────────────── -->
+<div id="command-overlay">
+  <div id="command-bar">
+    <input id="command-input" placeholder="Search commands, files, presets…" autocomplete="off">
+    <div id="command-results"></div>
+  </div>
+</div>
+
+<!-- ─────────────── SETTINGS ─────────────── -->
+<div id="settings-overlay">
+  <div id="settings-panel">
+    <div class="settings-nav">
+      <h3>Settings</h3>
+      <div class="snav-item active" onclick="switchSettingsTab('appearance')">🎨 Appearance</div>
+      <div class="snav-item" onclick="switchSettingsTab('editor')">✏️ Editor</div>
+      <div class="snav-item" onclick="switchSettingsTab('runtime')">▶️ Runtime</div>
+      <div class="snav-item" onclick="switchSettingsTab('keybinds')">⌨️ Keybinds</div>
+      <div class="snav-item" onclick="switchSettingsTab('manual')">📖 Manual</div>
+      <div class="snav-item" onclick="switchSettingsTab('about')">ℹ️ About</div>
+      <div style="flex:1"></div>
+      <button onclick="closeSettings()" style="background:var(--bg4);border:1px solid var(--border);color:var(--text2);padding:8px;border-radius:7px;cursor:pointer;font-family:var(--ui-font);font-size:12px;font-weight:700">Close</button>
+    </div>
+    <div class="settings-content">
+
+      <!-- APPEARANCE -->
+      <div class="settings-section active" id="sec-appearance">
+        <h2>🎨 Appearance</h2>
+        <div class="settings-row">
+          <div class="row-left"><label>Theme</label></div>
+        </div>
+        <div class="theme-grid">
+          <div class="theme-card selected" id="theme-dark" onclick="applyTheme('dark')">
+            <div class="theme-preview" style="background:#0d0f14">
+              <div class="theme-bar" style="background:#2a2f3d;width:70%"></div>
+              <div class="theme-bar" style="background:#4f9eff;width:40%"></div>
+              <div class="theme-bar" style="background:#4fffb0;width:55%"></div>
+            </div>
+            <div class="theme-name">Dark</div>
+          </div>
+          <div class="theme-card" id="theme-light" onclick="applyTheme('light')">
+            <div class="theme-preview" style="background:#f5f7fa">
+              <div class="theme-bar" style="background:#c8d0de;width:70%"></div>
+              <div class="theme-bar" style="background:#4f9eff;width:40%"></div>
+              <div class="theme-bar" style="background:#2dd68c;width:55%"></div>
+            </div>
+            <div class="theme-name">Light</div>
+          </div>
+          <div class="theme-card" id="theme-midnight" onclick="applyTheme('midnight')">
+            <div class="theme-preview" style="background:#050810">
+              <div class="theme-bar" style="background:#1e2640;width:70%"></div>
+              <div class="theme-bar" style="background:#5fc8ff;width:40%"></div>
+              <div class="theme-bar" style="background:#5fffc8;width:55%"></div>
+            </div>
+            <div class="theme-name">Midnight</div>
+          </div>
+          <div class="theme-card" id="theme-forest" onclick="applyTheme('forest')">
+            <div class="theme-preview" style="background:#0c1410">
+              <div class="theme-bar" style="background:#253428;width:70%"></div>
+              <div class="theme-bar" style="background:#4fff90;width:40%"></div>
+              <div class="theme-bar" style="background:#ffd04f;width:55%"></div>
+            </div>
+            <div class="theme-name">Forest</div>
+          </div>
+          <div class="theme-card" id="theme-crimson" onclick="applyTheme('crimson')">
+            <div class="theme-preview" style="background:#120809">
+              <div class="theme-bar" style="background:#3d2225;width:70%"></div>
+              <div class="theme-bar" style="background:#ff4f6b;width:40%"></div>
+              <div class="theme-bar" style="background:#4fffb0;width:55%"></div>
+            </div>
+            <div class="theme-name">Crimson</div>
+          </div>
+        </div>
+
+        <div class="settings-row" style="margin-top:16px">
+          <div class="row-left">
+            <label>Font Size</label>
+            <div class="row-desc">Editor font size in pixels</div>
+          </div>
+          <input type="range" id="font-size-slider" min="10" max="20" value="13" oninput="changeFontSize(this.value)">
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Line Height</label>
+          </div>
+          <select id="line-height-select" onchange="changeLineHeight(this.value)">
+            <option value="1.4">Compact (1.4)</option>
+            <option value="1.65" selected>Normal (1.65)</option>
+            <option value="1.9">Relaxed (1.9)</option>
+            <option value="2.1">Wide (2.1)</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Minimap</label>
+          </div>
+          <div class="toggle" id="toggle-minimap" onclick="toggleSetting('minimap')"></div>
+        </div>
+      </div>
+
+      <!-- EDITOR -->
+      <div class="settings-section" id="sec-editor">
+        <h2>✏️ Editor</h2>
+        <div class="settings-row">
+          <div class="row-left"><label>Tab Size</label></div>
+          <select id="tab-size-select" onchange="changeTabSize(this.value)">
+            <option value="2" selected>2 spaces</option>
+            <option value="4">4 spaces</option>
+            <option value="8">8 spaces</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="row-left"><label>Word Wrap</label></div>
+          <div class="toggle on" id="toggle-wordwrap" onclick="toggleSetting('wordwrap')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Auto Brackets</label>
+            <div class="row-desc">Auto-close brackets, quotes, parentheses</div>
+          </div>
+          <div class="toggle on" id="toggle-brackets" onclick="toggleSetting('brackets')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Predictions</label>
+            <div class="row-desc">Show code completion suggestions</div>
+          </div>
+          <div class="toggle on" id="toggle-predictions" onclick="toggleSetting('predictions')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Auto Indent</label>
+          </div>
+          <div class="toggle on" id="toggle-autoindent" onclick="toggleSetting('autoindent')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Line Numbers</label>
+          </div>
+          <div class="toggle on" id="toggle-linenums" onclick="toggleSetting('linenums')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Highlight Current Line</label>
+          </div>
+          <div class="toggle on" id="toggle-curline" onclick="toggleSetting('curline')"></div>
+        </div>
+      </div>
+
+      <!-- RUNTIME -->
+      <div class="settings-section" id="sec-runtime">
+        <h2>▶️ Runtime</h2>
+        <div class="settings-row">
+          <div class="row-left"><label>Run Mode</label></div>
+          <select id="run-mode-select">
+            <option value="preview">Preview Panel</option>
+            <option value="newwindow">New Window</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Auto-run on Save</label>
+          </div>
+          <div class="toggle" id="toggle-autorun" onclick="toggleSetting('autorun')"></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-left">
+            <label>Console Timestamps</label>
+          </div>
+          <div class="toggle on" id="toggle-timestamps" onclick="toggleSetting('timestamps')"></div>
+        </div>
+      </div>
+
+      <!-- KEYBINDS -->
+      <div class="settings-section" id="sec-keybinds">
+        <h2>⌨️ Keybinds</h2>
+        <div class="settings-row"><div class="row-left"><label>Run Script</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+Enter</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Command Bar</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+P</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Find</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+F</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Select All</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+A</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Save File</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+S</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>New File</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+N</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Close Tab</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+W</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Toggle Sidebar</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+B</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Comment Toggle</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+/</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Duplicate Line</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Alt+D</kbd></div>
+        <div class="settings-row"><div class="row-left"><label>Delete Line</label></div><kbd style="background:var(--bg4);padding:4px 8px;border-radius:5px;font-size:11px;border:1px solid var(--border)">Ctrl+Shift+K</kbd></div>
+      </div>
+
+      <!-- MANUAL -->
+      <div class="settings-section" id="sec-manual">
+        <h2>📖 ar(&gt; Language Manual</h2>
+
+        <div class="manual-section">
+          <h3>Overview</h3>
+          <p><strong>ar(&gt;</strong> (pronounced "Arrow") is a modern scripting language designed to be readable, expressive, and powerful. It compiles to JavaScript and runs in any browser or runtime. Its syntax is designed to be English-like, removing boilerplate while keeping full capability.</p>
+        </div>
+
+        <div class="manual-section">
+          <h3>Variables</h3>
+          <div class="manual-code">set name = "Alice"           -- string
+set age  = 25               -- number
+set isOn = true             -- boolean
+set items = [1, 2, 3]       -- list
+const PI = 3.14159          -- constant</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Functions</h3>
+          <div class="manual-code">fn greet(name) =>
+  say "Hello, " + name
+end
+
+fn add(a, b) =>
+  return a + b
+end
+
+-- Arrow shorthand
+fn square(x) -> x * x</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Control Flow</h3>
+          <div class="manual-code">-- If / elif / else
+if age > 18 then
+  say "Adult"
+elif age == 18 then
+  say "Just 18"
+else
+  say "Minor"
+end
+
+-- Loops
+loop 10 times
+  say "Hello!"
+end
+
+for item in items
+  say item
+end
+
+while count < 5
+  count += 1
+end</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Classes & Objects</h3>
+          <div class="manual-code">class Player
+  has name, health = 100, x = 0, y = 0
+
+  fn init(name) =>
+    self.name = name
+  end
+
+  fn move(dx, dy) =>
+    self.x += dx
+    self.y += dy
+  end
+
+  fn takeDamage(amount) =>
+    self.health -= amount
+    if self.health <= 0 then
+      say self.name + " died"
+    end
+  end
+end
+
+set p = new Player("Hero")</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Output & Input</h3>
+          <div class="manual-code">say "Hello World"          -- console.log
+say "x = " + x            -- string concat
+ask "Your name?" -> name  -- prompt
+show alert "Warning!"     -- alert
+set val = read input       -- input element value</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>2D Game Engine (built-in)</h3>
+          <div class="manual-code">-- Setup canvas
+canvas 800 x 600 as "game"
+
+-- Draw shapes
+draw rect at 100, 200 size 64, 64 color "#ff4f6b"
+draw circle at 400, 300 radius 50 color "#4f9eff"
+draw text "Score: 0" at 10, 20 font "16px bold" color "white"
+
+-- Sprites
+load image "hero.png" as hero
+draw image hero at x, y size 64, 64
+
+-- Game loop
+loop every frame
+  clear screen
+  update()
+  draw()
+end
+
+-- Input
+on keydown "ArrowRight" => player.x += 5 end
+on keyup "Space" => player.jump() end
+on click at x, y => shoot(x, y) end</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>3D Game Engine (built-in)</h3>
+          <div class="manual-code">-- Setup 3D scene
+scene3d 800 x 600
+
+-- Camera
+camera at 0, 5, 10 looking 0, 0, 0
+
+-- Objects
+add cube at 0, 0, 0 size 1 color "#7b5cff"
+add sphere at 2, 1, 0 radius 0.5
+add plane at 0, 0, 0 size 20
+add light point at 5, 10, 5 intensity 1.5
+add light ambient color "#334" intensity 0.5
+
+-- Skybox
+skybox color "#111133"
+
+-- Physics
+enable physics
+set cube gravity = true
+set cube mass = 1.0
+
+-- Animate
+loop every frame
+  cube.rotate(0, 0.01, 0)
+end</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Audio</h3>
+          <div class="manual-code">load audio "bg.mp3" as music
+play music loop true volume 0.5
+
+load audio "jump.wav" as sfx
+play sfx once
+
+stop music
+set music.volume = 0.8</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>UI Elements</h3>
+          <div class="manual-code">-- Create HTML elements
+make button "Click Me" at 100, 100 on click => doThing() end
+make input text at 200, 150 id "nameInput"
+make label "Name:" at 200, 130
+
+-- Styling
+style button color "#4f9eff" size 120, 40 radius 8</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Files & Storage</h3>
+          <div class="manual-code">-- Local storage
+save "score" = 1000
+load "score" -> score
+
+-- File operations (with user permission)
+pick file -> f
+read file f -> text
+
+-- Fetch
+fetch "https://api.example.com/data" -> result
+say result.json</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Multi-Script (use)</h3>
+          <div class="manual-code">-- In main.ar
+use "utils.ar"
+use "player.ar"
+
+-- utils.ar exports functions automatically
+-- Call them directly:
+set p = new Player("Alice")
+log(p.name)</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Types & Casting</h3>
+          <div class="manual-code">set n = toNum("42")        -- 42
+set s = toStr(3.14)        -- "3.14"
+set b = toBool(0)          -- false
+type of n                   -- "number"
+is n a Number               -- true</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Error Handling</h3>
+          <div class="manual-code">try
+  riskyFn()
+catch err
+  say "Error: " + err.message
+finally
+  cleanup()
+end</div>
+        </div>
+
+        <div class="manual-section">
+          <h3>Math & Utilities</h3>
+          <div class="manual-code">math.random(0, 100)
+math.floor(3.7)        -- 3
+math.abs(-5)           -- 5
+math.clamp(x, 0, 100)
+
+-- String utilities
+"hello".upper          -- "HELLO"
+"hello".replace("l","L")
+"a,b,c".split(",")     -- ["a","b","c"]
+items.join(", ")
+
+-- List utilities
+items.push(4)
+items.pop()
+items.length
+items.filter(x -> x > 2)
+items.map(x -> x * 2)</div>
+        </div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="settings-section" id="sec-about">
+        <h2>ℹ️ About</h2>
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:48px;margin-bottom:12px">⌨️</div>
+          <div style="font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">ar(&gt; Playground</div>
+          <div style="font-size:13px;color:var(--text3);margin-bottom:20px">Version 1.0.0 • The custom scripting IDE</div>
+          <div style="font-size:12px;color:var(--text2);line-height:2">
+            A full-featured script playground for the <strong>ar(&gt;</strong> language.<br>
+            Supports 2D &amp; 3D game development, audio, files, multi-script projects,<br>
+            custom themes, and a massive prediction engine.<br><br>
+            Built for iPad and desktop. Touch-optimised.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── PRESETS MODAL ─────────────── -->
+<div class="mini-modal" id="presets-modal">
+  <div class="mini-modal-box" style="width:min(560px,95vw);max-height:80dvh;overflow-y:auto">
+    <h3>📦 Presets</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Choose a template to start a new project</p>
+    <div class="preset-grid" id="preset-grid"></div>
+    <div class="modal-btns" style="margin-top:16px"><button onclick="closePresets()">Cancel</button></div>
+  </div>
+</div>
+
+<!-- NEW FILE MODAL -->
+<div class="mini-modal" id="new-file-modal">
+  <div class="mini-modal-box">
+    <h3>New File</h3>
+    <input id="new-file-name" placeholder="filename.ar" autocomplete="off">
+    <div class="modal-btns">
+      <button onclick="closeNewFile()">Cancel</button>
+      <button class="primary" onclick="confirmNewFile()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW FOLDER MODAL -->
+<div class="mini-modal" id="new-folder-modal">
+  <div class="mini-modal-box">
+    <h3>New Folder</h3>
+    <input id="new-folder-name" placeholder="folder-name" autocomplete="off">
+    <div class="modal-btns">
+      <button onclick="document.getElementById('new-folder-modal').classList.remove('open')">Cancel</button>
+      <button class="primary" onclick="confirmNewFolder()">Create</button>
+    </div>
+  </div>
 </div>
 
 <script>
-    // --- VIRTUAL FILE SYSTEM ---
-    let files = {
-        "root": {
-            "main.ar": "ar(> log \"Game Started!\" )\n\n// Create a 2D Square\nar(> create.rect \"box\" { x: 50, y: 50, w: 100, h: 100, color: \"#58a6ff\" } )\n\n// Move on click\nar(> on.click( pos => {\n    ar(> move \"box\" to pos )\n} ) )",
-            "scripts": {
-                "player_logic.ar": "// Custom player logic\nar(> define \"health\" as 100 )"
-            }
-        }
-    };
-    let currentFilePath = "main.ar";
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const state = {
+  files: {},        // id -> {id, name, content, parentId, modified}
+  folders: {},      // id -> {id, name, parentId, open}
+  openTabs: [],     // file ids
+  activeTab: null,
+  settings: {
+    theme: 'dark',
+    fontSize: 13,
+    lineHeight: 1.65,
+    tabSize: 2,
+    wordWrap: true,
+    brackets: true,
+    predictions: true,
+    autoIndent: true,
+    lineNums: true,
+    curLine: true,
+    autoRun: false,
+    timestamps: true,
+    runMode: 'preview',
+    minimap: false,
+  },
+  acIndex: -1,
+  acItems: [],
+  findMatches: [],
+  findIndex: 0,
+  uid: 1,
+};
 
-    // --- MONACO EDITOR SETUP ---
-    var editor;
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
-    require(['vs/editor/editor.main'], function() {
-        
-        // Define ar(> Language
-        monaco.languages.register({ id: 'ar_lang' });
-        
-        // Custom Syntax Highlighting (Monarch)
-        monaco.languages.setMonarchTokensProvider('ar_lang', {
-            tokenizer: {
-                root: [
-                    [/ar\(>/, "keyword"],
-                    [/\".*?\"/, "string"],
-                    [/\b(create\.sprite|create\.rect|create\.3D_cube|on\.tick|on\.click|move|log|define|as)\b/, "keyword"],
-                    [/\b(x|y|w|h|color|size|image|pos|delta)\b/, "variable"],
-                    [/\d+/, "number"],
-                    [/\/\/.*$/, "comment"]
-                ]
-            }
-        });
+let uid = () => 'id' + (state.uid++);
 
-        // Prediction System (Autocompletion)
-        monaco.languages.registerCompletionItemProvider('ar_lang', {
-            provideCompletionItems: () => {
-                var suggestions = [
-                    { label: 'ar(>', kind: monaco.languages.CompletionItemKind.Keyword, insertText: 'ar(> ' },
-                    { label: 'create.sprite', kind: monaco.languages.CompletionItemKind.Function, insertText: 'create.sprite "${1:name}" { x: 0, y: 0, image: "${2:url}" } )', insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet },
-                    { label: 'on.tick', kind: monaco.languages.CompletionItemKind.Event, insertText: 'on.tick( delta => {\n\t$0\n} )' },
-                    { label: '3D Scene Template', kind: monaco.languages.CompletionItemKind.Snippet, insertText: 'ar(> create.3D_cube "cube" { size: 1, color: "blue" } )\nar(> on.tick( d => {\n\tar(> rotate "cube" { x: 0.01, y: 0.01 } )\n} ) )', documentation: 'Create a rotating 3D Cube' }
-                ];
-                return { suggestions: suggestions };
-            }
-        });
+// ─── AR(> LANGUAGE KEYWORDS & COMPLETIONS ───
+const AR_KEYWORDS = [
+  'set','const','fn','end','return','if','elif','else','then','loop','for','in',
+  'while','class','has','self','new','try','catch','finally','true','false',
+  'null','and','or','not','is','of','a','as','use','say','ask','show','fetch',
+  'times','every','frame','on','make','style','draw','canvas','scene3d','camera',
+  'add','enable','skybox','load','play','stop','save','pick','read','type',
+  'math','import','export','break','continue','do','switch','case','default',
+  'async','await','emit','listen','pass','to','with','at','size','color','by',
+  'from','via','let','var','log','err','warn','alert','prompt','input','output',
+];
 
-        editor = monaco.editor.create(document.getElementById('monaco-root'), {
-            value: files["root"]["main.ar"],
-            language: 'ar_lang',
-            theme: 'vs-dark',
-            automaticLayout: true,
-            fontSize: 16,
-            wordWrap: "on",
-            minimap: { enabled: false },
-            scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 }
-        });
+const AR_FUNCTIONS = [
+  { name: 'say', detail: 'say value', kind: 'fn' },
+  { name: 'ask', detail: 'ask "prompt" -> var', kind: 'fn' },
+  { name: 'fetch', detail: 'fetch url -> result', kind: 'fn' },
+  { name: 'draw rect', detail: 'draw rect at x,y size w,h color c', kind: 'fn' },
+  { name: 'draw circle', detail: 'draw circle at x,y radius r color c', kind: 'fn' },
+  { name: 'draw text', detail: 'draw text "str" at x,y', kind: 'fn' },
+  { name: 'draw image', detail: 'draw image img at x,y size w,h', kind: 'fn' },
+  { name: 'draw line', detail: 'draw line from x1,y1 to x2,y2 color c', kind: 'fn' },
+  { name: 'clear screen', detail: 'clear screen', kind: 'fn' },
+  { name: 'canvas', detail: 'canvas W x H as "id"', kind: 'fn' },
+  { name: 'scene3d', detail: 'scene3d W x H', kind: 'fn' },
+  { name: 'camera', detail: 'camera at x,y,z looking x,y,z', kind: 'fn' },
+  { name: 'add cube', detail: 'add cube at x,y,z size s color c', kind: 'fn' },
+  { name: 'add sphere', detail: 'add sphere at x,y,z radius r', kind: 'fn' },
+  { name: 'add plane', detail: 'add plane at x,y,z size s', kind: 'fn' },
+  { name: 'add light', detail: 'add light point at x,y,z intensity n', kind: 'fn' },
+  { name: 'load image', detail: 'load image "path" as name', kind: 'fn' },
+  { name: 'load audio', detail: 'load audio "path" as name', kind: 'fn' },
+  { name: 'play', detail: 'play audio loop true volume 0.5', kind: 'fn' },
+  { name: 'stop', detail: 'stop audio', kind: 'fn' },
+  { name: 'math.random', detail: 'math.random(min, max)', kind: 'fn' },
+  { name: 'math.floor', detail: 'math.floor(n)', kind: 'fn' },
+  { name: 'math.ceil', detail: 'math.ceil(n)', kind: 'fn' },
+  { name: 'math.abs', detail: 'math.abs(n)', kind: 'fn' },
+  { name: 'math.sqrt', detail: 'math.sqrt(n)', kind: 'fn' },
+  { name: 'math.clamp', detail: 'math.clamp(v, min, max)', kind: 'fn' },
+  { name: 'math.sin', detail: 'math.sin(angle)', kind: 'fn' },
+  { name: 'math.cos', detail: 'math.cos(angle)', kind: 'fn' },
+  { name: 'math.pow', detail: 'math.pow(base, exp)', kind: 'fn' },
+  { name: 'toNum', detail: 'toNum(str)', kind: 'fn' },
+  { name: 'toStr', detail: 'toStr(val)', kind: 'fn' },
+  { name: 'toBool', detail: 'toBool(val)', kind: 'fn' },
+  { name: 'use', detail: 'use "filename.ar"', kind: 'fn' },
+  { name: 'make button', detail: 'make button "label" at x,y on click => ... end', kind: 'snip' },
+  { name: 'loop every frame', detail: 'loop every frame ... end', kind: 'snip' },
+  { name: 'on keydown', detail: 'on keydown "key" => ... end', kind: 'snip' },
+  { name: 'on click', detail: 'on click at x,y => ... end', kind: 'snip' },
+  { name: 'enable physics', detail: 'enable physics', kind: 'fn' },
+  { name: 'skybox', detail: 'skybox color "hex"', kind: 'fn' },
+];
 
-        renderFileTree();
+const AR_SNIPPETS = [
+  { name: 'fn...end', insert: 'fn name(args) =>\n  \nend', kind: 'snip' },
+  { name: 'class...end', insert: 'class Name\n  has prop1, prop2\n\n  fn init() =>\n    \n  end\nend', kind: 'snip' },
+  { name: 'if...end', insert: 'if condition then\n  \nend', kind: 'snip' },
+  { name: 'loop N times', insert: 'loop 10 times\n  \nend', kind: 'snip' },
+  { name: 'for...in', insert: 'for item in list\n  \nend', kind: 'snip' },
+  { name: 'try...catch', insert: 'try\n  \ncatch err\n  say err.message\nend', kind: 'snip' },
+  { name: 'canvas 2D', insert: 'canvas 800 x 600 as "game"\n\nloop every frame\n  clear screen\n  draw rect at 100,100 size 60,60 color "#4f9eff"\nend', kind: 'snip' },
+  { name: '3D scene', insert: 'scene3d 800 x 600\ncamera at 0,5,10 looking 0,0,0\nadd cube at 0,0,0 size 1 color "#7b5cff"\nadd light point at 5,10,5 intensity 1.5\nskybox color "#111133"\n\nloop every frame\n  cube.rotate(0,0.01,0)\nend', kind: 'snip' },
+];
+
+// ─── PRESETS ───
+const PRESETS = [
+  {
+    icon: '🎮',
+    name: '2D Platformer',
+    desc: 'Side-scrolling platformer base with physics and controls',
+    files: [
+      { name: 'main.ar', content: `-- 2D Platformer Base
+use "player.ar"
+use "world.ar"
+
+canvas 800 x 600 as "game"
+
+set score = 0
+set level = 1
+
+fn init() =>
+  world.create()
+  player.spawn(50, 400)
+  say "Game started!"
+end
+
+loop every frame
+  clear screen
+  draw rect at 0,0 size 800,600 color "#1a1a2e"
+  world.draw()
+  player.update()
+  player.draw()
+  drawHUD()
+end
+
+fn drawHUD() =>
+  draw text "Score: " + score at 10,24 font "16px bold" color "white"
+  draw text "Level: " + level at 10,48 font "14px" color "#aaa"
+end
+
+on keydown "ArrowRight" => player.moveRight() end
+on keydown "ArrowLeft"  => player.moveLeft() end
+on keydown "Space"      => player.jump() end
+on keydown "ArrowUp"    => player.jump() end
+
+init()` },
+      { name: 'player.ar', content: `-- Player Script
+class Player
+  has x=50, y=400, vx=0, vy=0
+  has width=32, height=48
+  has speed=4, jumpForce=10
+  has onGround=false, health=3
+  has facing="right"
+
+  fn init() => end
+
+  fn moveRight() =>
+    self.vx = self.speed
+    self.facing = "right"
+  end
+
+  fn moveLeft() =>
+    self.vx = -self.speed
+    self.facing = "left"
+  end
+
+  fn jump() =>
+    if self.onGround then
+      self.vy = -self.jumpForce
+      self.onGround = false
+    end
+  end
+
+  fn update() =>
+    self.vy += 0.5  -- gravity
+    self.x += self.vx
+    self.y += self.vy
+    self.vx *= 0.8  -- friction
+
+    if self.y > 500 then
+      self.y = 500
+      self.vy = 0
+      self.onGround = true
+    end
+  end
+
+  fn draw() =>
+    draw rect at self.x, self.y size self.width, self.height color "#4f9eff"
+    draw rect at self.x+8, self.y+8 size 6,6 color "white"
+  end
+end
+
+set player = new Player()
+
+fn spawn(x,y) =>
+  player.x = x
+  player.y = y
+end` },
+      { name: 'world.ar', content: `-- World / Tilemap Script
+set platforms = [
+  {x:0,   y:560, w:800, h:40},
+  {x:100, y:460, w:200, h:20},
+  {x:400, y:380, w:150, h:20},
+  {x:600, y:300, w:120, h:20},
+]
+
+fn create() =>
+  say "World created with " + platforms.length + " platforms"
+end
+
+fn draw() =>
+  for p in platforms
+    draw rect at p.x, p.y size p.w, p.h color "#2dd68c"
+  end
+end` },
+    ]
+  },
+  {
+    icon: '🚀',
+    name: '3D Space Game',
+    desc: 'Flying through space in 3D with Three.js-style scene',
+    files: [
+      { name: 'space.ar', content: `-- 3D Space Game
+scene3d 800 x 600
+
+camera at 0, 2, 12 looking 0, 0, 0
+skybox color "#000011"
+
+add light ambient color "#001133" intensity 0.3
+add light point at 0, 10, 0 intensity 2.0
+
+-- Stars (many small spheres)
+loop 80 times
+  set sx = math.random(-40, 40)
+  set sy = math.random(-20, 20)
+  set sz = math.random(-50, 0)
+  add sphere at sx, sy, sz radius 0.08 color "white"
+end
+
+-- Player ship
+add cube at 0, 0, 0 size 0.8 color "#4f9eff"
+add cube at -1, -0.2, 0.3 size 0.4 color "#2266aa"
+add cube at 1, -0.2, 0.3 size 0.4 color "#2266aa"
+
+set shipX = 0
+set shipY = 0
+set speed = 0.1
+
+loop every frame
+  ship.position.set(shipX, shipY, 0)
+end
+
+on keydown "ArrowLeft"  => shipX -= speed end
+on keydown "ArrowRight" => shipX += speed end
+on keydown "ArrowUp"    => shipY += speed end
+on keydown "ArrowDown"  => shipY -= speed end` },
+    ]
+  },
+  {
+    icon: '🧩',
+    name: 'Puzzle Game',
+    desc: 'Grid-based puzzle game with drag-and-drop tiles',
+    files: [
+      { name: 'puzzle.ar', content: `-- Puzzle Game Base
+canvas 600 x 600 as "puzzle"
+
+const GRID = 4
+const TILE = 120
+set board = []
+set moves = 0
+
+fn init() =>
+  set nums = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0]
+  -- shuffle
+  loop 1000 times
+    set a = math.floor(math.random(0, 16))
+    set b = math.floor(math.random(0, 16))
+    set tmp = nums[a]
+    set nums[a] = nums[b]
+    set nums[b] = tmp
+  end
+  set board = nums
+  say "Puzzle initialised!"
+end
+
+fn draw() =>
+  draw rect at 0,0 size 600,600 color "#1a1a2e"
+  loop 16 times as i
+    set row = math.floor(i / GRID)
+    set col = i - row * GRID
+    set val = board[i]
+    if val != 0 then
+      draw rect at col*TILE+4, row*TILE+4 size TILE-8, TILE-8 color "#4f9eff"
+      draw text toStr(val) at col*TILE+50, row*TILE+70 font "28px bold" color "white"
+    end
+  end
+  draw text "Moves: " + moves at 10,590 font "14px" color "#aaa"
+end
+
+loop every frame
+  draw()
+end
+
+on click at cx, cy =>
+  set col = math.floor(cx / TILE)
+  set row = math.floor(cy / TILE)
+  slideTile(row * GRID + col)
+end
+
+fn slideTile(i) =>
+  -- find blank
+  set blank = 0
+  loop 16 times as j
+    if board[j] == 0 then set blank = j end
+  end
+  -- check adjacency
+  set dr = math.abs(math.floor(i/GRID) - math.floor(blank/GRID))
+  set dc = math.abs(i - blank - (math.floor(i/GRID)-math.floor(blank/GRID))*GRID)
+  if (dr==1 and dc==0) or (dr==0 and dc==1) then
+    set board[blank] = board[i]
+    set board[i] = 0
+    moves += 1
+  end
+end
+
+init()` },
+    ]
+  },
+  {
+    icon: '🎵',
+    name: 'Music Visualiser',
+    desc: 'Audio-reactive 2D visualiser with canvas',
+    files: [
+      { name: 'visualiser.ar', content: `-- Music Visualiser
+canvas 800 x 400 as "vis"
+
+set bars = 64
+set time = 0
+set hue = 0
+
+loop every frame
+  clear screen
+  draw rect at 0,0 size 800,400 color "#050505"
+
+  hue = (hue + 0.5)
+  if hue > 360 then hue = 0 end
+
+  set barW = 800 / bars
+  loop bars times as i
+    set freq = math.sin(time * 0.05 + i * 0.3) * 0.5 + 0.5
+    set h = freq * 300 + 10
+    set c = "hsl(" + (hue + i * 5) + ",80%,55%)"
+    set bx = i * barW
+    draw rect at bx, 400-h size barW-2, h color c
+  end
+
+  time += 1
+end
+
+say "Visualiser running!"` },
+    ]
+  },
+  {
+    icon: '🤖',
+    name: 'Simple RPG',
+    desc: 'Top-down RPG with inventory and combat system',
+    files: [
+      { name: 'rpg.ar', content: `-- Simple Top-Down RPG
+use "rpg_player.ar"
+use "rpg_enemy.ar"
+
+canvas 800 x 600 as "rpg"
+
+set camera_x = 0
+set camera_y = 0
+
+fn init() =>
+  player.spawn(400, 300)
+  rpg_enemy.spawnGroup(5)
+  say "RPG world ready!"
+end
+
+loop every frame
+  clear screen
+  drawWorld()
+  rpg_enemy.update()
+  rpg_enemy.draw()
+  player.update()
+  player.draw()
+  drawUI()
+end
+
+fn drawWorld() =>
+  draw rect at 0,0 size 800,600 color "#2d4a1e"
+  loop 20 times as i
+    loop 20 times as j
+      if math.random(0,1) > 0.85 then
+        draw rect at i*40-camera_x, j*40-camera_y size 38,38 color "#1a3010"
+      end
+    end
+  end
+end
+
+fn drawUI() =>
+  draw rect at 10,10 size 200,20 color "#333"
+  draw rect at 10,10 size player.health*2, 20 color "#ff4f6b"
+  draw text "HP: "+player.health+"/100" at 12,24 font "13px bold" color "white"
+  draw text "Gold: "+player.gold at 10,46 font "13px" color "#ffd04f"
+  draw text "Lv."+player.level at 10,62 font "13px bold" color "#4fffb0"
+end
+
+on keydown "w" => player.vy = -player.speed end
+on keydown "s" => player.vy =  player.speed end
+on keydown "a" => player.vx = -player.speed end
+on keydown "d" => player.vx =  player.speed end
+on keyup   "w" => player.vy = 0 end
+on keyup   "s" => player.vy = 0 end
+on keyup   "a" => player.vx = 0 end
+on keyup   "d" => player.vx = 0 end
+on click at x,y => player.attack(x, y) end
+
+init()` },
+      { name: 'rpg_player.ar', content: `-- RPG Player
+class RPGPlayer
+  has x=400, y=300, vx=0, vy=0
+  has speed=3
+  has health=100, maxHealth=100
+  has gold=0, xp=0, level=1
+
+  fn spawn(sx, sy) =>
+    self.x = sx
+    self.y = sy
+  end
+
+  fn update() =>
+    self.x += self.vx
+    self.y += self.vy
+    self.x = math.clamp(self.x, 0, 800)
+    self.y = math.clamp(self.y, 0, 600)
+  end
+
+  fn draw() =>
+    draw circle at self.x, self.y radius 16 color "#4f9eff"
+    draw circle at self.x-5, self.y-4 radius 3 color "white"
+    draw circle at self.x+5, self.y-4 radius 3 color "white"
+  end
+
+  fn attack(tx, ty) =>
+    say "Player attacks at " + tx + "," + ty
+  end
+
+  fn gainXP(amount) =>
+    self.xp += amount
+    if self.xp >= self.level * 100 then
+      self.level += 1
+      self.maxHealth += 20
+      self.health = self.maxHealth
+      say "Level up! Now level " + self.level
+    end
+  end
+end
+
+set player = new RPGPlayer()` },
+      { name: 'rpg_enemy.ar', content: `-- RPG Enemy System
+class Enemy
+  has x=0, y=0, health=30, speed=1
+  has alive=true
+
+  fn update(px, py) =>
+    if not self.alive then return end
+    set dx = px - self.x
+    set dy = py - self.y
+    set dist = math.sqrt(dx*dx + dy*dy)
+    if dist < 200 and dist > 5 then
+      self.x += (dx/dist) * self.speed
+      self.y += (dy/dist) * self.speed
+    end
+  end
+
+  fn draw() =>
+    if not self.alive then return end
+    draw circle at self.x, self.y radius 14 color "#ff4f6b"
+    draw rect at self.x-14, self.y-22 size 28,4 color "#333"
+    set hw = (self.health/30)*28
+    draw rect at self.x-14, self.y-22 size hw,4 color "#4fffb0"
+  end
+end
+
+set enemies = []
+
+fn spawnGroup(n) =>
+  loop n times
+    set e = new Enemy()
+    e.x = math.random(0, 800)
+    e.y = math.random(0, 600)
+    enemies.push(e)
+  end
+end
+
+fn update() =>
+  for e in enemies
+    e.update(player.x, player.y)
+  end
+end
+
+fn draw() =>
+  for e in enemies
+    e.draw()
+  end
+end` },
+    ]
+  },
+  {
+    icon: '🌐',
+    name: 'Hello World',
+    desc: 'Basic starter with variables, loops and output',
+    files: [
+      { name: 'hello.ar', content: `-- Hello World in ar(>
+-- Welcome to the ar(> scripting language!
+
+set name = "World"
+say "Hello, " + name + "!"
+
+-- Variables and math
+set a = 10
+set b = 25
+set sum = a + b
+say "Sum: " + sum
+
+-- Loop
+loop 5 times as i
+  say "Count: " + (i + 1)
+end
+
+-- Function
+fn greet(person) =>
+  say "Nice to meet you, " + person + "!"
+end
+
+greet("Alice")
+greet("Bob")
+
+-- List
+set fruits = ["apple", "banana", "cherry"]
+for fruit in fruits
+  say "Fruit: " + fruit
+end
+
+say "Done!"` },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════
+//  DOM REFS
+// ═══════════════════════════════════════════
+const $ta = document.getElementById('code-textarea');
+const $display = document.getElementById('code-display');
+const $lineNums = document.getElementById('line-numbers');
+const $tabs = document.getElementById('tabs');
+const $ac = document.getElementById('autocomplete');
+const $cmdOverlay = document.getElementById('command-overlay');
+const $cmdInput = document.getElementById('command-input');
+const $cmdResults = document.getElementById('command-results');
+const $outputPanel = document.getElementById('output-panel');
+const $outputContent = document.getElementById('output-content');
+const $runFrame = document.getElementById('run-frame');
+const $runFrameWrap = document.getElementById('run-frame-wrap');
+const $noFile = document.getElementById('no-file');
+const $editorWrapper = document.getElementById('editor-wrapper');
+const $findBar = document.getElementById('find-bar');
+
+// ═══════════════════════════════════════════
+//  SYNTAX HIGHLIGHTER
+// ═══════════════════════════════════════════
+function highlight(code) {
+  let html = '';
+  let i = 0;
+  const len = code.length;
+
+  while (i < len) {
+    // Comment: starts with --
+    if (code[i] === '-' && code[i+1] === '-') {
+      let j = i;
+      while (j < len && code[j] !== '\n') j++;
+      html += `<span class="hl-comment">${esc(code.slice(i, j))}</span>`;
+      i = j;
+      continue;
+    }
+
+    // String
+    if (code[i] === '"' || code[i] === "'") {
+      const q = code[i];
+      let j = i+1;
+      while (j < len && code[j] !== q) {
+        if (code[j] === '\\') j++;
+        j++;
+      }
+      j++;
+      html += `<span class="hl-str">${esc(code.slice(i, j))}</span>`;
+      i = j;
+      continue;
+    }
+
+    // Number
+    if (/[0-9]/.test(code[i]) && (i === 0 || /[\s\(\[,=+\-*\/]/.test(code[i-1]))) {
+      let j = i;
+      while (j < len && /[0-9._]/.test(code[j])) j++;
+      html += `<span class="hl-num">${esc(code.slice(i, j))}</span>`;
+      i = j;
+      continue;
+    }
+
+    // Identifier / keyword
+    if (/[a-zA-Z_]/.test(code[i])) {
+      let j = i;
+      while (j < len && /[a-zA-Z0-9_]/.test(code[j])) j++;
+      const word = code.slice(i, j);
+      if (AR_KEYWORDS.includes(word)) {
+        html += `<span class="hl-kw">${esc(word)}</span>`;
+      } else if (/^[A-Z]/.test(word)) {
+        html += `<span class="hl-type">${esc(word)}</span>`;
+      } else if (j < len && code[j] === '(') {
+        html += `<span class="hl-fn">${esc(word)}</span>`;
+      } else {
+        html += esc(word);
+      }
+      i = j;
+      continue;
+    }
+
+    // Operators
+    if (/[+\-*\/=<>!&|]/.test(code[i])) {
+      html += `<span class="hl-op">${esc(code[i])}</span>`;
+      i++;
+      continue;
+    }
+
+    // Punctuation
+    if (/[(){}\[\],;:.]/.test(code[i])) {
+      html += `<span class="hl-punc">${esc(code[i])}</span>`;
+      i++;
+      continue;
+    }
+
+    html += esc(code[i]);
+    i++;
+  }
+
+  return html;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════
+//  EDITOR CORE
+// ═══════════════════════════════════════════
+function getActiveFile() {
+  return state.files[state.activeTab];
+}
+
+function refreshDisplay() {
+  const code = $ta.value;
+  $display.innerHTML = highlight(code) + '\n';
+  updateLineNumbers();
+  updateStatus();
+
+  const file = getActiveFile();
+  if (file && file.content !== code) {
+    file.content = code;
+    file.modified = true;
+    refreshTabs();
+  }
+}
+
+function updateLineNumbers() {
+  const lines = ($ta.value.match(/\n/g) || []).length + 1;
+  let nums = '';
+  for (let i = 1; i <= lines; i++) nums += i + '\n';
+  $lineNums.textContent = nums;
+}
+
+function updateStatus() {
+  const code = $ta.value;
+  const pos = $ta.selectionStart;
+  const before = code.slice(0, pos);
+  const lines = before.split('\n');
+  const ln = lines.length;
+  const col = lines[lines.length - 1].length + 1;
+  document.getElementById('sb-pos').textContent = `Ln ${ln}, Col ${col}`;
+  document.getElementById('sb-words').textContent = `${code.split(/\s+/).filter(Boolean).length} tokens`;
+  const file = getActiveFile();
+  document.getElementById('sb-file').textContent = file ? file.name : 'No file';
+}
+
+// Sync scroll
+$ta.addEventListener('scroll', () => {
+  $display.scrollTop = $ta.scrollTop;
+  $display.scrollLeft = $ta.scrollLeft;
+  $lineNums.scrollTop = $ta.scrollTop;
+});
+
+$ta.addEventListener('input', () => {
+  refreshDisplay();
+  scheduleAC();
+});
+
+$ta.addEventListener('keydown', handleEditorKeydown);
+$ta.addEventListener('click', () => { updateStatus(); hideAC(); });
+$ta.addEventListener('selectionchange', updateStatus);
+document.addEventListener('selectionchange', updateStatus);
+
+function handleEditorKeydown(e) {
+  // Tab -> spaces
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (state.acIndex >= 0) { insertAC(); return; }
+    const start = $ta.selectionStart, end = $ta.selectionEnd;
+    const spaces = ' '.repeat(state.settings.tabSize);
+    if (start === end) {
+      insertAtCursor(spaces);
+    } else {
+      // Indent block
+      const val = $ta.value;
+      const before = val.slice(0, start).lastIndexOf('\n') + 1;
+      const after = val.slice(end).indexOf('\n');
+      const lines = val.slice(before, end + (after < 0 ? 0 : after));
+      const indented = lines.split('\n').map(l => spaces + l).join('\n');
+      $ta.setRangeText(indented, before, end + (after < 0 ? val.length - end : after), 'end');
+      refreshDisplay();
+    }
+    return;
+  }
+
+  // AC navigation
+  if ($ac.style.display === 'block') {
+    if (e.key === 'ArrowDown') { e.preventDefault(); moveAC(1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); moveAC(-1); return; }
+    if (e.key === 'Enter' && state.acIndex >= 0) { e.preventDefault(); insertAC(); return; }
+    if (e.key === 'Escape') { hideAC(); return; }
+  }
+
+  // Enter - auto indent
+  if (e.key === 'Enter') {
+    if (state.settings.autoIndent) {
+      const start = $ta.selectionStart;
+      const val = $ta.value;
+      const before = val.slice(0, start).split('\n').pop();
+      const indent = before.match(/^(\s*)/)[1];
+      const needsExtra = /=>\s*$|then\s*$|else\s*$|class\s|loop\s|for\s|while\s|try\s*$|catch\s/.test(before.trim());
+      const extra = needsExtra ? ' '.repeat(state.settings.tabSize) : '';
+      e.preventDefault();
+      insertAtCursor('\n' + indent + extra);
+      return;
+    }
+  }
+
+  // Auto brackets
+  if (state.settings.brackets) {
+    const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+    if (pairs[e.key]) {
+      const start = $ta.selectionStart, end = $ta.selectionEnd;
+      if (start !== end) {
+        e.preventDefault();
+        const sel = $ta.value.slice(start, end);
+        $ta.setRangeText(e.key + sel + pairs[e.key], start, end, 'end');
+        $ta.selectionStart = start + 1;
+        $ta.selectionEnd = start + 1 + sel.length;
+        refreshDisplay();
+        return;
+      }
+    }
+  }
+
+  // Ctrl shortcuts
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 's') { e.preventDefault(); saveFile(); return; }
+    if (e.key === '/') { e.preventDefault(); toggleComment(); return; }
+    if (e.key === 'd' && e.altKey === false && !e.shiftKey) { /* handled globally */ }
+  }
+  if (e.altKey && e.key === 'd') { e.preventDefault(); duplicateLine(); return; }
+  if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key === 'K') { e.preventDefault(); deleteLine(); return; }
+}
+
+function insertAtCursor(text) {
+  const start = $ta.selectionStart, end = $ta.selectionEnd;
+  $ta.setRangeText(text, start, end, 'end');
+  refreshDisplay();
+}
+
+function toggleComment() {
+  const start = $ta.selectionStart;
+  const val = $ta.value;
+  const lineStart = val.slice(0, start).lastIndexOf('\n') + 1;
+  const lineEnd = val.indexOf('\n', start);
+  const line = val.slice(lineStart, lineEnd < 0 ? val.length : lineEnd);
+  let newLine;
+  if (line.trimStart().startsWith('--')) {
+    newLine = line.replace(/^(\s*)--\s?/, '$1');
+  } else {
+    newLine = line.replace(/^(\s*)/, '$1-- ');
+  }
+  $ta.setRangeText(newLine, lineStart, lineEnd < 0 ? val.length : lineEnd, 'end');
+  refreshDisplay();
+}
+
+function duplicateLine() {
+  const start = $ta.selectionStart;
+  const val = $ta.value;
+  const lineStart = val.slice(0, start).lastIndexOf('\n') + 1;
+  let lineEnd = val.indexOf('\n', start);
+  if (lineEnd < 0) lineEnd = val.length;
+  const line = val.slice(lineStart, lineEnd);
+  $ta.setRangeText(line + '\n', lineStart, lineStart, 'end');
+  refreshDisplay();
+}
+
+function deleteLine() {
+  const start = $ta.selectionStart;
+  const val = $ta.value;
+  const lineStart = val.slice(0, start).lastIndexOf('\n') + 1;
+  let lineEnd = val.indexOf('\n', start);
+  if (lineEnd < 0) lineEnd = val.length;
+  else lineEnd++;
+  $ta.setRangeText('', lineStart, lineEnd, 'start');
+  refreshDisplay();
+}
+
+// ═══════════════════════════════════════════
+//  AUTOCOMPLETE
+// ═══════════════════════════════════════════
+let acTimer = null;
+
+function scheduleAC() {
+  clearTimeout(acTimer);
+  acTimer = setTimeout(computeAC, 80);
+}
+
+function computeAC() {
+  if (!state.settings.predictions) { hideAC(); return; }
+  const pos = $ta.selectionStart;
+  const val = $ta.value.slice(0, pos);
+  const word = val.match(/[\w.]+$/) ? val.match(/[\w.]+$/)[0] : '';
+  if (word.length < 1) { hideAC(); return; }
+
+  const w = word.toLowerCase();
+  const results = [];
+
+  // Keywords
+  AR_KEYWORDS.filter(k => k.toLowerCase().startsWith(w) && k !== word).slice(0,5).forEach(k => {
+    results.push({ name: k, detail: 'keyword', kind: 'kw', insert: k });
+  });
+
+  // Functions + snippets
+  [...AR_FUNCTIONS, ...AR_SNIPPETS].filter(f => f.name.toLowerCase().includes(w)).slice(0,8).forEach(f => {
+    results.push({ name: f.name, detail: f.detail || '', kind: f.kind, insert: f.insert || f.name });
+  });
+
+  // File names
+  Object.values(state.files).filter(f => f.name.toLowerCase().includes(w)).forEach(f => {
+    results.push({ name: '"'+f.name+'"', detail: 'file', kind: 'var', insert: '"'+f.name+'"' });
+  });
+
+  if (!results.length) { hideAC(); return; }
+
+  state.acItems = results;
+  state.acIndex = -1;
+  renderAC(word);
+}
+
+function renderAC(word) {
+  $ac.innerHTML = state.acItems.map((item, i) => `
+    <div class="ac-item${i===state.acIndex?' selected':''}" onclick="insertACItem(${i})">
+      <div class="ac-kind kind-${item.kind}">${item.kind.toUpperCase().slice(0,2)}</div>
+      <div class="ac-name">${item.name}</div>
+      ${item.detail ? `<div class="ac-detail">${item.detail}</div>` : ''}
+    </div>
+  `).join('');
+
+  // Position
+  const pos = $ta.selectionStart;
+  const val = $ta.value.slice(0, pos);
+  const lines = val.split('\n');
+  const lineN = lines.length - 1;
+  const col = lines[lineN].length;
+  const lh = 1.65 * (state.settings.fontSize || 13);
+  const top = (lineN + 1) * lh + 14 - $ta.scrollTop;
+  const left = col * (state.settings.fontSize || 13) * 0.6 + 16 - $ta.scrollLeft + ($lineNums.offsetWidth || 46);
+
+  $ac.style.top = top + 'px';
+  $ac.style.left = Math.min(left, $ta.offsetWidth - 240) + 'px';
+  $ac.style.display = 'block';
+}
+
+function moveAC(dir) {
+  state.acIndex = Math.max(-1, Math.min(state.acItems.length - 1, state.acIndex + dir));
+  renderAC('');
+}
+
+function hideAC() { $ac.style.display = 'none'; state.acIndex = -1; }
+
+function insertAC() {
+  const item = state.acItems[state.acIndex < 0 ? 0 : state.acIndex];
+  if (!item) return;
+  insertACItem(state.acIndex < 0 ? 0 : state.acIndex);
+}
+
+function insertACItem(i) {
+  const item = state.acItems[i];
+  const pos = $ta.selectionStart;
+  const val = $ta.value;
+  const word = val.slice(0, pos).match(/[\w.]+$/) ? val.slice(0, pos).match(/[\w.]+$/)[0] : '';
+  const start = pos - word.length;
+  $ta.setRangeText(item.insert, start, pos, 'end');
+  refreshDisplay();
+  hideAC();
+  $ta.focus();
+}
+
+// ═══════════════════════════════════════════
+//  FILE SYSTEM
+// ═══════════════════════════════════════════
+function createFile(name, content = '', parentId = null) {
+  const id = uid();
+  state.files[id] = { id, name, content, parentId, modified: false };
+  refreshFileTree();
+  openTab(id);
+  return id;
+}
+
+function createFolder(name, parentId = null) {
+  const id = uid();
+  state.folders[id] = { id, name, parentId, open: true };
+  refreshFileTree();
+  return id;
+}
+
+function deleteFile(id) {
+  const closeIdx = state.openTabs.indexOf(id);
+  if (closeIdx >= 0) {
+    state.openTabs.splice(closeIdx, 1);
+    if (state.activeTab === id) {
+      state.activeTab = state.openTabs[Math.max(0, closeIdx - 1)] || null;
+    }
+  }
+  delete state.files[id];
+  refreshFileTree();
+  refreshTabs();
+  loadActiveTab();
+}
+
+function deleteFolder(id) {
+  // Delete all files in folder
+  Object.keys(state.files).forEach(fid => {
+    if (state.files[fid].parentId === id) deleteFile(fid);
+  });
+  // Delete sub-folders
+  Object.keys(state.folders).forEach(fid => {
+    if (state.folders[fid].parentId === id) deleteFolder(fid);
+  });
+  delete state.folders[id];
+  refreshFileTree();
+}
+
+function openTab(id) {
+  if (!state.openTabs.includes(id)) state.openTabs.push(id);
+  state.activeTab = id;
+  refreshTabs();
+  loadActiveTab();
+}
+
+function closeTab(id) {
+  const idx = state.openTabs.indexOf(id);
+  if (idx < 0) return;
+  state.openTabs.splice(idx, 1);
+  if (state.activeTab === id) {
+    state.activeTab = state.openTabs[Math.max(0, idx - 1)] || null;
+  }
+  refreshTabs();
+  loadActiveTab();
+}
+
+function saveFile() {
+  const f = getActiveFile();
+  if (!f) return;
+  f.content = $ta.value;
+  f.modified = false;
+  refreshTabs();
+  log('Saved: ' + f.name, 'info');
+  if (state.settings.autoRun) runScript();
+}
+
+function loadActiveTab() {
+  const f = getActiveFile();
+  if (!f) {
+    $ta.value = '';
+    $ta.disabled = true;
+    $lineNums.textContent = '';
+    $display.innerHTML = '';
+    $noFile.classList.add('visible');
+    $lineNums.style.display = 'none';
+    document.getElementById('code-editor').style.display = 'none';
+    document.getElementById('sb-file').textContent = 'No file';
+    return;
+  }
+  $noFile.classList.remove('visible');
+  $ta.disabled = false;
+  $lineNums.style.display = '';
+  document.getElementById('code-editor').style.display = '';
+  $ta.value = f.content;
+  refreshDisplay();
+}
+
+// ─── TREE RENDER ───
+function refreshFileTree() {
+  const $tree = document.getElementById('file-tree');
+  $tree.innerHTML = '';
+  renderTreeLevel($tree, null);
+}
+
+function renderTreeLevel(container, parentId) {
+  // Folders first
+  Object.values(state.folders)
+    .filter(f => f.parentId === parentId)
+    .forEach(folder => {
+      const wrap = document.createElement('div');
+      wrap.className = 'tree-folder';
+
+      const item = document.createElement('div');
+      item.className = 'tree-item';
+      item.innerHTML = `
+        <span class="item-icon">${folder.open ? '📂' : '📁'}</span>
+        <span class="item-name">${folder.name}</span>
+        <span class="item-actions">
+          <button title="Delete" onclick="event.stopPropagation();deleteFolder('${folder.id}')">✕</button>
+        </span>
+      `;
+      item.onclick = () => {
+        folder.open = !folder.open;
+        refreshFileTree();
+      };
+
+      const children = document.createElement('div');
+      children.className = 'tree-folder-children' + (folder.open ? '' : ' collapsed');
+
+      wrap.appendChild(item);
+      wrap.appendChild(children);
+      container.appendChild(wrap);
+
+      if (folder.open) renderTreeLevel(children, folder.id);
     });
 
-    // --- GAME ENGINE (RUNNER) ---
-    let gameActive = false;
-    let scene2D = [];
-    function runScript() {
-        const code = editor.getValue();
-        document.getElementById('preview-layer').style.display = 'block';
-        gameActive = true;
-        
-        // Simple Transpiler/Interpreter Logic
-        console.log("Compiling ar(>...");
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+  // Files
+  Object.values(state.files)
+    .filter(f => f.parentId === parentId)
+    .forEach(file => {
+      const item = document.createElement('div');
+      item.className = 'tree-item' + (file.id === state.activeTab ? ' active' : '');
+      const ext = file.name.split('.').pop();
+      const icon = ext === 'ar' ? '📜' : ext === 'json' ? '📋' : ext === 'md' ? '📝' : '📄';
+      item.innerHTML = `
+        <span class="item-icon">${icon}</span>
+        <span class="item-name">${file.name}${file.modified ? ' •' : ''}</span>
+        <span class="item-actions">
+          <button title="Delete" onclick="event.stopPropagation();deleteFile('${file.id}')">✕</button>
+        </span>
+      `;
+      item.onclick = () => openTab(file.id);
+      container.appendChild(item);
+    });
+}
 
-        // Reset scene
-        scene2D = [];
-        
-        // Mock execution (In a real version, we'd regex parse 'ar(>' lines)
-        // For the demo, we'll parse simple rect commands
-        const lines = code.split('\n');
-        lines.forEach(line => {
-            if(line.includes('create.rect')) {
-                // Simplified extraction
-                scene2D.push({ type: 'rect', x: 100, y: 100, w: 100, h: 100, color: '#58a6ff' });
-            }
-        });
+// ─── TABS RENDER ───
+function refreshTabs() {
+  $tabs.innerHTML = '';
+  state.openTabs.forEach(id => {
+    const f = state.files[id];
+    if (!f) return;
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (id === state.activeTab ? ' active' : '');
+    tab.innerHTML = `
+      ${f.modified ? '<span class="tab-modified"></span>' : ''}
+      <span>${f.name}</span>
+      <button class="tab-close" onclick="event.stopPropagation();closeTab('${id}')">✕</button>
+    `;
+    tab.onclick = () => openTab(id);
+    $tabs.appendChild(tab);
+  });
+  refreshFileTree();
+}
 
-        function gameLoop() {
-            if(!gameActive) return;
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0,0,canvas.width, canvas.height);
-            
-            scene2D.forEach(obj => {
-                ctx.fillStyle = obj.color;
-                ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
-            });
-            requestAnimationFrame(gameLoop);
-        }
-        gameLoop();
-    }
+// ═══════════════════════════════════════════
+//  RUN SCRIPT
+// ═══════════════════════════════════════════
+function compileAR(code, allFiles) {
+  // Compile ar(> to JavaScript
+  let js = '';
 
-    function stopScript() {
-        gameActive = false;
-        document.getElementById('preview-layer').style.display = 'none';
-    }
+  // Preamble
+  js += `
+// ar(> Runtime
+const __ar = {
+  canvas: null, ctx: null,
+  scene: null, renderer: null, camera: null, animId: null,
+  keys: {}, objects: {}, images: {}, audio: {},
+  frameCallbacks: [], keyListeners: {}, clickListeners: [],
+  logs: [],
+};
 
-    // --- UI LOGIC ---
-    function renderFileTree() {
-        const tree = document.getElementById('file-tree');
-        tree.innerHTML = "";
-        
-        Object.keys(files.root).forEach(key => {
-            const isDir = typeof files.root[key] === 'object';
-            const item = document.createElement('div');
-            item.className = `file-item ${isDir ? 'folder' : ''} ${currentFilePath === key ? 'active' : ''}`;
-            item.innerHTML = `<span>${isDir ? '📁' : '📄'}</span> ${key}`;
-            item.onclick = () => { if(!isDir) selectFile(key); };
-            tree.appendChild(item);
-        });
-    }
+function say(v) { console.log(v); }
+function log(v) { console.log(v); }
 
-    function selectFile(name) {
-        currentFilePath = name;
-        editor.setValue(files.root[name]);
-        renderFileTree();
-    }
+const math = {
+  random: (a,b) => a + Math.random()*(b-a),
+  floor: Math.floor, ceil: Math.ceil, abs: Math.abs,
+  sqrt: Math.sqrt, clamp: (v,a,b) => Math.min(b,Math.max(a,v)),
+  sin: Math.sin, cos: Math.cos, pow: Math.pow, PI: Math.PI,
+  round: Math.round, min: Math.min, max: Math.max,
+};
 
-    function toggleModal(id) {
-        const m = document.getElementById(id);
-        m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-    }
+function toNum(v) { return Number(v); }
+function toStr(v) { return String(v); }
+function toBool(v) { return Boolean(v); }
 
-    function changeTheme(theme) {
-        monaco.editor.setTheme(theme);
-    }
+window.__arObjs = {};
 
-    function updateFontSize(size) {
-        editor.updateOptions({ fontSize: parseInt(size) });
-    }
+// Canvas 2D
+function __setupCanvas(w,h,id) {
+  const c = document.getElementById(id) || document.createElement('canvas');
+  c.id = id; c.width = w; c.height = h;
+  c.style.display='block'; c.style.margin='0 auto';
+  c.style.background='#111';
+  document.body.appendChild(c);
+  __ar.canvas = c;
+  __ar.ctx = c.getContext('2d');
+  c.addEventListener('click', e => {
+    const r = c.getBoundingClientRect();
+    __ar.clickListeners.forEach(fn => fn(e.clientX-r.left, e.clientY-r.top));
+  });
+}
 
-    // Command Bar Listeners
-    document.getElementById('cmdInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            const cmd = this.value.toLowerCase();
-            if(cmd === 'run') runScript();
-            if(cmd.includes('theme')) changeTheme('vs-light');
-            this.value = "";
-        }
+function __draw(type, opts) {
+  const ctx = __ar.ctx; if (!ctx) return;
+  ctx.fillStyle = opts.color || 'white';
+  ctx.strokeStyle = opts.color || 'white';
+  if (type === 'rect') {
+    ctx.fillRect(opts.x, opts.y, opts.w, opts.h);
+  } else if (type === 'circle') {
+    ctx.beginPath(); ctx.arc(opts.x, opts.y, opts.r, 0, Math.PI*2); ctx.fill();
+  } else if (type === 'text') {
+    ctx.font = opts.font || '14px monospace';
+    ctx.fillText(opts.text, opts.x, opts.y);
+  } else if (type === 'line') {
+    ctx.beginPath(); ctx.moveTo(opts.x1, opts.y1); ctx.lineTo(opts.x2, opts.y2);
+    ctx.lineWidth = opts.lw || 1; ctx.stroke();
+  } else if (type === 'image' && opts.img) {
+    ctx.drawImage(opts.img, opts.x, opts.y, opts.w, opts.h);
+  }
+}
+
+function __clearScreen() {
+  if (__ar.ctx) __ar.ctx.clearRect(0, 0, __ar.canvas.width, __ar.canvas.height);
+}
+
+// Key listeners
+document.addEventListener('keydown', e => {
+  __ar.keys[e.key] = true;
+  (__ar.keyListeners['keydown']||{})[e.key]?.forEach(f=>f());
+  (__ar.keyListeners['keydown']||{})['*']?.forEach(f=>f(e.key));
+});
+document.addEventListener('keyup', e => {
+  __ar.keys[e.key] = false;
+  (__ar.keyListeners['keyup']||{})[e.key]?.forEach(f=>f());
+});
+
+// Frame loop
+function __startFrameLoop() {
+  function tick() {
+    __ar.frameCallbacks.forEach(f => { try{f();}catch(e){console.error(e);} });
+    __ar.animId = requestAnimationFrame(tick);
+  }
+  __ar.animId = requestAnimationFrame(tick);
+}
+
+`;
+
+  // Process each file
+  const processCode = (src) => {
+    let out = src;
+
+    // use "file.ar" -> already merged
+    out = out.replace(/^use\s+"[^"]+"\s*$/gm, '');
+
+    // -- comments
+    out = out.replace(/--[^\n]*/g, '');
+
+    // canvas W x H as "id"
+    out = out.replace(/canvas\s+(\d+)\s+x\s+(\d+)\s+as\s+"([^"]+)"/g,
+      '__setupCanvas($1,$2,"$3")');
+
+    // scene3d W x H
+    out = out.replace(/scene3d\s+(\d+)\s+x\s+(\d+)/g, '__setup3D($1,$2)');
+
+    // loop every frame ... end
+    out = out.replace(/loop\s+every\s+frame\s*([\s\S]*?)end/g, (_, body) =>
+      `__ar.frameCallbacks.push(function(){${processCode(body)}}); __startFrameLoop();`);
+
+    // loop N times as i ... end
+    out = out.replace(/loop\s+(\S+)\s+times\s+as\s+(\w+)([\s\S]*?)end/g, (_, n, v, body) =>
+      `for(let ${v}=0;${v}<${n};${v}++){${processCode(body)}}`);
+
+    // loop N times ... end
+    out = out.replace(/loop\s+(\S+)\s+times([\s\S]*?)end/g, (_, n, body) =>
+      `for(let __i=0;__i<${n};__i++){${processCode(body)}}`);
+
+    // for item in list ... end
+    out = out.replace(/for\s+(\w+)\s+in\s+(\w+)([\s\S]*?)end/g, (_, v, arr, body) =>
+      `for(let ${v} of ${arr}){${processCode(body)}}`);
+
+    // while condition ... end
+    out = out.replace(/while\s+(.*?)\s*\n([\s\S]*?)end/g, (_, cond, body) =>
+      `while(${cond}){${processCode(body)}}`);
+
+    // on keydown "key" => ... end
+    out = out.replace(/on\s+keydown\s+"([^"]+)"\s+=>\s*([\s\S]*?)end/g, (_, key, body) => {
+      return `__ar.keyListeners['keydown']=__ar.keyListeners['keydown']||{};
+__ar.keyListeners['keydown']['${key}']=__ar.keyListeners['keydown']['${key}']||[];
+__ar.keyListeners['keydown']['${key}'].push(function(){${processCode(body)}});`;
+    });
+    out = out.replace(/on\s+keyup\s+"([^"]+)"\s+=>\s*([\s\S]*?)end/g, (_, key, body) => {
+      return `__ar.keyListeners['keyup']=__ar.keyListeners['keyup']||{};
+__ar.keyListeners['keyup']['${key}']=__ar.keyListeners['keyup']['${key}']||[];
+__ar.keyListeners['keyup']['${key}'].push(function(){${processCode(body)}});`;
     });
 
-    // iPad Touch Handlers
-    window.addEventListener('resize', () => {
-        if(editor) editor.layout();
+    // on click at x,y => ... end
+    out = out.replace(/on\s+click\s+at\s+(\w+)\s*,\s*(\w+)\s+=>\s*([\s\S]*?)end/g, (_, x, y, body) =>
+      `__ar.clickListeners.push(function(${x},${y}){${processCode(body)}});`);
+
+    // draw rect at x,y size w,h color "c"
+    out = out.replace(/draw\s+rect\s+at\s+([^,]+),\s*([^\s]+)\s+size\s+([^,]+),\s*([^\s]+)\s+color\s+"([^"]+)"/g,
+      '__draw("rect",{x:$1,y:$2,w:$3,h:$4,color:"$5"})');
+    out = out.replace(/draw\s+rect\s+at\s+([^,]+),\s*([^\s]+)\s+size\s+([^,]+),\s*([^\s]+)\s+color\s+(\S+)/g,
+      '__draw("rect",{x:$1,y:$2,w:$3,h:$4,color:$5})');
+
+    // draw circle at x,y radius r color "c"
+    out = out.replace(/draw\s+circle\s+at\s+([^,]+),\s*([^\s]+)\s+radius\s+([^\s]+)\s+color\s+"([^"]+)"/g,
+      '__draw("circle",{x:$1,y:$2,r:$3,color:"$4"})');
+    out = out.replace(/draw\s+circle\s+at\s+([^,]+),\s*([^\s]+)\s+radius\s+([^\s]+)\s+color\s+(\S+)/g,
+      '__draw("circle",{x:$1,y:$2,r:$3,color:$4})');
+
+    // draw text "str" at x,y font "f" color "c"
+    out = out.replace(/draw\s+text\s+"([^"]*)"\s+at\s+([^,]+),\s*([^\s]+)\s+font\s+"([^"]*)"\s+color\s+"([^"]*)"/g,
+      '__draw("text",{text:"$1",x:$2,y:$3,font:"$4",color:"$5"})');
+    out = out.replace(/draw\s+text\s+"([^"]*)"\s+at\s+([^,]+),\s*([^\s]+)\s+font\s+"([^"]*)"\s+color\s+(\S+)/g,
+      '__draw("text",{text:"$1",x:$2,y:$3,font:"$4",color:$5})');
+    out = out.replace(/draw\s+text\s+(\S+)\s+at\s+([^,]+),\s*([^\s]+)\s+font\s+"([^"]*)"\s+color\s+"([^"]*)"/g,
+      '__draw("text",{text:String($1),x:$2,y:$3,font:"$4",color:"$5"})');
+    out = out.replace(/draw\s+text\s+(\S+)\s+at\s+([^,]+),\s*([^\s]+)\s+font\s+"([^"]*)"\s+color\s+(\S+)/g,
+      '__draw("text",{text:String($1),x:$2,y:$3,font:"$4",color:$5})');
+
+    // clear screen
+    out = out.replace(/clear\s+screen/g, '__clearScreen()');
+
+    // if ... then ... elif ... else ... end
+    out = out.replace(/\belif\b/g, '} else if(');
+    out = out.replace(/\bif\s+(.*?)\s+then/g, 'if($1){');
+    out = out.replace(/\belse\b/g, '}else{');
+    // end -> }
+    // We do this last carefully
+    out = out.replace(/\bend\b/g, '}');
+
+    // fn name(args) => ... (end already replaced)
+    out = out.replace(/\bfn\s+(\w+)\s*\((.*?)\)\s*=>/g, 'function $1($2){');
+    // fn name(args) -> expr (arrow shorthand)
+    out = out.replace(/\bfn\s+(\w+)\s*\((.*?)\)\s*->\s*(.*)/g, 'function $1($2){ return $3; }');
+
+    // set x = y / const x = y
+    out = out.replace(/\bconst\s+(\w+)\s*=/g, 'const $1 =');
+    out = out.replace(/\bset\s+(\w+)\s*=/g, 'let $1 =');
+
+    // class Name ... has props
+    out = out.replace(/\bclass\s+(\w+)\s*\{?/g, 'class $1{');
+    out = out.replace(/\bhas\s+(.*)/g, (_, props) => {
+      return props.split(',').map(p => {
+        const [name, def] = p.trim().split('=');
+        return `${name.trim()} = ${def ? def.trim() : 'undefined'};`;
+      }).join(' ');
     });
+    out = out.replace(/\bself\b/g, 'this');
+
+    // new ClassName(...)
+    out = out.replace(/\bnew\s+(\w+)/g, 'new $1');
+
+    // say "str"
+    out = out.replace(/\bsay\s+(.+)/g, 'console.log($1)');
+
+    // return
+    out = out.replace(/\breturn\b/g, 'return');
+
+    // math.random, math.floor etc already JS-compatible
+
+    // push/pop/length — already JS
+    // + - * / already JS
+
+    // not -> !
+    out = out.replace(/\bnot\b/g, '!');
+    // and -> &&
+    out = out.replace(/\band\b/g, '&&');
+    // or -> ||
+    out = out.replace(/\bor\b/g, '||');
+
+    // += -= etc already fine
+    return out;
+  };
+
+  // Merge all files (use dependencies)
+  let merged = '';
+  if (allFiles) {
+    allFiles.forEach(f => {
+      if (f.id !== state.activeTab) merged += '\n' + f.content + '\n';
+    });
+  }
+  merged += '\n' + code;
+
+  js += processCode(merged);
+  return js;
+}
+
+function runScript() {
+  const f = getActiveFile();
+  if (!f) { log('No file to run', 'error'); return; }
+
+  openOutput();
+  switchOutTab('console');
+  log('▶ Running ' + f.name + '…', 'info');
+
+  const allFiles = Object.values(state.files);
+  const compiled = compileAR(f.content, allFiles);
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin:0; background:#111; color:#eee; font-family:monospace; font-size:13px; overflow:auto; }
+  canvas { display:block; margin:0 auto; }
+</style>
+</head>
+<body>
+<script>
+// Intercept console
+const origLog = console.log;
+const origErr = console.error;
+const origWarn = console.warn;
+function sendLog(type, args) {
+  window.parent.postMessage({type:'console',level:type,msg:args.map(String).join(' ')}, '*');
+}
+console.log = (...a) => { origLog(...a); sendLog('log',a); };
+console.error = (...a) => { origErr(...a); sendLog('error',a); };
+console.warn = (...a) => { origWarn(...a); sendLog('warn',a); };
+window.onerror = (msg,src,ln,col,err) => { sendLog('error', [msg + ' (line '+ln+')']); };
+
+try {
+${compiled}
+} catch(e) { console.error(e.message); }
+<\/script>
+</body>
+</html>`;
+
+  $runFrame.srcdoc = html;
+  switchOutTab('preview');
+  openOutput();
+}
+
+function runAll() {
+  const files = Object.values(state.files);
+  if (!files.length) { log('No files to run', 'error'); return; }
+  openOutput();
+  log('▶ Running all ' + files.length + ' scripts…', 'info');
+  runScript();
+}
+
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'console') {
+    const level = e.data.level === 'error' ? 'error' : e.data.level === 'warn' ? 'warn' : 'success';
+    log(e.data.msg, level);
+  }
+});
+
+// ═══════════════════════════════════════════
+//  OUTPUT
+// ═══════════════════════════════════════════
+function log(msg, type = '') {
+  const line = document.createElement('div');
+  line.className = 'out-line ' + type;
+  const ts = state.settings.timestamps ? `<span class="out-ts">${new Date().toLocaleTimeString()}</span>` : '';
+  line.innerHTML = ts + `<span>${escHtml(String(msg))}</span>`;
+  $outputContent.appendChild(line);
+  $outputContent.scrollTop = $outputContent.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearOutput() {
+  $outputContent.innerHTML = '';
+}
+
+function openOutput() {
+  $outputPanel.classList.add('open');
+}
+
+function closeOutput() {
+  $outputPanel.classList.remove('open');
+}
+
+let activeOutTab = 'console';
+function switchOutTab(tab) {
+  activeOutTab = tab;
+  document.getElementById('out-tab-console').classList.toggle('active', tab === 'console');
+  document.getElementById('out-tab-preview').classList.toggle('active', tab === 'preview');
+  $outputContent.style.display = tab === 'console' ? 'block' : 'none';
+  $runFrameWrap.classList.toggle('active', tab === 'preview');
+}
+
+// ═══════════════════════════════════════════
+//  FIND / REPLACE
+// ═══════════════════════════════════════════
+function openFind() {
+  $findBar.classList.add('open');
+  document.getElementById('find-input').focus();
+  doFind();
+}
+function closeFind() {
+  $findBar.classList.remove('open');
+  $ta.focus();
+}
+
+function doFind() {
+  const q = document.getElementById('find-input').value;
+  if (!q) { document.getElementById('find-count').textContent = '—'; return; }
+  const code = $ta.value;
+  const matches = [];
+  let i = 0;
+  while (i < code.length) {
+    const idx = code.indexOf(q, i);
+    if (idx < 0) break;
+    matches.push(idx);
+    i = idx + 1;
+  }
+  state.findMatches = matches;
+  state.findIndex = 0;
+  document.getElementById('find-count').textContent = matches.length ? `${state.findIndex+1}/${matches.length}` : '0 results';
+  if (matches.length) highlightFindMatch();
+}
+
+function highlightFindMatch() {
+  const idx = state.findMatches[state.findIndex];
+  if (idx === undefined) return;
+  const q = document.getElementById('find-input').value;
+  $ta.focus();
+  $ta.setSelectionRange(idx, idx + q.length);
+  document.getElementById('find-count').textContent = `${state.findIndex+1}/${state.findMatches.length}`;
+}
+
+function findNext() { state.findIndex = (state.findIndex+1) % state.findMatches.length; highlightFindMatch(); }
+function findPrev() { state.findIndex = (state.findIndex-1+state.findMatches.length) % state.findMatches.length; highlightFindMatch(); }
+
+function replaceOne() {
+  const q = document.getElementById('find-input').value;
+  const r = document.getElementById('replace-input').value;
+  if (!q) return;
+  const idx = state.findMatches[state.findIndex];
+  if (idx === undefined) return;
+  $ta.setRangeText(r, idx, idx+q.length, 'end');
+  refreshDisplay();
+  doFind();
+}
+
+function replaceAll() {
+  const q = document.getElementById('find-input').value;
+  const r = document.getElementById('replace-input').value;
+  if (!q) return;
+  $ta.value = $ta.value.split(q).join(r);
+  refreshDisplay();
+  doFind();
+}
+
+document.getElementById('find-input').addEventListener('input', doFind);
+document.getElementById('btn-find-prev').onclick = findPrev;
+document.getElementById('btn-find-next').onclick = findNext;
+document.getElementById('btn-replace-one').onclick = replaceOne;
+document.getElementById('btn-replace-all').onclick = replaceAll;
+document.getElementById('btn-find-close').onclick = closeFind;
+
+// ═══════════════════════════════════════════
+//  COMMAND BAR
+// ═══════════════════════════════════════════
+const COMMANDS = [
+  { icon: '▶', label: 'Run Script', sub: '', kbd: 'Ctrl+Enter', action: runScript },
+  { icon: '▶▶', label: 'Run All Scripts', sub: '', kbd: '', action: runAll },
+  { icon: '＋', label: 'New File', sub: '', kbd: 'Ctrl+N', action: newFile },
+  { icon: '📁', label: 'New Folder', sub: '', kbd: '', action: () => { closeCmd(); document.getElementById('new-folder-modal').classList.add('open'); document.getElementById('new-folder-name').focus(); } },
+  { icon: '💾', label: 'Save File', sub: '', kbd: 'Ctrl+S', action: saveFile },
+  { icon: '🔍', label: 'Find & Replace', sub: '', kbd: 'Ctrl+F', action: () => { closeCmd(); openFind(); } },
+  { icon: '📦', label: 'Presets', sub: '', kbd: '', action: () => { closeCmd(); openPresets(); } },
+  { icon: '⚙', label: 'Settings', sub: '', kbd: '', action: () => { closeCmd(); openSettings('appearance'); } },
+  { icon: '📖', label: 'Training Manual', sub: '', kbd: '', action: () => { closeCmd(); openSettings('manual'); } },
+  { icon: '☰', label: 'Toggle Sidebar', sub: '', kbd: 'Ctrl+B', action: toggleSidebar },
+  { icon: '🎨', label: 'Theme: Dark', sub: 'theme', action: () => applyTheme('dark') },
+  { icon: '🎨', label: 'Theme: Light', sub: 'theme', action: () => applyTheme('light') },
+  { icon: '🎨', label: 'Theme: Midnight', sub: 'theme', action: () => applyTheme('midnight') },
+  { icon: '🎨', label: 'Theme: Forest', sub: 'theme', action: () => applyTheme('forest') },
+  { icon: '🎨', label: 'Theme: Crimson', sub: 'theme', action: () => applyTheme('crimson') },
+  { icon: '✏️', label: 'Toggle Comment', sub: '', kbd: 'Ctrl+/', action: () => { closeCmd(); toggleComment(); } },
+  { icon: '🗑', label: 'Delete Line', sub: '', kbd: 'Ctrl+Shift+K', action: () => { closeCmd(); deleteLine(); } },
+  { icon: '📋', label: 'Duplicate Line', sub: '', kbd: 'Alt+D', action: () => { closeCmd(); duplicateLine(); } },
+  { icon: '🔢', label: 'Select All', sub: '', kbd: 'Ctrl+A', action: () => { closeCmd(); $ta.focus(); $ta.select(); } },
+  { icon: '✕', label: 'Close Output', sub: '', kbd: '', action: closeOutput },
+  { icon: '🗑', label: 'Clear Console', sub: '', kbd: '', action: clearOutput },
+];
+
+let cmdIndex = 0;
+
+function openCmd() {
+  $cmdOverlay.classList.add('open');
+  $cmdInput.value = '';
+  $cmdInput.focus();
+  renderCmds(COMMANDS);
+}
+function closeCmd() { $cmdOverlay.classList.remove('open'); }
+
+function renderCmds(list) {
+  cmdIndex = 0;
+  $cmdResults.innerHTML = list.map((c, i) => `
+    <div class="cmd-item${i===0?' selected':''}" onclick="runCmd(${COMMANDS.indexOf(c)})">
+      <span class="cmd-icon">${c.icon}</span>
+      <span class="cmd-label">${c.label}</span>
+      ${c.sub ? `<span class="cmd-sub">${c.sub}</span>` : ''}
+      ${c.kbd ? `<span class="cmd-kbd">${c.kbd}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+function runCmd(i) {
+  COMMANDS[i].action();
+  closeCmd();
+}
+
+$cmdInput.addEventListener('input', () => {
+  const q = $cmdInput.value.toLowerCase();
+  if (!q) { renderCmds(COMMANDS); return; }
+  // Also search file names
+  const fileCmds = Object.values(state.files).filter(f => f.name.toLowerCase().includes(q)).map(f => ({
+    icon: '📜', label: 'Open: ' + f.name, sub: 'file', kbd: '', action: () => openTab(f.id)
+  }));
+  const filtered = COMMANDS.filter(c => c.label.toLowerCase().includes(q));
+  renderCmds([...filtered, ...fileCmds]);
+});
+
+$cmdInput.addEventListener('keydown', e => {
+  const items = $cmdResults.querySelectorAll('.cmd-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    cmdIndex = Math.min(cmdIndex+1, items.length-1);
+    items.forEach((el,i) => el.classList.toggle('selected', i===cmdIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    cmdIndex = Math.max(0, cmdIndex-1);
+    items.forEach((el,i) => el.classList.toggle('selected', i===cmdIndex));
+  } else if (e.key === 'Enter') {
+    items[cmdIndex]?.click();
+  } else if (e.key === 'Escape') {
+    closeCmd();
+  }
+});
+
+$cmdOverlay.addEventListener('click', e => { if (e.target === $cmdOverlay) closeCmd(); });
+
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+function openSettings(tab) {
+  document.getElementById('settings-overlay').classList.add('open');
+  switchSettingsTab(tab || 'appearance');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+function switchSettingsTab(tab) {
+  document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.snav-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-'+tab)?.classList.add('active');
+  document.querySelectorAll('.snav-item').forEach(s => {
+    if (s.getAttribute('onclick')?.includes(tab)) s.classList.add('active');
+  });
+}
+
+document.getElementById('settings-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+});
+
+function applyTheme(name) {
+  document.body.className = name === 'dark' ? '' : 'theme-' + name;
+  state.settings.theme = name;
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('theme-'+name)?.classList.add('selected');
+}
+
+function changeFontSize(v) {
+  state.settings.fontSize = parseInt(v);
+  const fs = v + 'px';
+  $ta.style.fontSize = fs;
+  $display.style.fontSize = fs;
+  $lineNums.style.fontSize = fs;
+  refreshDisplay();
+}
+
+function changeLineHeight(v) {
+  state.settings.lineHeight = parseFloat(v);
+  $ta.style.lineHeight = v;
+  $display.style.lineHeight = v;
+  $lineNums.style.lineHeight = v;
+  refreshDisplay();
+}
+
+function changeTabSize(v) {
+  state.settings.tabSize = parseInt(v);
+  $ta.style.tabSize = v;
+  $display.style.tabSize = v;
+}
+
+function toggleSetting(key) {
+  const map = {
+    minimap: 'minimap', wordwrap: 'wordWrap', brackets: 'brackets',
+    predictions: 'predictions', autoindent: 'autoIndent', linenums: 'lineNums',
+    curline: 'curLine', autorun: 'autoRun', timestamps: 'timestamps',
+  };
+  const sKey = map[key];
+  state.settings[sKey] = !state.settings[sKey];
+  const el = document.getElementById('toggle-'+key);
+  el?.classList.toggle('on', state.settings[sKey]);
+
+  if (key === 'linenums') {
+    $lineNums.style.display = state.settings.lineNums ? '' : 'none';
+  }
+  if (key === 'wordwrap') {
+    const ww = state.settings.wordWrap ? 'pre-wrap' : 'pre';
+    $ta.style.whiteSpace = ww;
+    $display.style.whiteSpace = ww;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  PRESETS
+// ═══════════════════════════════════════════
+function openPresets() {
+  document.getElementById('presets-modal').classList.add('open');
+  const grid = document.getElementById('preset-grid');
+  grid.innerHTML = PRESETS.map((p,i) => `
+    <div class="preset-card" onclick="loadPreset(${i})">
+      <div class="preset-icon">${p.icon}</div>
+      <div class="preset-name">${p.name}</div>
+      <div class="preset-desc">${p.desc}</div>
+    </div>
+  `).join('');
+}
+
+function closePresets() {
+  document.getElementById('presets-modal').classList.remove('open');
+}
+
+function loadPreset(i) {
+  const preset = PRESETS[i];
+  closePresets();
+  // Create a folder for the preset
+  const folderId = createFolder(preset.name);
+  preset.files.forEach(f => {
+    createFile(f.name, f.content, folderId);
+  });
+  // Open first file
+  const firstFile = Object.values(state.files).find(f => f.parentId === folderId);
+  if (firstFile) openTab(firstFile.id);
+  log('Loaded preset: ' + preset.name, 'success');
+}
+
+// ═══════════════════════════════════════════
+//  NEW FILE / FOLDER
+// ═══════════════════════════════════════════
+function newFile() {
+  document.getElementById('new-file-modal').classList.add('open');
+  const inp = document.getElementById('new-file-name');
+  inp.value = '';
+  inp.focus();
+}
+
+function closeNewFile() {
+  document.getElementById('new-file-modal').classList.remove('open');
+}
+
+function confirmNewFile() {
+  let name = document.getElementById('new-file-name').value.trim();
+  if (!name) name = 'untitled.ar';
+  if (!name.includes('.')) name += '.ar';
+  closeNewFile();
+  const id = createFile(name, `-- ${name}\n\n`);
+  openTab(id);
+}
+
+function confirmNewFolder() {
+  let name = document.getElementById('new-folder-name').value.trim();
+  if (!name) name = 'folder';
+  document.getElementById('new-folder-modal').classList.remove('open');
+  createFolder(name);
+}
+
+// Enter key in modals
+document.getElementById('new-file-name').addEventListener('keydown', e => { if(e.key==='Enter') confirmNewFile(); });
+document.getElementById('new-folder-name').addEventListener('keydown', e => { if(e.key==='Enter') confirmNewFolder(); });
+
+// ═══════════════════════════════════════════
+//  SIDEBAR TOGGLE
+// ═══════════════════════════════════════════
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 768) {
+    sb.classList.toggle('mobile-open');
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+}
+
+// ═══════════════════════════════════════════
+//  GLOBAL KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl && e.key === 'p') { e.preventDefault(); openCmd(); return; }
+  if (ctrl && e.key === 'Enter') { e.preventDefault(); runScript(); return; }
+  if (ctrl && e.key === 'n') { e.preventDefault(); newFile(); return; }
+  if (ctrl && e.key === 'w') { e.preventDefault(); if(state.activeTab) closeTab(state.activeTab); return; }
+  if (ctrl && e.key === 'b') { e.preventDefault(); toggleSidebar(); return; }
+  if (ctrl && e.key === 'f') { e.preventDefault(); openFind(); return; }
+  if (ctrl && e.key === 's') { e.preventDefault(); saveFile(); return; }
+
+  if (e.key === 'Escape') {
+    closeCmd();
+    if ($findBar.classList.contains('open')) closeFind();
+    closeSettings();
+    closePresets();
+    closeNewFile();
+  }
+});
+
+// ═══════════════════════════════════════════
+//  TOOLBAR BUTTONS
+// ═══════════════════════════════════════════
+document.getElementById('btn-sidebar').onclick = toggleSidebar;
+document.getElementById('btn-new-file').onclick = newFile;
+document.getElementById('btn-new-folder').onclick = () => { document.getElementById('new-folder-modal').classList.add('open'); document.getElementById('new-folder-name').focus(); };
+document.getElementById('btn-find').onclick = openFind;
+document.getElementById('btn-cmd').onclick = openCmd;
+document.getElementById('btn-presets').onclick = openPresets;
+document.getElementById('btn-run').onclick = runScript;
+document.getElementById('btn-run-all').onclick = runAll;
+document.getElementById('btn-settings').onclick = () => openSettings('appearance');
+document.getElementById('btn-refresh-tree').onclick = refreshFileTree;
+
+// ═══════════════════════════════════════════
+//  MOBILE SIDEBAR DISMISS
+// ═══════════════════════════════════════════
+document.getElementById('main').addEventListener('click', e => {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 768 && sb.classList.contains('mobile-open')) {
+    if (!sb.contains(e.target) && e.target !== document.getElementById('btn-sidebar')) {
+      sb.classList.remove('mobile-open');
+    }
+  }
+});
+
+// ═══════════════════════════════════════════
+//  TOUCH SUPPORT (iPad)
+// ═══════════════════════════════════════════
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 60) {
+    const sb = document.getElementById('sidebar');
+    if (dx > 0 && touchStartX < 20) sb.classList.add('mobile-open');
+    if (dx < 0) sb.classList.remove('mobile-open');
+  }
+}, { passive: true });
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function init() {
+  refreshFileTree();
+  refreshTabs();
+
+  // Set initial toggles to match settings
+  Object.entries({
+    wordwrap: state.settings.wordWrap,
+    brackets: state.settings.brackets,
+    predictions: state.settings.predictions,
+    autoindent: state.settings.autoIndent,
+    linenums: state.settings.lineNums,
+    curline: state.settings.curLine,
+    timestamps: state.settings.timestamps,
+  }).forEach(([key, val]) => {
+    document.getElementById('toggle-'+key)?.classList.toggle('on', val);
+  });
+}
+
+init();
 </script>
-
 </body>
 </html>
