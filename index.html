@@ -1,3643 +1,511 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AR(> Playground</title>
-<style>
-  :root {
-    --bg: #0d0f14;
-    --bg2: #13161e;
-    --bg3: #1a1d27;
-    --bg4: #21253a;
-    --panel: #161923;
-    --border: #2a2f45;
-    --accent: #5b8cff;
-    --accent2: #a259ff;
-    --accent3: #00e5c9;
-    --accent4: #ff6b6b;
-    --text: #e0e6ff;
-    --text2: #8a94b8;
-    --text3: #5a6380;
-    --success: #3ddc84;
-    --warn: #ffb347;
-    --err: #ff5555;
-    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    --font-ui: 'Segoe UI', system-ui, sans-serif;
-    --tab-h: 36px;
-    --sidebar-w: 220px;
-    --header-h: 48px;
-    --cmd-h: 34px;
-    --status-h: 26px;
-    --radius: 6px;
-    --shadow: 0 4px 24px rgba(0,0,0,0.5);
-    --line-h: 22px;
-    --font-sz: 14px;
-    --anim: 0.18s;
-    /* theme tokens overridden by theme classes */
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR(> Script Playground</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    
+    <!-- CodeMirror 6 via ESM.sh -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@codemirror/view": "https://esm.sh/@codemirror/view@6.0.0",
+        "@codemirror/state": "https://esm.sh/@codemirror/state@6.0.0",
+        "@codemirror/language": "https://esm.sh/@codemirror/language@6.0.0",
+        "@codemirror/commands": "https://esm.sh/@codemirror/commands@6.0.0",
+        "@codemirror/search": "https://esm.sh/@codemirror/search@6.0.0",
+        "@codemirror/autocomplete": "https://esm.sh/@codemirror/autocomplete@6.0.0",
+        "@nextjournal/lang-javascript": "https://esm.sh/@nextjournal/lang-javascript@1.0.0"
+      }
+    }
+    </script>
 
-  /* ===== THEMES ===== */
-  .theme-dark { --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1d27;--bg4:#21253a;--panel:#161923;--border:#2a2f45;--accent:#5b8cff;--accent2:#a259ff;--accent3:#00e5c9;--text:#e0e6ff;--text2:#8a94b8;--text3:#5a6380; }
-  .theme-light { --bg:#f4f6fb;--bg2:#eef0f8;--bg3:#e6e9f4;--bg4:#dde1f0;--panel:#eef0f8;--border:#c8cedf;--accent:#3a6df5;--accent2:#7c3aff;--accent3:#00b89c;--text:#1a1d2e;--text2:#4a5070;--text3:#8890a8; }
-  .theme-monokai { --bg:#272822;--bg2:#1e1f1c;--bg3:#2d2e28;--bg4:#3e3d32;--panel:#1e1f1c;--border:#49483e;--accent:#a6e22e;--accent2:#66d9e8;--accent3:#f92672;--text:#f8f8f2;--text2:#75715e;--text3:#49483e; }
-  .theme-nord { --bg:#2e3440;--bg2:#242933;--bg3:#3b4252;--bg4:#434c5e;--panel:#242933;--border:#4c566a;--accent:#88c0d0;--accent2:#81a1c1;--accent3:#a3be8c;--text:#eceff4;--text2:#d8dee9;--text3:#4c566a; }
-  .theme-solarized { --bg:#002b36;--bg2:#073642;--bg3:#004052;--bg4:#005060;--panel:#073642;--border:#586e75;--accent:#268bd2;--accent2:#6c71c4;--accent3:#2aa198;--text:#fdf6e3;--text2:#93a1a1;--text3:#657b83; }
-  .theme-dracula { --bg:#282a36;--bg2:#21222c;--bg3:#313344;--bg4:#44475a;--panel:#21222c;--border:#44475a;--accent:#bd93f9;--accent2:#ff79c6;--accent3:#50fa7b;--text:#f8f8f2;--text2:#6272a4;--text3:#44475a; }
-  .theme-ocean { --bg:#0a1628;--bg2:#0d1e36;--bg3:#122540;--bg4:#1a3050;--panel:#0d1e36;--border:#1e3a5a;--accent:#38bdf8;--accent2:#818cf8;--accent3:#34d399;--text:#e2f0ff;--text2:#5b8aa8;--text3:#2a4a64; }
+    <style>
+        :root {
+            --bg-darker: #0d1117;
+            --bg-dark: #161b22;
+            --bg-light: #21262d;
+            --accent: #58a6ff;
+            --text-main: #c9d1d9;
+            --text-dim: #8b949e;
+            --border: #30363d;
+            --sidebar-width: 260px;
+            --header-height: 50px;
+            --tap-target: 44px;
+        }
 
-  /* ===== RESET & BASE ===== */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 13px; -webkit-tap-highlight-color: transparent; }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg2); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
-  button { cursor: pointer; border: none; outline: none; background: none; color: inherit; font: inherit; }
-  input, textarea, select { outline: none; font: inherit; color: inherit; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); }
-  select option { background: var(--bg3); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            background: var(--bg-darker); color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
 
-  /* ===== LAYOUT ===== */
-  #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; }
-  #header { height: var(--header-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0; flex-shrink: 0; user-select: none; }
-  #main-area { flex: 1; display: flex; overflow: hidden; min-height: 0; }
-  #sidebar { width: var(--sidebar-w); background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; transition: width var(--anim); }
-  #sidebar.collapsed { width: 0; }
-  #editor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-  #tab-bar { height: var(--tab-h); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; flex-shrink: 0; }
-  #tab-bar::-webkit-scrollbar { height: 3px; }
-  #editor-content { flex: 1; display: flex; overflow: hidden; min-height: 0; }
-  #editor-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-  #output-panel { height: 200px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: height var(--anim); }
-  #output-panel.collapsed { height: 0; overflow: hidden; }
-  #cmd-bar { height: var(--cmd-h); background: var(--bg3); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 8px; gap: 6px; flex-shrink: 0; }
-  #status-bar { height: var(--status-h); background: var(--accent); display: flex; align-items: center; padding: 0 10px; gap: 16px; flex-shrink: 0; }
+        /* --- Layout --- */
+        #app-container {
+            display: flex; height: 100vh; flex-direction: column;
+        }
 
-  /* ===== HEADER ===== */
-  #logo { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-right: 1px solid var(--border); height: 100%; font-weight: 700; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; }
-  #logo .logo-icon { font-size: 20px; }
-  #logo .logo-text { color: var(--accent); }
-  #header-menu { display: flex; align-items: center; gap: 2px; padding: 0 6px; }
-  .hmenu-btn { padding: 5px 10px; border-radius: 4px; font-size: 12px; color: var(--text2); transition: background var(--anim), color var(--anim); white-space: nowrap; }
-  .hmenu-btn:hover { background: var(--bg4); color: var(--text); }
-  .hmenu-btn.active { background: var(--bg4); color: var(--text); }
-  #header-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; padding-right: 12px; }
-  .run-btn { padding: 6px 16px; background: var(--success); color: #000; border-radius: var(--radius); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; transition: opacity var(--anim), transform var(--anim); }
-  .run-btn:hover { opacity: 0.88; transform: scale(1.02); }
-  .run-btn:active { transform: scale(0.97); }
-  .stop-btn { padding: 6px 16px; background: var(--err); color: #fff; border-radius: var(--radius); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
-  .icon-btn { width: 32px; height: 32px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center; color: var(--text2); transition: background var(--anim), color var(--anim); font-size: 16px; }
-  .icon-btn:hover { background: var(--bg4); color: var(--text); }
+        header {
+            height: var(--header-height);
+            background: var(--bg-dark);
+            border-bottom: 1px border var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px;
+            z-index: 100;
+        }
 
-  /* ===== DROPDOWN MENU ===== */
-  .dropdown { position: relative; }
-  .dropdown-menu { position: absolute; top: calc(100% + 4px); left: 0; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); min-width: 180px; z-index: 9999; box-shadow: var(--shadow); overflow: hidden; }
-  .dropdown-menu.right { left: auto; right: 0; }
-  .dropdown-item { padding: 8px 14px; font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background var(--anim), color var(--anim); white-space: nowrap; }
-  .dropdown-item:hover { background: var(--bg4); color: var(--text); }
-  .dropdown-item .shortcut { margin-left: auto; font-size: 10px; color: var(--text3); }
-  .dropdown-sep { height: 1px; background: var(--border); margin: 3px 0; }
+        .logo {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 800; font-size: 1.2rem; color: var(--accent);
+        }
 
-  /* ===== SIDEBAR ===== */
-  #sidebar-header { padding: 10px 12px 6px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  #sidebar-header span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); }
-  .sidebar-actions { display: flex; gap: 2px; }
-  .sidebar-action-btn { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 13px; transition: background var(--anim), color var(--anim); }
-  .sidebar-action-btn:hover { background: var(--bg4); color: var(--text); }
-  #file-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
-  .tree-item { display: flex; align-items: center; gap: 6px; padding: 5px 12px; cursor: pointer; transition: background var(--anim); font-size: 12px; color: var(--text2); user-select: none; position: relative; }
-  .tree-item:hover { background: var(--bg3); color: var(--text); }
-  .tree-item.active { background: var(--bg4); color: var(--accent); }
-  .tree-item .fi { font-size: 13px; flex-shrink: 0; }
-  .tree-item .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tree-item .factions { display: none; gap: 2px; }
-  .tree-item:hover .factions { display: flex; }
-  .faction-btn { width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
-  .faction-btn:hover { background: var(--border); color: var(--text); }
-  .tree-folder { font-weight: 600; }
-  .tree-folder .fold-arrow { font-size: 9px; transition: transform var(--anim); }
-  .tree-folder.open .fold-arrow { transform: rotate(90deg); }
-  .tree-children { padding-left: 14px; }
-  .tree-children.hidden { display: none; }
+        main { display: flex; flex: 1; overflow: hidden; position: relative; }
 
-  /* ===== TABS ===== */
-  .tab { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: var(--tab-h); border-right: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text2); white-space: nowrap; flex-shrink: 0; transition: background var(--anim), color var(--anim); position: relative; max-width: 160px; }
-  .tab:hover { background: var(--bg3); color: var(--text); }
-  .tab.active { background: var(--bg); color: var(--text); border-bottom: 2px solid var(--accent); }
-  .tab .tab-name { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-  .tab .tab-close { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text3); transition: background var(--anim), color var(--anim); flex-shrink: 0; }
-  .tab .tab-close:hover { background: var(--bg4); color: var(--text); }
-  .tab.modified::after { content: '●'; position: absolute; top: 4px; right: 4px; font-size: 6px; color: var(--accent); }
-  #new-tab-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 18px; flex-shrink: 0; transition: color var(--anim); }
-  #new-tab-btn:hover { color: var(--text); }
+        /* --- Sidebar --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-darker);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            transition: transform 0.3s ease;
+        }
 
-  /* ===== CODE EDITOR ===== */
-  #editor-main { flex: 1; display: flex; overflow: hidden; position: relative; font-family: var(--font-mono); font-size: var(--font-sz); line-height: var(--line-h); }
-  #line-numbers { width: 52px; background: var(--bg2); border-right: 1px solid var(--border); text-align: right; padding: 10px 8px 10px 0; color: var(--text3); overflow: hidden; user-select: none; flex-shrink: 0; }
-  #code-scroll { flex: 1; overflow: auto; position: relative; }
-  #code-area { min-height: 100%; min-width: 100%; padding: 10px 0 10px 16px; position: relative; white-space: pre; tab-size: 2; }
-  #code-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; padding: 10px 0 10px 16px; font: inherit; resize: none; white-space: pre; tab-size: 2; z-index: 10; caret-color: var(--accent); }
-  #code-highlight { padding: 10px 0 10px 16px; pointer-events: none; white-space: pre; }
-  .line-wrap { display: flex; }
-  .line-num { display: block; line-height: var(--line-h); }
+        .sidebar-header {
+            padding: 10px; font-size: 0.8rem; text-transform: uppercase;
+            color: var(--text-dim); display: flex; justify-content: space-between;
+        }
 
-  /* ===== SYNTAX HIGHLIGHT ===== */
-  .kw { color: var(--accent2); font-weight: 600; }
-  .kw2 { color: var(--accent); }
-  .str { color: var(--accent3); }
-  .num { color: var(--warn); }
-  .cmt { color: var(--text3); font-style: italic; }
-  .fn { color: #ffd700; }
-  .op { color: var(--accent4); }
-  .builtin { color: var(--accent3); }
-  .type { color: #ff9f43; }
-  .bool { color: var(--accent2); }
-  .punc { color: var(--text2); }
+        #file-tree { flex: 1; overflow-y: auto; padding: 5px; }
+        .file-item {
+            padding: 10px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+        .file-item:hover { background: var(--bg-light); }
+        .file-item.active { background: var(--bg-light); border-left: 3px solid var(--accent); }
 
-  /* ===== AUTOCOMPLETE ===== */
-  #autocomplete { position: absolute; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); z-index: 1000; max-height: 220px; overflow-y: auto; min-width: 220px; max-width: 380px; box-shadow: var(--shadow); display: none; }
-  .ac-item { padding: 6px 10px; font-family: var(--font-mono); font-size: 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background var(--anim); }
-  .ac-item:hover, .ac-item.selected { background: var(--bg4); }
-  .ac-item .ac-icon { width: 16px; height: 16px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
-  .ac-icon.kw { background: rgba(162,89,255,0.25); color: var(--accent2); }
-  .ac-icon.fn { background: rgba(255,215,0,0.15); color: #ffd700; }
-  .ac-icon.bi { background: rgba(0,229,201,0.15); color: var(--accent3); }
-  .ac-icon.ty { background: rgba(255,159,67,0.2); color: #ff9f43; }
-  .ac-icon.sn { background: rgba(91,140,255,0.2); color: var(--accent); }
-  .ac-name { flex: 1; color: var(--text); }
-  .ac-type { font-size: 10px; color: var(--text3); }
-  .ac-docs { font-size: 10px; color: var(--text2); margin-top: 2px; }
+        /* --- Editor Area --- */
+        #editor-container { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
+        #cm-editor { flex: 1; font-size: 16px; overflow: hidden; }
 
-  /* ===== OUTPUT / CONSOLE ===== */
-  #output-header { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  #output-header span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); }
-  .out-tab-btn { padding: 4px 10px; border-radius: 4px; font-size: 11px; color: var(--text3); transition: background var(--anim), color var(--anim); }
-  .out-tab-btn.active { background: var(--bg4); color: var(--text); }
-  #clear-out-btn { margin-left: auto; font-size: 10px; color: var(--text3); padding: 3px 8px; border-radius: 4px; transition: background var(--anim); }
-  #clear-out-btn:hover { background: var(--bg4); color: var(--text); }
-  #output-body { flex: 1; overflow-y: auto; padding: 6px 10px; font-family: var(--font-mono); font-size: 12px; }
-  .out-line { margin: 1px 0; line-height: 18px; }
-  .out-line.info { color: var(--text2); }
-  .out-line.log { color: var(--text); }
-  .out-line.warn { color: var(--warn); }
-  .out-line.error { color: var(--err); }
-  .out-line.success { color: var(--success); }
-  .out-line.system { color: var(--accent3); font-style: italic; }
-  .out-ts { color: var(--text3); margin-right: 8px; font-size: 10px; }
-  #resize-handle { height: 4px; background: transparent; cursor: row-resize; transition: background var(--anim); flex-shrink: 0; }
-  #resize-handle:hover { background: var(--accent); }
+        /* --- Toolbar --- */
+        .toolbar {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .btn {
+            background: var(--bg-light); border: 1px solid var(--border);
+            color: white; padding: 0 15px; height: 36px; border-radius: 6px;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            font-size: 14px; white-space: nowrap;
+        }
+        .btn:active { opacity: 0.7; }
+        .btn-primary { background: var(--accent); border-color: transparent; }
 
-  /* ===== COMMAND BAR ===== */
-  #cmd-label { font-size: 11px; color: var(--text3); white-space: nowrap; }
-  #cmd-input { flex: 1; background: transparent; border: none; padding: 4px 6px; font-family: var(--font-mono); font-size: 12px; color: var(--accent3); }
-  #cmd-input::placeholder { color: var(--text3); }
-  #cmd-run-btn { padding: 3px 10px; background: var(--bg4); border-radius: 4px; font-size: 11px; color: var(--text2); transition: background var(--anim); }
-  #cmd-run-btn:hover { background: var(--accent); color: #fff; }
+        /* --- Run Overlay --- */
+        #run-panel {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 1000; display: none;
+            flex-direction: column;
+        }
+        #run-header {
+            height: 50px; background: #111; display: flex; 
+            align-items: center; justify-content: space-between; padding: 0 20px;
+        }
+        #viewport { flex: 1; position: relative; background: #000; overflow: hidden; }
+        #console-out {
+            height: 150px; background: #050505; border-top: 1px solid #333;
+            font-family: monospace; padding: 10px; overflow-y: auto; color: #0f0;
+            font-size: 12px;
+        }
 
-  /* ===== STATUS BAR ===== */
-  #status-bar { background: var(--accent); }
-  .status-item { font-size: 11px; color: rgba(0,0,0,0.75); font-weight: 600; white-space: nowrap; }
-  .status-item.right { margin-left: auto; }
-  #status-errors { background: var(--err); color: #fff; padding: 0 8px; border-radius: 3px; }
-  #status-errors.hidden { display: none; }
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal {
+            background: var(--bg-dark); border: 1px solid var(--border);
+            width: 90%; max-width: 600px; border-radius: 12px; padding: 20px;
+            max-height: 80vh; overflow-y: auto;
+        }
 
-  /* ===== MODAL BASE ===== */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 5000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.15s; }
-  .modal-overlay.hidden { display: none; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 20px 80px rgba(0,0,0,0.7); animation: slideUp 0.2s; display: flex; flex-direction: column; }
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .modal-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .modal-header h2 { font-size: 14px; font-weight: 700; }
-  .modal-close { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 16px; transition: background var(--anim), color var(--anim); }
-  .modal-close:hover { background: var(--bg4); color: var(--text); }
-  .modal-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
-  .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+        /* --- Responsive iPad Fixes --- */
+        @media (max-width: 768px) {
+            #sidebar { position: absolute; left: -100%; height: 100%; z-index: 50; }
+            #sidebar.open { transform: translateX(100%); }
+            .btn span { display: none; }
+            .btn { padding: 0 10px; width: 44px; justify-content: center; }
+        }
 
-  /* ===== SETTINGS MODAL ===== */
-  #settings-modal .modal { width: min(700px, 96vw); height: min(580px, 92vh); }
-  #settings-layout { display: flex; height: 100%; gap: 0; }
-  #settings-nav { width: 160px; border-right: 1px solid var(--border); padding: 10px 0; flex-shrink: 0; }
-  .snav-item { padding: 8px 14px; font-size: 12px; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 8px; border-radius: var(--radius); margin: 1px 6px; transition: background var(--anim), color var(--anim); }
-  .snav-item:hover { background: var(--bg4); color: var(--text); }
-  .snav-item.active { background: var(--accent); color: #fff; }
-  #settings-content { flex: 1; overflow-y: auto; padding: 16px; }
-  .settings-section { display: none; }
-  .settings-section.active { display: block; }
-  .settings-section h3 { font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
-  .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
-  .setting-label { font-size: 12px; color: var(--text2); flex: 1; }
-  .setting-label small { display: block; font-size: 10px; color: var(--text3); margin-top: 1px; }
-  .setting-control select, .setting-control input[type=number], .setting-control input[type=text] { padding: 5px 8px; width: 140px; font-size: 12px; }
-  .toggle { width: 40px; height: 22px; background: var(--bg4); border-radius: 11px; position: relative; cursor: pointer; transition: background var(--anim); flex-shrink: 0; }
-  .toggle.on { background: var(--accent); }
-  .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left var(--anim); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
-  .toggle.on::after { left: 21px; }
-  .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-  .theme-card { padding: 10px; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; text-align: center; font-size: 11px; transition: border-color var(--anim); }
-  .theme-card:hover, .theme-card.active { border-color: var(--accent); color: var(--accent); }
-  .theme-preview { width: 100%; height: 28px; border-radius: 3px; margin-bottom: 6px; }
-
-  /* ===== NEW FILE / FOLDER DIALOGS ===== */
-  #new-file-modal .modal, #rename-modal .modal, #new-folder-modal .modal, #find-modal .modal { width: min(380px, 92vw); }
-  .form-row { margin-bottom: 12px; }
-  .form-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; display: block; }
-  .form-input { width: 100%; padding: 7px 10px; font-size: 13px; border-radius: var(--radius); }
-  .btn-primary { padding: 7px 18px; background: var(--accent); color: #fff; border-radius: var(--radius); font-size: 12px; font-weight: 600; transition: opacity var(--anim); }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-secondary { padding: 7px 18px; background: var(--bg4); color: var(--text2); border-radius: var(--radius); font-size: 12px; transition: background var(--anim); }
-  .btn-secondary:hover { background: var(--border); }
-  .btn-danger { padding: 7px 18px; background: var(--err); color: #fff; border-radius: var(--radius); font-size: 12px; }
-
-  /* ===== FIND/REPLACE ===== */
-  #find-modal .modal { width: min(480px, 94vw); }
-  .find-row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
-  .find-row input { flex: 1; padding: 6px 8px; font-size: 12px; }
-  .find-opt-btn { padding: 4px 8px; background: var(--bg4); border-radius: 4px; font-size: 11px; color: var(--text2); transition: background var(--anim), color var(--anim); }
-  .find-opt-btn.active { background: var(--accent); color: #fff; }
-  .find-count { font-size: 11px; color: var(--text3); white-space: nowrap; }
-
-  /* ===== TRAINING MANUAL ===== */
-  #manual-modal .modal { width: min(760px, 96vw); height: min(640px, 94vh); }
-  #manual-toc { width: 180px; border-right: 1px solid var(--border); padding: 10px 0; overflow-y: auto; flex-shrink: 0; }
-  .manual-toc-item { padding: 6px 12px; font-size: 11px; color: var(--text2); cursor: pointer; transition: background var(--anim), color var(--anim); border-left: 2px solid transparent; }
-  .manual-toc-item:hover { background: var(--bg4); color: var(--text); }
-  .manual-toc-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(91,140,255,0.07); }
-  .manual-toc-item.section { font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-top: 8px; cursor: default; }
-  .manual-toc-item.section:hover { background: none; }
-  #manual-content { flex: 1; overflow-y: auto; padding: 20px 22px; }
-  .manual-page { display: none; }
-  .manual-page.active { display: block; }
-  .manual-page h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--accent); }
-  .manual-page h3 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text); }
-  .manual-page p { font-size: 12px; color: var(--text2); line-height: 1.7; margin-bottom: 8px; }
-  .manual-page ul, .manual-page ol { padding-left: 20px; font-size: 12px; color: var(--text2); line-height: 1.8; margin-bottom: 8px; }
-  .manual-page code { font-family: var(--font-mono); background: var(--bg4); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--accent3); }
-  .manual-page pre { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text); overflow-x: auto; margin: 8px 0 12px; line-height: 1.6; }
-  .manual-page .badge { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-right: 4px; }
-  .badge-kw { background: rgba(162,89,255,0.2); color: var(--accent2); }
-  .badge-fn { background: rgba(255,215,0,0.15); color: #ffd700; }
-  .badge-ty { background: rgba(255,159,67,0.2); color: #ff9f43; }
-  .badge-op { background: rgba(255,107,107,0.2); color: var(--accent4); }
-  #manual-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  #dl-spec-btn { padding: 8px 18px; background: var(--accent); color: #fff; border-radius: var(--radius); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; transition: opacity var(--anim); }
-  #dl-spec-btn:hover { opacity: 0.85; }
-
-  /* ===== CONTEXT MENU ===== */
-  #ctx-menu { position: fixed; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); z-index: 9999; min-width: 170px; box-shadow: var(--shadow); display: none; overflow: hidden; }
-  .ctx-item { padding: 7px 14px; font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background var(--anim), color var(--anim); }
-  .ctx-item:hover { background: var(--bg4); color: var(--text); }
-  .ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
-
-  /* ===== PRESETS ===== */
-  #presets-modal .modal { width: min(640px, 96vw); max-height: 80vh; }
-  .preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
-  .preset-card { border: 2px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: border-color var(--anim), transform var(--anim); }
-  .preset-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .preset-icon { font-size: 28px; margin-bottom: 8px; }
-  .preset-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-  .preset-desc { font-size: 11px; color: var(--text3); line-height: 1.5; }
-  .preset-tag { display: inline-block; padding: 1px 6px; background: var(--bg4); border-radius: 10px; font-size: 10px; color: var(--text3); margin-top: 6px; }
-
-  /* ===== MINIMAP ===== */
-  #minimap { width: 60px; background: var(--bg2); border-left: 1px solid var(--border); overflow: hidden; position: relative; flex-shrink: 0; }
-  #minimap canvas { width: 100%; }
-
-  /* ===== TOAST ===== */
-  #toast-container { position: fixed; bottom: 36px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-  .toast { padding: 8px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; box-shadow: var(--shadow); animation: toastIn 0.25s, toastOut 0.3s 2.7s forwards; max-width: 280px; }
-  @keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
-  @keyframes toastOut { to { opacity:0; transform: translateX(20px); } }
-  .toast.success { border-color: var(--success); color: var(--success); }
-  .toast.error { border-color: var(--err); color: var(--err); }
-  .toast.info { border-color: var(--accent); color: var(--accent); }
-
-  /* ===== RUNNER FRAME ===== */
-  #runner-overlay { position: fixed; inset: 0; background: #000; z-index: 4000; display: none; flex-direction: column; }
-  #runner-overlay.open { display: flex; }
-  #runner-topbar { height: 40px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0; }
-  #runner-title { font-size: 13px; font-weight: 700; color: var(--text2); flex: 1; }
-  #runner-close { padding: 5px 12px; background: var(--err); color: #fff; border-radius: var(--radius); font-size: 12px; font-weight: 700; }
-  #runner-frame { flex: 1; border: none; background: #111; }
-
-  /* ===== MOBILE / IPAD ADAPTATIONS ===== */
-  @media (max-width: 900px) {
-    :root { --sidebar-w: 200px; --font-sz: 13px; }
-    #sidebar { position: absolute; z-index: 100; height: calc(100% - var(--header-h)); top: var(--header-h); left: 0; }
-    #sidebar:not(.collapsed) { box-shadow: 4px 0 20px rgba(0,0,0,0.5); }
-    #sidebar.collapsed { width: 0; }
-  }
-  @media (max-width: 600px) {
-    :root { --header-h: 44px; --tab-h: 34px; --font-sz: 12px; }
-    #logo .logo-text { display: none; }
-    #header-menu { gap: 0; }
-    .hmenu-btn { padding: 5px 7px; font-size: 11px; }
-    .run-btn span { display: none; }
-  }
-  @media (pointer: coarse) {
-    .tab { height: 40px; padding: 0 14px; }
-    .tree-item { padding: 9px 12px; }
-    .snav-item { padding: 11px 14px; }
-    #cmd-input { font-size: 14px; }
-    .dropdown-item { padding: 11px 14px; }
-  }
-
-  /* ===== SPLIT PANE ===== */
-  #split-right { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-  .split-active { cursor: col-resize; }
-
-  /* ===== WELCOME SCREEN ===== */
-  #welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text3); user-select: none; gap: 12px; }
-  #welcome .wlc-logo { font-size: 64px; margin-bottom: 6px; }
-  #welcome h1 { font-size: 24px; font-weight: 800; color: var(--text2); }
-  #welcome p { font-size: 13px; max-width: 320px; text-align: center; line-height: 1.7; }
-  .wlc-shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-top: 8px; font-size: 11px; }
-  .wlc-shortcut { display: flex; align-items: center; gap: 6px; }
-  .wlc-key { background: var(--bg4); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 10px; color: var(--text); }
-
-  /* ===== SCROLLBARS IPAD ===== */
-  @supports (-webkit-overflow-scrolling: touch) {
-    #code-scroll { -webkit-overflow-scrolling: touch; }
-    #file-tree { -webkit-overflow-scrolling: touch; }
-  }
-
-  /* ===== BREADCRUMB ===== */
-  #breadcrumb { padding: 3px 14px; font-size: 11px; color: var(--text3); background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px; flex-shrink: 0; height: 24px; overflow: hidden; }
-  .bc-sep { color: var(--border); }
-  .bc-part { color: var(--text3); }
-  .bc-part:last-child { color: var(--text2); }
-</style>
+        /* --- Syntax Guide CSS --- */
+        .guide-code { background: #000; padding: 10px; border-radius: 5px; color: #58a6ff; font-family: monospace; display: block; margin: 10px 0; }
+    </style>
 </head>
 <body>
 
-<!-- ===== APP ROOT ===== -->
-<div id="app" class="theme-dark">
+<div id="app-container">
+    <header>
+        <div class="logo">
+            <i data-lucide="zap"></i> AR(> <span style="font-weight: 300; opacity: 0.5;">STUDIO</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
+            <button class="btn" onclick="showCommandBar()"><i data-lucide="search"></i></button>
+            <button class="btn btn-primary" onclick="runProject()"><i data-lucide="play"></i> <span>RUN</span></button>
+            <button class="btn" onclick="showSettings()"><i data-lucide="settings"></i></button>
+        </div>
+    </header>
 
-  <!-- HEADER -->
-  <div id="header">
-    <div id="logo">
-      <span class="logo-icon">🔷</span>
-      <span class="logo-text">AR(&gt; Playground</span>
-    </div>
-    <div id="header-menu">
-      <div class="dropdown" id="menu-file">
-        <button class="hmenu-btn" onclick="toggleMenu('menu-file')">File</button>
-        <div class="dropdown-menu" id="menu-file-drop" style="display:none;">
-          <div class="dropdown-item" onclick="newFile();closeMenus()">📄 New Script <span class="shortcut">Ctrl+N</span></div>
-          <div class="dropdown-item" onclick="newFolder();closeMenus()">📁 New Folder</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="openPresets();closeMenus()">🚀 New from Preset</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="saveFile();closeMenus()">💾 Save <span class="shortcut">Ctrl+S</span></div>
-          <div class="dropdown-item" onclick="downloadCurrentFile();closeMenus()">⬇️ Download File</div>
-          <div class="dropdown-item" onclick="downloadAllFiles();closeMenus()">📦 Export All Scripts</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="closeMenus();openUpload()">📂 Import File</div>
-        </div>
-      </div>
-      <div class="dropdown" id="menu-edit">
-        <button class="hmenu-btn" onclick="toggleMenu('menu-edit')">Edit</button>
-        <div class="dropdown-menu" id="menu-edit-drop" style="display:none;">
-          <div class="dropdown-item" onclick="edUndo();closeMenus()">↩ Undo <span class="shortcut">Ctrl+Z</span></div>
-          <div class="dropdown-item" onclick="edRedo();closeMenus()">↪ Redo <span class="shortcut">Ctrl+Y</span></div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="selectAll();closeMenus()">⬜ Select All <span class="shortcut">Ctrl+A</span></div>
-          <div class="dropdown-item" onclick="openFind();closeMenus()">🔍 Find &amp; Replace <span class="shortcut">Ctrl+H</span></div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="commentToggle();closeMenus()">💬 Toggle Comment <span class="shortcut">Ctrl+/</span></div>
-          <div class="dropdown-item" onclick="formatCode();closeMenus()">✨ Format Code</div>
-          <div class="dropdown-item" onclick="duplicateLine();closeMenus()">📋 Duplicate Line</div>
-        </div>
-      </div>
-      <div class="dropdown" id="menu-view">
-        <button class="hmenu-btn" onclick="toggleMenu('menu-view')">View</button>
-        <div class="dropdown-menu" id="menu-view-drop" style="display:none;">
-          <div class="dropdown-item" onclick="toggleSidebar();closeMenus()">📁 Toggle Sidebar</div>
-          <div class="dropdown-item" onclick="toggleOutput();closeMenus()">📟 Toggle Console</div>
-          <div class="dropdown-item" onclick="toggleMinimap();closeMenus()">🗺 Toggle Minimap</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="increaseFontSize();closeMenus()">🔤 Font Size +</div>
-          <div class="dropdown-item" onclick="decreaseFontSize();closeMenus()">🔡 Font Size -</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="openSettings('appearance');closeMenus()">🎨 Themes</div>
-        </div>
-      </div>
-      <div class="dropdown" id="menu-run">
-        <button class="hmenu-btn" onclick="toggleMenu('menu-run')">Run</button>
-        <div class="dropdown-menu" id="menu-run-drop" style="display:none;">
-          <div class="dropdown-item" onclick="runCode();closeMenus()">▶ Run Current Script <span class="shortcut">F5</span></div>
-          <div class="dropdown-item" onclick="runAllCode();closeMenus()">⚡ Run All Scripts</div>
-          <div class="dropdown-item" onclick="stopRun();closeMenus()">⏹ Stop Runner</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="lintCode();closeMenus()">🔎 Lint Code</div>
-        </div>
-      </div>
-      <div class="dropdown" id="menu-help">
-        <button class="hmenu-btn" onclick="toggleMenu('menu-help')">Help</button>
-        <div class="dropdown-menu" id="menu-help-drop" style="display:none;">
-          <div class="dropdown-item" onclick="openManual();closeMenus()">📖 Training Manual</div>
-          <div class="dropdown-item" onclick="openSettings('shortcuts');closeMenus()">⌨️ Keyboard Shortcuts</div>
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-item" onclick="aboutDialog();closeMenus()">ℹ️ About AR(&gt;</div>
-        </div>
-      </div>
-    </div>
-    <div id="header-actions">
-      <button class="run-btn" onclick="runCode()" id="run-btn">▶ <span>Run</span></button>
-      <button class="icon-btn" onclick="openSettings('general')" title="Settings">⚙️</button>
-      <button class="icon-btn" onclick="openManual()" title="Training Manual">📖</button>
-    </div>
-  </div>
-
-  <!-- MAIN -->
-  <div id="main-area">
-
-    <!-- SIDEBAR -->
-    <div id="sidebar">
-      <div id="sidebar-header">
-        <span>Explorer</span>
-        <div class="sidebar-actions">
-          <button class="sidebar-action-btn" title="New Script" onclick="newFile()">📄</button>
-          <button class="sidebar-action-btn" title="New Folder" onclick="newFolder()">📁</button>
-          <button class="sidebar-action-btn" title="Refresh" onclick="renderFileTree()">🔄</button>
-        </div>
-      </div>
-      <div id="file-tree"></div>
-    </div>
-
-    <!-- EDITOR AREA -->
-    <div id="split-right">
-      <div id="editor-area">
-        <div id="tab-bar">
-          <button id="new-tab-btn" onclick="newFile()" title="New file">＋</button>
-        </div>
-        <div id="breadcrumb"><span class="bc-part">AR(&gt; Playground</span></div>
-        <div id="editor-content">
-          <div id="editor-wrap">
-            <div id="editor-main">
-              <div id="line-numbers"></div>
-              <div id="code-scroll">
-                <div id="code-area" style="position:relative;">
-                  <div id="code-highlight"></div>
-                  <textarea id="code-input" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off"></textarea>
-                </div>
-              </div>
-              <div id="minimap"><canvas id="minimap-canvas"></canvas></div>
+    <main>
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <span>Files</span>
+                <button class="btn" style="height: 24px; padding: 0 5px;" onclick="newFilePrompt()"><i data-lucide="plus" size="14"></i></button>
             </div>
-            <div id="autocomplete"></div>
-          </div>
+            <div id="file-tree"></div>
         </div>
 
-        <!-- RESIZE HANDLE -->
-        <div id="resize-handle" id="resize-handle"></div>
-
-        <!-- OUTPUT PANEL -->
-        <div id="output-panel">
-          <div id="output-header">
-            <span>Output</span>
-            <button class="out-tab-btn active" id="out-tab-console" onclick="switchOutTab('console')">Console</button>
-            <button class="out-tab-btn" id="out-tab-problems" onclick="switchOutTab('problems')">Problems</button>
-            <button id="clear-out-btn" onclick="clearOutput()">Clear</button>
-            <button class="icon-btn" onclick="toggleOutput()" title="Toggle" style="width:24px;height:24px;font-size:12px;margin-left:4px;">⬇</button>
-          </div>
-          <div id="output-body"></div>
+        <div id="editor-container">
+            <div id="cm-editor"></div>
         </div>
+    </main>
+</div>
 
-        <!-- COMMAND BAR -->
-        <div id="cmd-bar">
-          <span id="cmd-label">AR(&gt; cmd:</span>
-          <input id="cmd-input" type="text" placeholder="Type a command or expression and press Enter…" autocomplete="off" spellcheck="false">
-          <button id="cmd-run-btn" onclick="runCommand()">Run</button>
+<!-- Run Screen -->
+<div id="run-panel">
+    <div id="run-header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span id="run-title" style="font-weight: bold;">Execution Mode</span>
         </div>
-      </div>
+        <button class="btn" onclick="stopProject()" style="background: #e74c3c;"><i data-lucide="square"></i> STOP</button>
     </div>
-  </div>
-
-  <!-- STATUS BAR -->
-  <div id="status-bar">
-    <span class="status-item" id="status-file">untitled.ar</span>
-    <span class="status-item">AR(&gt; v1.0</span>
-    <span class="status-item" id="status-pos">Ln 1, Col 1</span>
-    <span class="status-item" id="status-sel"></span>
-    <span class="status-item right" id="status-errors" class="hidden"></span>
-    <span class="status-item">UTF-8</span>
-    <span class="status-item">Spaces: 2</span>
-  </div>
-</div>
-
-<!-- HIDDEN UPLOAD INPUT -->
-<input type="file" id="upload-input" accept=".ar,.txt,.js,.json,.html,.css,.md" style="display:none" multiple onchange="handleUpload(event)">
-
-<!-- AUTOCOMPLETE PORTAL -->
-<div id="autocomplete" style="position:fixed;display:none;z-index:2000;"></div>
-
-<!-- TOAST CONTAINER -->
-<div id="toast-container"></div>
-
-<!-- RUNNER OVERLAY -->
-<div id="runner-overlay">
-  <div id="runner-topbar">
-    <span>🔷</span>
-    <span id="runner-title">AR(&gt; Runner</span>
-    <button class="icon-btn" onclick="toggleRunnerSize()" style="font-size:13px;">⬜</button>
-    <button id="runner-close" onclick="closeRunner()">✕ Close</button>
-  </div>
-  <iframe id="runner-frame" sandbox="allow-scripts allow-same-origin allow-modals"></iframe>
-</div>
-
-<!-- CONTEXT MENU -->
-<div id="ctx-menu">
-  <div class="ctx-item" id="ctx-open">📄 Open</div>
-  <div class="ctx-item" id="ctx-rename">✏️ Rename</div>
-  <div class="ctx-item" id="ctx-duplicate">📋 Duplicate</div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctx-delete" style="color:var(--err)">🗑️ Delete</div>
-</div>
-
-<!-- === NEW FILE MODAL === -->
-<div id="new-file-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header"><h2>New Script</h2><button class="modal-close" onclick="closeModal('new-file-modal')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-row"><label class="form-label">Script Name</label><input class="form-input" id="new-file-name" placeholder="e.g. main.ar" autocomplete="off"></div>
-      <div class="form-row"><label class="form-label">Parent Folder (optional)</label>
-        <select class="form-input" id="new-file-folder" style="width:100%"></select>
-      </div>
+    <div id="viewport">
+        <canvas id="canvas2d" style="width: 100%; height: 100%; display: none;"></canvas>
     </div>
-    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('new-file-modal')">Cancel</button><button class="btn-primary" onclick="confirmNewFile()">Create</button></div>
-  </div>
+    <div id="console-out"></div>
 </div>
 
-<!-- === NEW FOLDER MODAL === -->
-<div id="new-folder-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header"><h2>New Folder</h2><button class="modal-close" onclick="closeModal('new-folder-modal')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-row"><label class="form-label">Folder Name</label><input class="form-input" id="new-folder-name" placeholder="e.g. components" autocomplete="off"></div>
-    </div>
-    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('new-folder-modal')">Cancel</button><button class="btn-primary" onclick="confirmNewFolder()">Create</button></div>
-  </div>
-</div>
-
-<!-- === RENAME MODAL === -->
-<div id="rename-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header"><h2>Rename</h2><button class="modal-close" onclick="closeModal('rename-modal')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-row"><label class="form-label">New Name</label><input class="form-input" id="rename-input" autocomplete="off"></div>
-    </div>
-    <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('rename-modal')">Cancel</button><button class="btn-primary" onclick="confirmRename()">Rename</button></div>
-  </div>
-</div>
-
-<!-- === FIND & REPLACE === -->
-<div id="find-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header"><h2>🔍 Find &amp; Replace</h2><button class="modal-close" onclick="closeModal('find-modal')">✕</button></div>
-    <div class="modal-body">
-      <div class="find-row">
-        <input id="find-input" class="form-input" placeholder="Find…" oninput="doFind()" style="flex:1">
-        <button class="find-opt-btn" id="find-case" onclick="toggleFindOpt('find-case')">Aa</button>
-        <button class="find-opt-btn" id="find-whole" onclick="toggleFindOpt('find-whole')">W</button>
-        <button class="find-opt-btn" id="find-regex" onclick="toggleFindOpt('find-regex')">.*</button>
-        <span class="find-count" id="find-count">0 results</span>
-      </div>
-      <div class="find-row">
-        <input id="replace-input" class="form-input" placeholder="Replace with…" style="flex:1">
-        <button class="btn-secondary" onclick="doReplace(false)" style="white-space:nowrap;padding:6px 10px;font-size:11px">Replace</button>
-        <button class="btn-secondary" onclick="doReplace(true)" style="white-space:nowrap;padding:6px 10px;font-size:11px">All</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <button class="btn-secondary" onclick="findPrev()" style="flex:1;font-size:11px">◀ Prev</button>
-        <button class="btn-secondary" onclick="findNext()" style="flex:1;font-size:11px">Next ▶</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- === PRESETS MODAL === -->
-<div id="presets-modal" class="modal-overlay hidden">
-  <div class="modal" style="width:min(680px,96vw);">
-    <div class="modal-header"><h2>🚀 New from Preset</h2><button class="modal-close" onclick="closeModal('presets-modal')">✕</button></div>
-    <div class="modal-body">
-      <div class="preset-grid" id="preset-grid"></div>
-    </div>
-  </div>
-</div>
-
-<!-- === SETTINGS MODAL === -->
-<div id="settings-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header"><h2>⚙️ Settings</h2><button class="modal-close" onclick="closeModal('settings-modal')">✕</button></div>
-    <div class="modal-body" style="padding:0;">
-      <div id="settings-layout">
-        <div id="settings-nav">
-          <div class="snav-item active" data-sec="general" onclick="switchSettings('general')">🔧 General</div>
-          <div class="snav-item" data-sec="appearance" onclick="switchSettings('appearance')">🎨 Appearance</div>
-          <div class="snav-item" data-sec="editor" onclick="switchSettings('editor')">📝 Editor</div>
-          <div class="snav-item" data-sec="shortcuts" onclick="switchSettings('shortcuts')">⌨️ Shortcuts</div>
-          <div class="snav-item" data-sec="language" onclick="switchSettings('language')">🔷 AR(&gt; Lang</div>
-          <div class="snav-item" data-sec="about" onclick="switchSettings('about')">ℹ️ About</div>
+<!-- New File Modal -->
+<div id="new-file-modal" class="modal-overlay">
+    <div class="modal">
+        <h3>Create New Script</h3>
+        <input type="text" id="new-filename" placeholder="script_name" style="width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: white; margin-bottom: 20px;">
+        <p>Choose a template:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn" onclick="createFile('blank')">Empty</button>
+            <button class="btn" onclick="createFile('2d')">2D Platformer</button>
+            <button class="btn" onclick="createFile('3d')">3D Scene</button>
+            <button class="btn" onclick="createFile('pong')">Pong Arcade</button>
+            <button class="btn" onclick="createFile('rpg')">RPG Base</button>
         </div>
-        <div id="settings-content">
-          <!-- GENERAL -->
-          <div class="settings-section active" id="sec-general">
-            <h3>General</h3>
-            <div class="setting-row"><div class="setting-label">Auto Save<small>Save on every change</small></div><div class="setting-control"><div class="toggle on" id="tog-autosave" onclick="toggleSetting('autosave',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Auto Format on Save</div><div class="setting-control"><div class="toggle" id="tog-autofmt" onclick="toggleSetting('autofmt',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Show Minimap</div><div class="setting-control"><div class="toggle on" id="tog-minimap" onclick="toggleSetting('minimap',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Show Line Numbers</div><div class="setting-control"><div class="toggle on" id="tog-linenums" onclick="toggleSetting('linenums',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Word Wrap</div><div class="setting-control"><div class="toggle" id="tog-wrap" onclick="toggleSetting('wrap',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Console at Bottom</div><div class="setting-control"><div class="toggle on" id="tog-console" onclick="toggleSetting('console',this)"></div></div></div>
-          </div>
-          <!-- APPEARANCE -->
-          <div class="settings-section" id="sec-appearance">
-            <h3>Theme</h3>
-            <div class="theme-grid" id="theme-grid"></div>
-            <h3 style="margin-top:16px">Font</h3>
-            <div class="setting-row"><div class="setting-label">Font Size</div><div class="setting-control"><input type="number" id="font-sz-input" min="10" max="28" value="14" onchange="applyFontSize(this.value)" style="width:80px;padding:5px 8px;font-size:12px"></div></div>
-            <div class="setting-row"><div class="setting-label">Line Height</div><div class="setting-control"><input type="number" id="line-h-input" min="14" max="36" value="22" onchange="applyLineHeight(this.value)" style="width:80px;padding:5px 8px;font-size:12px"></div></div>
-            <div class="setting-row"><div class="setting-label">Font Family</div><div class="setting-control"><select id="font-fam-select" onchange="applyFontFamily(this.value)" style="width:160px;padding:5px 8px;font-size:12px">
-              <option value="'JetBrains Mono',monospace">JetBrains Mono</option>
-              <option value="'Fira Code',monospace">Fira Code</option>
-              <option value="'Consolas',monospace">Consolas</option>
-              <option value="'Courier New',monospace">Courier New</option>
-              <option value="monospace">System Mono</option>
-            </select></div></div>
-          </div>
-          <!-- EDITOR -->
-          <div class="settings-section" id="sec-editor">
-            <h3>Editor Behaviour</h3>
-            <div class="setting-row"><div class="setting-label">Auto Brackets</div><div class="setting-control"><div class="toggle on" id="tog-brackets" onclick="toggleSetting('brackets',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Auto Indent</div><div class="setting-control"><div class="toggle on" id="tog-autoindent" onclick="toggleSetting('autoindent',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Tab Size</div><div class="setting-control"><select id="tab-sz-sel" onchange="applyTabSize(this.value)" style="width:80px;padding:5px;font-size:12px"><option value="2" selected>2</option><option value="4">4</option><option value="8">8</option></select></div></div>
-            <div class="setting-row"><div class="setting-label">Autocomplete Delay (ms)</div><div class="setting-control"><input type="number" id="ac-delay" min="0" max="2000" value="300" style="width:80px;padding:5px 8px;font-size:12px"></div></div>
-            <div class="setting-row"><div class="setting-label">Highlight Current Line</div><div class="setting-control"><div class="toggle on" id="tog-curline" onclick="toggleSetting('curline',this)"></div></div></div>
-          </div>
-          <!-- SHORTCUTS -->
-          <div class="settings-section" id="sec-shortcuts">
-            <h3>Keyboard Shortcuts</h3>
-            <div id="shortcut-list" style="font-size:12px;"></div>
-          </div>
-          <!-- AR LANG -->
-          <div class="settings-section" id="sec-language">
-            <h3>AR(&gt; Language Settings</h3>
-            <div class="setting-row"><div class="setting-label">Strict Mode<small>Enable strict type checking</small></div><div class="setting-control"><div class="toggle on" id="tog-strict" onclick="toggleSetting('strict',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Enable 3D Module</div><div class="setting-control"><div class="toggle on" id="tog-3d" onclick="toggleSetting('3d',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Enable 2D Module</div><div class="setting-control"><div class="toggle on" id="tog-2d" onclick="toggleSetting('2d',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Enable Network Module</div><div class="setting-control"><div class="toggle on" id="tog-net" onclick="toggleSetting('net',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Enable Audio Module</div><div class="setting-control"><div class="toggle on" id="tog-audio" onclick="toggleSetting('audio',this)"></div></div></div>
-            <div class="setting-row"><div class="setting-label">Compiler Target</div><div class="setting-control"><select id="compiler-target" style="width:140px;padding:5px;font-size:12px">
-              <option>JavaScript</option><option>WebGL</option><option>Canvas2D</option>
-            </select></div></div>
-            <div style="margin-top:14px">
-              <button class="btn-primary" onclick="openManual()">📖 Open Training Manual</button>
-            </div>
-          </div>
-          <!-- ABOUT -->
-          <div class="settings-section" id="sec-about">
-            <h3>About AR(&gt;</h3>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8;">
-              <p style="font-size:18px;font-weight:800;color:var(--accent);margin-bottom:8px;">AR(&gt; Language v1.0</p>
-              <p>AR(&gt; is a next-generation, fully custom programming language built for creative game development. It combines the simplicity of Lua with the power of JavaScript and beyond.</p>
-              <p style="margin-top:10px"><strong>Capabilities:</strong></p>
-              <ul style="padding-left:16px;margin-top:4px">
-                <li>2D &amp; 3D game development</li>
-                <li>Image, audio, and file management</li>
-                <li>Physics engine integration</li>
-                <li>Full scripting with modules</li>
-                <li>Custom asset pipeline</li>
-                <li>Multi-script execution</li>
-              </ul>
-              <p style="margin-top:12px;color:var(--text3);font-size:11px;">AR(&gt; Playground · Built for creators · v1.0.0</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        <br>
+        <button class="btn" style="width: 100%;" onclick="closeModals()">Cancel</button>
     </div>
-  </div>
 </div>
 
-<!-- === TRAINING MANUAL === -->
-<div id="manual-modal" class="modal-overlay hidden">
-  <div class="modal" style="width:min(800px,97vw);height:min(680px,96vh);">
-    <div class="modal-header"><h2>📖 AR(&gt; Training Manual</h2><button class="modal-close" onclick="closeModal('manual-modal')">✕</button></div>
-    <div class="modal-body" style="padding:0;display:flex;overflow:hidden;flex:1;min-height:0;">
-      <div id="manual-toc"></div>
-      <div id="manual-content"></div>
+<!-- Manual Modal -->
+<div id="manual-modal" class="modal-overlay">
+    <div class="modal" style="max-width: 800px;">
+        <h2>AR(> Language Manual</h2>
+        <p>AR(> is a natural-language wrapper for high-performance logic and rendering.</p>
+        
+        <h3>Basics</h3>
+        <code class="guide-code">set score to 0<br>set name to "Player 1"</code>
+        
+        <h3>Logic</h3>
+        <code class="guide-code">if score > 10 do<br>&nbsp;&nbsp;print "Level Up!"<br>end</code>
+        
+        <h3>2D Graphics</h3>
+        <code class="guide-code">draw circle at 100, 100 radius 50 color "red"<br>draw rect at x, y size 50, 50 color "blue"</code>
+        
+        <h3>3D Graphics</h3>
+        <code class="guide-code">create box at 0, 0, 0 name "cube1"<br>rotate "cube1" x 0.01</code>
+
+        <h3>Events</h3>
+        <code class="guide-code">every frame do<br>&nbsp;&nbsp;move "cube1" x 0.1<br>end<br><br>when key "space" do<br>&nbsp;&nbsp;print "Jump!"<br>end</code>
+
+        <button class="btn" style="width: 100%;" onclick="downloadSpec()">Download Complete Spec</button>
+        <br>
+        <button class="btn" style="width: 100%;" onclick="closeModals()">Close</button>
     </div>
-    <div id="manual-footer">
-      <span style="font-size:11px;color:var(--text3)">AR(&gt; Language Specification · v1.0</span>
-      <button id="dl-spec-btn" onclick="downloadSpec()">⬇️ Download Full Spec</button>
-    </div>
-  </div>
 </div>
 
-<script>
-// ============================================================
-// AR(> PLAYGROUND — FULL IMPLEMENTATION
-// ============================================================
-
-// ===== STATE =====
-const state = {
-  files: [],        // { id, name, content, folderId, modified }
-  folders: [],      // { id, name, parentId }
-  activeFileId: null,
-  openTabs: [],     // fileIds
-  settings: {
-    autosave: true, autofmt: false, minimap: true, linenums: true,
-    wrap: false, console: true, brackets: true, autoindent: true,
-    tabSize: 2, fontSize: 14, lineHeight: 22, fontFamily: "'JetBrains Mono',monospace",
-    theme: 'dark', acDelay: 300, strict: true, mod3d: true, mod2d: true,
-    modNet: true, modAudio: true, highlightLine: true
-  },
-  cursor: { line: 1, col: 1 },
-  findMatches: [],
-  findIdx: 0,
-  findOpts: { case: false, whole: false, regex: false },
-  ctxTarget: null,
-  renameTarget: null,
-  history: {},      // fileId -> {past:[], future:[]}
-  outputTab: 'console',
-  runnerOpen: false,
-  acVisible: false,
-  acIndex: -1,
-  acItems: [],
-  undoTimers: {}
-};
-
-// ===== AR(> LANGUAGE DEFINITION =====
-const AR_KEYWORDS = [
-  'let','const','var','func','return','if','else','elif','while','for','in','do',
-  'break','continue','match','case','default','class','extends','new','this','super',
-  'import','export','module','from','as','async','await','try','catch','finally',
-  'throw','typeof','instanceof','delete','void','null','true','false','undefined',
-  'and','or','not','is','isnt','of','yield','with','using','enum','interface',
-  'type','struct','impl','pub','priv','static','final','abstract','override',
-  'get','set','constructor','destructor','spawn','kill','join'
-];
-
-const AR_BUILTINS = [
-  // I/O
-  'print','println','input','prompt','alert','confirm',
-  // Math
-  'Math.sin','Math.cos','Math.tan','Math.sqrt','Math.pow','Math.abs','Math.floor',
-  'Math.ceil','Math.round','Math.random','Math.max','Math.min','Math.PI','Math.E',
-  // String
-  'String.length','String.upper','String.lower','String.trim','String.split',
-  'String.replace','String.includes','String.startsWith','String.endsWith',
-  'String.slice','String.indexOf','String.format','String.repeat','String.chars',
-  // Array
-  'Array.push','Array.pop','Array.shift','Array.unshift','Array.map','Array.filter',
-  'Array.reduce','Array.forEach','Array.find','Array.findIndex','Array.includes',
-  'Array.sort','Array.reverse','Array.join','Array.slice','Array.splice','Array.concat',
-  'Array.flat','Array.from','Array.length','Array.isEmpty','Array.first','Array.last',
-  // Object
-  'Object.keys','Object.values','Object.entries','Object.merge','Object.clone',
-  'Object.freeze','Object.assign','Object.has',
-  // Game 2D
-  'Game2D.create','Game2D.scene','Game2D.sprite','Game2D.text','Game2D.rect',
-  'Game2D.circle','Game2D.line','Game2D.image','Game2D.audio','Game2D.camera',
-  'Game2D.physics','Game2D.input','Game2D.update','Game2D.render','Game2D.run',
-  'Game2D.stop','Game2D.width','Game2D.height','Game2D.fps','Game2D.dt',
-  'Game2D.bg','Game2D.layer','Game2D.collision','Game2D.animate',
-  // Game 3D
-  'Game3D.create','Game3D.scene','Game3D.mesh','Game3D.material','Game3D.light',
-  'Game3D.camera','Game3D.physics','Game3D.rigidbody','Game3D.collider',
-  'Game3D.transform','Game3D.position','Game3D.rotation','Game3D.scale',
-  'Game3D.render','Game3D.run','Game3D.stop','Game3D.update','Game3D.input',
-  'Game3D.sky','Game3D.fog','Game3D.shadow','Game3D.postfx','Game3D.rayCast',
-  'Game3D.audio3D','Game3D.particle','Game3D.terrain',
-  // Asset
-  'Asset.loadImage','Asset.loadAudio','Asset.loadFile','Asset.loadFont',
-  'Asset.loadModel','Asset.loadJSON','Asset.loadCSS','Asset.loadScript',
-  'Asset.cache','Asset.preload','Asset.url',
-  // Audio
-  'Audio.play','Audio.stop','Audio.pause','Audio.resume','Audio.volume',
-  'Audio.loop','Audio.pitch','Audio.fade','Audio.create','Audio.stream',
-  // Network
-  'Net.fetch','Net.post','Net.get','Net.ws','Net.socket','Net.on','Net.emit',
-  // File
-  'File.read','File.write','File.download','File.upload','File.exists',
-  'File.delete','File.list','File.mkdir',
-  // UI
-  'UI.button','UI.text','UI.input','UI.panel','UI.modal','UI.toast','UI.tooltip',
-  'UI.slider','UI.checkbox','UI.dropdown','UI.progress','UI.canvas',
-  // Time
-  'Time.now','Time.delta','Time.fps','Time.wait','Time.repeat','Time.cancel',
-  'Time.format','Time.stamp',
-  // Event
-  'Event.on','Event.off','Event.emit','Event.once','Event.clear',
-  // System
-  'Sys.platform','Sys.memory','Sys.version','Sys.args','Sys.env','Sys.exit',
-  // Color
-  'Color.rgb','Color.rgba','Color.hex','Color.hsl','Color.lerp','Color.mix',
-  // Vec
-  'Vec2','Vec3','Vec4','Quat','Mat4',
-  // Misc
-  'JSON.parse','JSON.stringify','console.log','console.warn','console.error',
-];
-
-const AR_TYPES = [
-  'int','float','double','string','bool','void','any','auto','array','map',
-  'set','tuple','fn','object','null','undefined','never','unknown',
-  'Vec2','Vec3','Vec4','Quat','Mat4','Color','Sprite','Mesh','Scene','Audio',
-  'Camera','Light','Physics','Collider','Transform','Event','Asset','Texture',
-];
-
-const AR_SNIPPETS = [
-  { name: 'func', insert: 'func ${name}(${params}) {\n  ${body}\n}', doc: 'Define a function' },
-  { name: 'class', insert: 'class ${Name} {\n  constructor(${params}) {\n    ${body}\n  }\n}', doc: 'Define a class' },
-  { name: 'for..in', insert: 'for ${item} in ${collection} {\n  ${body}\n}', doc: 'For-in loop' },
-  { name: 'while', insert: 'while ${condition} {\n  ${body}\n}', doc: 'While loop' },
-  { name: 'if..else', insert: 'if ${condition} {\n  ${then}\n} else {\n  ${else}\n}', doc: 'If-else block' },
-  { name: 'match', insert: 'match ${value} {\n  case ${a}: ${body1}\n  case ${b}: ${body2}\n  default: ${bodyD}\n}', doc: 'Match statement' },
-  { name: 'try..catch', insert: 'try {\n  ${body}\n} catch ${e} {\n  println(${e})\n}', doc: 'Try-catch block' },
-  { name: 'import', insert: 'import ${name} from "${module}"', doc: 'Import a module' },
-  { name: 'Game2D', insert: 'let game = Game2D.create({\n  width: 800,\n  height: 600,\n  title: "My Game"\n})\n\ngame.update(func(dt) {\n  // update logic\n})\n\ngame.render(func() {\n  // draw calls\n})\n\ngame.run()', doc: 'Create a 2D game' },
-  { name: 'Game3D', insert: 'let scene = Game3D.create({\n  width: 1280,\n  height: 720,\n  title: "My 3D Game"\n})\n\nlet camera = Game3D.camera({ fov: 75 })\nlet light = Game3D.light({ type: "directional" })\n\nscene.update(func(dt) {\n  // update logic\n})\n\nscene.run()', doc: 'Create a 3D game' },
-  { name: 'async func', insert: 'async func ${name}(${params}) {\n  let result = await ${expr}\n  return result\n}', doc: 'Async function' },
-  { name: 'event handler', insert: 'Event.on("${event}", func(e) {\n  ${body}\n})', doc: 'Listen to an event' },
-  { name: 'class extends', insert: 'class ${Child} extends ${Parent} {\n  constructor(${params}) {\n    super(${args})\n    ${body}\n  }\n}', doc: 'Class inheritance' },
-];
-
-// ===== THEMES =====
-const THEMES = [
-  { id: 'dark',      name: 'Dark',      colors: ['#0d0f14','#5b8cff','#a259ff'] },
-  { id: 'light',     name: 'Light',     colors: ['#f4f6fb','#3a6df5','#7c3aff'] },
-  { id: 'monokai',   name: 'Monokai',   colors: ['#272822','#a6e22e','#f92672'] },
-  { id: 'nord',      name: 'Nord',      colors: ['#2e3440','#88c0d0','#81a1c1'] },
-  { id: 'solarized', name: 'Solarized', colors: ['#002b36','#268bd2','#2aa198'] },
-  { id: 'dracula',   name: 'Dracula',   colors: ['#282a36','#bd93f9','#ff79c6'] },
-  { id: 'ocean',     name: 'Ocean',     colors: ['#0a1628','#38bdf8','#818cf8'] },
-];
-
-// ===== PRESETS =====
-const PRESETS = [
-  {
-    id: 'blank', icon: '📄', name: 'Blank Script', tag: 'Basic',
-    desc: 'Empty script file, ready to write.',
-    files: [{ name: 'main.ar', content: '// AR(> Script\n// Start coding below!\n\n' }]
-  },
-  {
-    id: 'hello', icon: '👋', name: 'Hello World', tag: 'Basic',
-    desc: 'Classic Hello World starter.',
-    files: [{ name: 'main.ar', content: '// Hello World in AR(>\n\nlet name = "World"\nprintln("Hello, " + name + "!")\n\n// You can also use string interpolation:\nprintln(`Hello, {name}!`)\n' }]
-  },
-  {
-    id: 'game2d', icon: '🎮', name: '2D Game', tag: '2D',
-    desc: 'Starter for a 2D canvas game with loop.',
-    files: [
-      { name: 'main.ar', content: `// AR(> 2D Game Starter
-
-import "game2d" from "arlib/game2d"
-
-let game = Game2D.create({
-  width: 800,
-  height: 600,
-  title: "My 2D Game",
-  bg: Color.hex("#1a1a2e")
-})
-
-// Player sprite
-let player = Game2D.sprite({
-  x: 400, y: 300,
-  w: 32, h: 32,
-  color: Color.rgb(91, 140, 255)
-})
-
-let speed = 200
-
-game.update(func(dt) {
-  if Game2D.input.key("ArrowLeft") { player.x -= speed * dt }
-  if Game2D.input.key("ArrowRight") { player.x += speed * dt }
-  if Game2D.input.key("ArrowUp") { player.y -= speed * dt }
-  if Game2D.input.key("ArrowDown") { player.y += speed * dt }
-  
-  // Clamp to screen
-  player.x = Math.max(0, Math.min(game.width - player.w, player.x))
-  player.y = Math.max(0, Math.min(game.height - player.h, player.y))
-})
-
-game.render(func() {
-  Game2D.rect(player.x, player.y, player.w, player.h, player.color)
-  Game2D.text("Use arrow keys!", 10, 10, { size: 16, color: "#fff" })
-})
-
-game.run()
-print("2D Game started!")
-` },
-      { name: 'constants.ar', content: `// Game Constants
-const SCREEN_W = 800
-const SCREEN_H = 600
-const GRAVITY = 9.81
-const FPS = 60
-` }
-    ]
-  },
-  {
-    id: 'game3d', icon: '🧊', name: '3D Game', tag: '3D',
-    desc: 'A 3D scene with lighting and a rotating cube.',
-    files: [
-      { name: 'main.ar', content: `// AR(> 3D Game Starter
-
-let scene = Game3D.create({
-  width: 1280,
-  height: 720,
-  title: "My 3D Game"
-})
-
-// Camera
-let cam = Game3D.camera({
-  fov: 75,
-  near: 0.1,
-  far: 1000,
-  position: Vec3(0, 2, 5)
-})
-
-// Lighting
-let sun = Game3D.light({
-  type: "directional",
-  color: Color.hex("#fff5e0"),
-  intensity: 1.2,
-  position: Vec3(5, 10, 5)
-})
-
-let ambient = Game3D.light({
-  type: "ambient",
-  color: Color.hex("#334"),
-  intensity: 0.4
-})
-
-// Cube mesh
-let cube = Game3D.mesh({
-  geometry: "box",
-  size: Vec3(1, 1, 1),
-  material: {
-    color: Color.hex("#5b8cff"),
-    roughness: 0.4,
-    metalness: 0.2
-  }
-})
-
-// Ground plane
-let ground = Game3D.mesh({
-  geometry: "plane",
-  size: Vec3(20, 1, 20),
-  position: Vec3(0, -1, 0),
-  material: { color: Color.hex("#2a2a3a") }
-})
-
-let angle = 0.0
-
-scene.update(func(dt) {
-  angle += dt * 1.2
-  cube.rotation = Vec3(angle * 0.7, angle, 0)
-  
-  if Game3D.input.key("KeyA") { cam.position.x -= 3 * dt }
-  if Game3D.input.key("KeyD") { cam.position.x += 3 * dt }
-  if Game3D.input.key("KeyW") { cam.position.z -= 3 * dt }
-  if Game3D.input.key("KeyS") { cam.position.z += 3 * dt }
-})
-
-scene.run()
-println("3D Scene running!")
-` },
-      { name: 'shaders.ar', content: `// Custom shader definitions
-module Shaders {
-  export let basic = {
-    vert: "
-      attribute vec3 position;
-      uniform mat4 mvp;
-      void main() { gl_Position = mvp * vec4(position, 1.0); }
-    ",
-    frag: "
-      precision mediump float;
-      uniform vec4 color;
-      void main() { gl_FragColor = color; }
-    "
-  }
-}
-` }
-    ]
-  },
-  {
-    id: 'platformer', icon: '🦘', name: 'Platformer', tag: '2D',
-    desc: 'Side-scrolling platformer base with gravity.',
-    files: [{ name: 'main.ar', content: `// AR(> Platformer Template
-
-let game = Game2D.create({ width: 800, height: 450, title: "Platformer", bg: "#1a1a2e" })
-
-let player = {
-  x: 100, y: 300, w: 24, h: 36,
-  vx: 0, vy: 0,
-  onGround: false,
-  color: Color.rgb(61, 220, 132)
-}
-
-let platforms = [
-  { x: 0,   y: 400, w: 800, h: 50 },
-  { x: 200, y: 300, w: 120, h: 16 },
-  { x: 400, y: 230, w: 100, h: 16 },
-  { x: 580, y: 160, w: 120, h: 16 },
-]
-
-const GRAVITY = 800
-const JUMP_V  = -420
-const SPEED   = 220
-
-func rectOverlap(a, b) {
-  return a.x < b.x + b.w and a.x + a.w > b.x and
-         a.y < b.y + b.h and a.y + a.h > b.y
-}
-
-game.update(func(dt) {
-  // Input
-  if Game2D.input.key("ArrowLeft")  { player.vx = -SPEED }
-  elif Game2D.input.key("ArrowRight") { player.vx = SPEED }
-  else { player.vx = 0 }
-  
-  if (Game2D.input.keyDown("ArrowUp") or Game2D.input.keyDown("Space")) and player.onGround {
-    player.vy = JUMP_V
-    player.onGround = false
-  }
-
-  // Gravity
-  player.vy += GRAVITY * dt
-  player.x += player.vx * dt
-  player.y += player.vy * dt
-
-  // Platform collision
-  player.onGround = false
-  for p in platforms {
-    if rectOverlap(player, p) {
-      if player.vy > 0 and player.y + player.h - player.vy * dt <= p.y {
-        player.y = p.y - player.h
-        player.vy = 0
-        player.onGround = true
-      }
-    }
-  }
-  if player.y > 500 { player.x = 100; player.y = 300; player.vy = 0 }
-})
-
-game.render(func() {
-  for p in platforms {
-    Game2D.rect(p.x, p.y, p.w, p.h, "#44475a")
-  }
-  Game2D.rect(player.x, player.y, player.w, player.h, player.color)
-  Game2D.text("Arrow keys + Space to jump", 10, 10, { color: "#aaa", size: 14 })
-})
-
-game.run()
-` }]
-  },
-  {
-    id: 'module', icon: '📦', name: 'Module System', tag: 'Advanced',
-    desc: 'Multi-file module example.',
-    files: [
-      { name: 'main.ar', content: `import { add, multiply } from "./math"\nimport Logger from "./logger"\n\nlet a = 10\nlet b = 20\n\nLogger.log("Sum: " + add(a, b))\nLogger.log("Product: " + multiply(a, b))\n` },
-      { name: 'math.ar', content: `export func add(a, b) { return a + b }\nexport func multiply(a, b) { return a * b }\nexport func square(n) { return n * n }\n` },
-      { name: 'logger.ar', content: `module Logger {\n  let prefix = "[LOG]"\n  export func log(msg) { println(prefix + " " + msg) }\n  export func warn(msg) { println("[WARN] " + msg) }\n  export func error(msg) { println("[ERR] " + msg) }\n}\nexport default Logger\n` }
-    ]
-  },
-  {
-    id: 'rpg', icon: '⚔️', name: 'RPG Base', tag: 'Game',
-    desc: 'Simple RPG entity system starter.',
-    files: [{ name: 'main.ar', content: `// AR(> RPG Starter
-
-class Entity {
-  constructor(name, hp, atk) {
-    this.name = name
-    this.hp = hp
-    this.maxHp = hp
-    this.atk = atk
-    this.alive = true
-  }
-
-  attack(target) {
-    let dmg = Math.floor(this.atk * (0.85 + Math.random() * 0.3))
-    target.hp -= dmg
-    if target.hp <= 0 { target.hp = 0; target.alive = false }
-    println(this.name + " attacks " + target.name + " for " + dmg + " damage!")
-    println(target.name + " HP: " + target.hp + "/" + target.maxHp)
-  }
-
-  heal(amount) {
-    this.hp = Math.min(this.maxHp, this.hp + amount)
-    println(this.name + " heals for " + amount + " HP. Now at " + this.hp)
-  }
-}
-
-let hero = new Entity("Hero", 100, 25)
-let goblin = new Entity("Goblin", 40, 10)
-let dragon = new Entity("Dragon", 200, 35)
-
-println("=== BATTLE START ===")
-while hero.alive and goblin.alive {
-  hero.attack(goblin)
-  if goblin.alive { goblin.attack(hero) }
-}
-println(goblin.alive ? goblin.name + " survived!" : "Goblin defeated!")
-
-if hero.alive {
-  hero.heal(30)
-  println("\\n=== BOSS BATTLE ===")
-  while hero.alive and dragon.alive {
-    hero.attack(dragon)
-    if dragon.alive { dragon.attack(hero) }
-  }
-  println(dragon.alive ? "Dragon won!" : "Dragon slain! Hero victorious!")
-}
-` }]
-  }
-];
-
-// ===== SHORTCUTS =====
-const SHORTCUTS = [
-  { key: 'Ctrl+N', action: 'New Script' },
-  { key: 'Ctrl+S', action: 'Save' },
-  { key: 'Ctrl+Z', action: 'Undo' },
-  { key: 'Ctrl+Y', action: 'Redo' },
-  { key: 'Ctrl+A', action: 'Select All' },
-  { key: 'Ctrl+H', action: 'Find & Replace' },
-  { key: 'Ctrl+/', action: 'Toggle Comment' },
-  { key: 'Ctrl+D', action: 'Duplicate Line' },
-  { key: 'Ctrl+F', action: 'Format Code' },
-  { key: 'F5',     action: 'Run Script' },
-  { key: 'Ctrl+`', action: 'Toggle Console' },
-  { key: 'Tab',    action: 'Indent / Accept Autocomplete' },
-  { key: 'Shift+Tab', action: 'Unindent' },
-  { key: 'Ctrl+\\', action: 'Toggle Sidebar' },
-  { key: 'Ctrl+K', action: 'Open Command Palette' },
-  { key: 'Esc',    action: 'Close Autocomplete / Modal' },
-];
-
-// ===== MANUAL PAGES =====
-const MANUAL_PAGES = [
-  {
-    id: 'intro', title: 'Introduction', section: 'Getting Started',
-    content: `<h2>Welcome to AR(&gt;</h2>
-<p>AR(&gt; (pronounced "Arrow") is a fully custom, modern programming language designed from the ground up for creative and game development. It combines the clarity of Lua, the expressiveness of Python, and the power of JavaScript into one elegant system.</p>
-<h3>Design Philosophy</h3>
-<ul>
-  <li>Readable &amp; writable — code should feel natural, like prose</li>
-  <li>Zero boilerplate — get things done with fewer lines</li>
-  <li>Game-first — 2D and 3D built-in at the language level</li>
-  <li>Safe by default — strict types, no silent failures</li>
-  <li>Modular — organize large projects with ease</li>
-</ul>
-<h3>Your First Script</h3>
-<pre>// This is a comment
-let name = "World"
-println("Hello, " + name + "!")
-
-// String interpolation
-println(\`Hello, {name}!\`)
-</pre>
-<p>Click <strong>Run (F5)</strong> to execute your script and see output in the Console panel below.</p>`
-  },
-  {
-    id: 'variables', title: 'Variables & Types', section: 'Getting Started',
-    content: `<h2>Variables &amp; Types</h2>
-<h3>Declarations</h3>
-<pre>let x = 10          // mutable variable
-const PI = 3.14159  // immutable constant
-var y = "hello"     // legacy var (mutable)</pre>
-<h3>Types</h3>
-<p>AR(&gt; has the following primitive types:</p>
-<ul>
-  <li><span class="badge badge-ty">int</span> Integer numbers: <code>42</code>, <code>-7</code></li>
-  <li><span class="badge badge-ty">float</span> Decimals: <code>3.14</code>, <code>-0.5</code></li>
-  <li><span class="badge badge-ty">string</span> Text: <code>"hello"</code>, <code>'world'</code>, <code>\`template {expr}\`</code></li>
-  <li><span class="badge badge-ty">bool</span> Boolean: <code>true</code>, <code>false</code></li>
-  <li><span class="badge badge-ty">null</span> Absence of value: <code>null</code></li>
-  <li><span class="badge badge-ty">array</span> Ordered list: <code>[1, 2, 3]</code></li>
-  <li><span class="badge badge-ty">map</span> Key-value: <code>{ key: value }</code></li>
-</ul>
-<h3>Type Annotations (optional)</h3>
-<pre>let score: int = 0
-let name: string = "Player"
-let pos: Vec2 = Vec2(0, 0)
-func greet(name: string): string {
-  return "Hello, " + name
-}</pre>
-<h3>Type Conversion</h3>
-<pre>let n = int("42")     // string to int
-let s = string(3.14)  // float to string
-let f = float("1.5")  // string to float
-let b = bool(1)       // truthy conversion</pre>`
-  },
-  {
-    id: 'operators', title: 'Operators', section: 'Getting Started',
-    content: `<h2>Operators</h2>
-<h3>Arithmetic</h3>
-<pre>let a = 10 + 5   // 15
-let b = 10 - 5   // 5
-let c = 10 * 5   // 50
-let d = 10 / 5   // 2.0
-let e = 10 % 3   // 1  (modulo)
-let f = 2 ** 8   // 256 (power)
-let g = 10 // 3  // 3  (integer division)</pre>
-<h3>Comparison</h3>
-<pre>a == b   // equal
-a != b   // not equal
-a &lt; b    // less than
-a &gt; b    // greater than
-a &lt;= b   // less or equal
-a &gt;= b   // greater or equal
-a is b   // identity check
-a isnt b // not identical</pre>
-<h3>Logical</h3>
-<pre>a and b   // AND
-a or b    // OR
-not a     // NOT
-a ?? b    // nullish coalescing (use b if a is null)</pre>
-<h3>Assignment</h3>
-<pre>x += 5   x -= 5   x *= 2
-x /= 2   x **= 2  x %= 3
-x ++     x --     // increment / decrement</pre>
-<h3>String Concatenation</h3>
-<pre>let s = "Hello" + " " + "World"
-let t = \`Score: {score}\`   // template literal</pre>`
-  },
-  {
-    id: 'control', title: 'Control Flow', section: 'Core Language',
-    content: `<h2>Control Flow</h2>
-<h3>if / elif / else</h3>
-<pre>if x > 10 {
-  println("big")
-} elif x > 5 {
-  println("medium")
-} else {
-  println("small")
-}
-
-// Ternary expression
-let label = x > 0 ? "positive" : "non-positive"</pre>
-<h3>match (switch)</h3>
-<pre>match color {
-  case "red":   println("Stop")
-  case "green": println("Go")
-  case "yellow": println("Caution")
-  default: println("Unknown")
-}</pre>
-<h3>while</h3>
-<pre>let i = 0
-while i &lt; 10 {
-  println(i)
-  i++
-}
-
-// do..while
-do {
-  println("at least once")
-  i++
-} while i &lt; 5</pre>
-<h3>for..in</h3>
-<pre>// Iterate array
-for item in [1, 2, 3, 4] {
-  println(item)
-}
-
-// Range loop
-for i in 0..10 { println(i) }    // 0 to 9
-for i in 0..=10 { println(i) }   // 0 to 10
-
-// Iterate map
-for key, val in myMap { println(key + ": " + val) }
-
-// With index
-for i, v in enumerate(arr) { println(i + ": " + v) }</pre>
-<h3>break / continue</h3>
-<pre>for i in 0..20 {
-  if i == 5 { continue }   // skip 5
-  if i == 10 { break }     // stop at 10
-  println(i)
-}</pre>`
-  },
-  {
-    id: 'functions', title: 'Functions', section: 'Core Language',
-    content: `<h2>Functions</h2>
-<h3>Basic Function</h3>
-<pre>func greet(name) {
-  return "Hello, " + name + "!"
-}
-
-println(greet("World"))</pre>
-<h3>Default Parameters</h3>
-<pre>func power(base, exp = 2) {
-  return base ** exp
-}
-println(power(3))    // 9
-println(power(2, 8)) // 256</pre>
-<h3>Rest Parameters</h3>
-<pre>func sum(...nums) {
-  let total = 0
-  for n in nums { total += n }
-  return total
-}
-println(sum(1,2,3,4,5)) // 15</pre>
-<h3>Arrow Functions</h3>
-<pre>let double = (x) => x * 2
-let add = (a, b) => a + b
-let greet = name => \`Hi {name}!\`</pre>
-<h3>Higher-order Functions</h3>
-<pre>let nums = [1, 2, 3, 4, 5]
-let doubled = nums.map((n) => n * 2)
-let evens = nums.filter((n) => n % 2 == 0)
-let total = nums.reduce((acc, n) => acc + n, 0)</pre>
-<h3>Async Functions</h3>
-<pre>async func loadData(url) {
-  let data = await Net.fetch(url)
-  return JSON.parse(data)
-}
-
-async func main() {
-  let info = await loadData("https://api.example.com/data")
-  println(info)
-}
-main()</pre>
-<h3>Generators</h3>
-<pre>func* counter(start, end) {
-  for i in start..end {
-    yield i
-  }
-}
-for n in counter(0, 5) { println(n) }</pre>`
-  },
-  {
-    id: 'classes', title: 'Classes & OOP', section: 'Core Language',
-    content: `<h2>Classes &amp; OOP</h2>
-<h3>Basic Class</h3>
-<pre>class Animal {
-  constructor(name, sound) {
-    this.name = name
-    this.sound = sound
-  }
-
-  speak() {
-    println(this.name + " says " + this.sound)
-  }
-
-  get info() {
-    return \`{this.name} ({this.sound})\`
-  }
-}
-
-let dog = new Animal("Rex", "Woof")
-dog.speak()
-println(dog.info)</pre>
-<h3>Inheritance</h3>
-<pre>class Dog extends Animal {
-  constructor(name) {
-    super(name, "Woof")
-    this.tricks = []
-  }
-
-  learn(trick) {
-    this.tricks.push(trick)
-  }
-
-  perform() {
-    for trick in this.tricks {
-      println(this.name + " performs: " + trick)
-    }
-  }
-}
-
-let d = new Dog("Buddy")
-d.learn("sit")
-d.learn("shake")
-d.perform()</pre>
-<h3>Static Members</h3>
-<pre>class Counter {
-  static count = 0
-
-  constructor() {
-    Counter.count++
-    this.id = Counter.count
-  }
-
-  static reset() { Counter.count = 0 }
-}
-
-let a = new Counter()
-let b = new Counter()
-println(Counter.count)  // 2</pre>
-<h3>Interfaces</h3>
-<pre>interface Drawable {
-  draw(): void
-  getBounds(): { x: int, y: int, w: int, h: int }
-}
-
-class Sprite impl Drawable {
-  draw() { ... }
-  getBounds() { return { x:0, y:0, w:32, h:32 } }
-}</pre>`
-  },
-  {
-    id: 'modules', title: 'Modules', section: 'Core Language',
-    content: `<h2>Modules</h2>
-<h3>Exporting</h3>
-<pre>// math.ar
-export func add(a, b) { return a + b }
-export func mul(a, b) { return a * b }
-export const PI = 3.14159
-
-export default func main() {
-  println("math module loaded")
-}</pre>
-<h3>Importing</h3>
-<pre>// Named imports
-import { add, mul, PI } from "./math"
-
-// Default import
-import main from "./math"
-
-// Namespace import
-import * as Math from "./math"
-
-// Side effects
-import "./init"</pre>
-<h3>Module Declaration</h3>
-<pre>module Physics {
-  const G = 9.81
-
-  export func gravity(mass: float): float {
-    return mass * G
-  }
-
-  export func kineticEnergy(mass, vel): float {
-    return 0.5 * mass * vel ** 2
-  }
-}
-
-println(Physics.gravity(70))</pre>
-<h3>Dynamic Import</h3>
-<pre>async func loadPlugin(name) {
-  let mod = await import(\`./plugins/{name}\`)
-  mod.init()
-}</pre>`
-  },
-  {
-    id: '2d', title: '2D Game Dev', section: 'Game Development',
-    content: `<h2>2D Game Development</h2>
-<h3>Creating a Game</h3>
-<pre>let game = Game2D.create({
-  width: 800,
-  height: 600,
-  title: "My Game",
-  bg: "#1a1a2e",
-  fps: 60
-})</pre>
-<h3>Sprites &amp; Shapes</h3>
-<pre>// Rectangle
-Game2D.rect(x, y, w, h, color)
-
-// Circle
-Game2D.circle(cx, cy, r, color)
-
-// Sprite (image)
-let img = Asset.loadImage("player.png")
-Game2D.image(img, x, y, w, h)
-
-// Text
-Game2D.text("Score: " + score, 10, 10, {
-  size: 18,
-  color: "#fff",
-  font: "Arial"
-})</pre>
-<h3>Game Loop</h3>
-<pre>game.update(func(dt) {
-  // dt = delta time in seconds
-  player.x += velocity * dt
-})
-
-game.render(func() {
-  // called every frame
-  Game2D.rect(player.x, player.y, 32, 32, "#5b8cff")
-})</pre>
-<h3>Input</h3>
-<pre>if Game2D.input.key("ArrowLeft") { ... }  // held
-if Game2D.input.keyDown("Space") { ... }   // just pressed
-if Game2D.input.keyUp("Space") { ... }     // just released
-let mx = Game2D.input.mouseX
-let my = Game2D.input.mouseY
-if Game2D.input.mouseDown(0) { ... }       // left button</pre>
-<h3>Physics</h3>
-<pre>let phys = Game2D.physics({ gravity: Vec2(0, 800) })
-let body = phys.createBody({ x:100, y:100, w:32, h:32 })
-body.velocity = Vec2(200, 0)
-body.restitution = 0.5
-
-game.update(func(dt) {
-  phys.step(dt)
-  player.x = body.x
-  player.y = body.y
-})</pre>
-<h3>Animation</h3>
-<pre>let anim = Game2D.animate({
-  frames: [img1, img2, img3, img4],
-  fps: 8,
-  loop: true
-})
-game.update(func(dt) { anim.update(dt) })
-game.render(func() { anim.draw(x, y) })</pre>
-<h3>Camera</h3>
-<pre>let cam = Game2D.camera()
-cam.follow(player, { lerp: 0.1 })
-cam.zoom = 1.5
-game.render(func() {
-  cam.begin()
-  // ...draw world...
-  cam.end()
-})</pre>`
-  },
-  {
-    id: '3d', title: '3D Game Dev', section: 'Game Development',
-    content: `<h2>3D Game Development</h2>
-<h3>Creating a 3D Scene</h3>
-<pre>let scene = Game3D.create({
-  width: 1280, height: 720,
-  title: "3D Game"
-})</pre>
-<h3>Camera</h3>
-<pre>let cam = Game3D.camera({
-  fov: 75,
-  near: 0.1, far: 1000,
-  position: Vec3(0, 2, 5),
-  target: Vec3(0, 0, 0)
-})</pre>
-<h3>Meshes</h3>
-<pre>// Box
-let box = Game3D.mesh({ geometry: "box", size: Vec3(1,1,1) })
-
-// Sphere
-let sphere = Game3D.mesh({ geometry: "sphere", radius: 0.5, segments: 32 })
-
-// Plane
-let floor = Game3D.mesh({ geometry: "plane", size: Vec3(20,1,20) })
-
-// Custom geometry
-let custom = Game3D.mesh({
-  geometry: "custom",
-  vertices: [...],
-  indices: [...]
-})</pre>
-<h3>Materials</h3>
-<pre>let mat = Game3D.material({
-  type: "pbr",          // physically based rendering
-  color: Color.hex("#5b8cff"),
-  roughness: 0.4,
-  metalness: 0.1,
-  texture: Asset.loadImage("tex.png"),
-  normalMap: Asset.loadImage("norm.png"),
-  emissive: Color.hex("#001122"),
-  emissiveIntensity: 0.5
-})</pre>
-<h3>Lights</h3>
-<pre>let sun = Game3D.light({ type: "directional", color: "#fff", intensity: 1.0 })
-let pt  = Game3D.light({ type: "point", color: "#ff8800", range: 10, intensity: 2 })
-let sp  = Game3D.light({ type: "spot",  color: "#ffffff", angle: 30, intensity: 3 })
-let amb = Game3D.light({ type: "ambient", color: "#334", intensity: 0.4 })</pre>
-<h3>Transform</h3>
-<pre>mesh.position = Vec3(1, 0, -2)
-mesh.rotation = Vec3(0, Math.PI / 4, 0)
-mesh.scale    = Vec3(2, 2, 2)
-mesh.lookAt(Vec3(0, 0, 0))</pre>
-<h3>Physics 3D</h3>
-<pre>let phys = Game3D.physics({ gravity: Vec3(0, -9.81, 0) })
-let rb = Game3D.rigidbody({ mass: 1.0, restitution: 0.4 })
-let col = Game3D.collider({ type: "box", size: Vec3(1,1,1) })
-rb.addCollider(col)
-phys.addBody(rb)</pre>
-<h3>Raycasting</h3>
-<pre>let ray = Game3D.rayCast(origin, direction)
-if ray.hit {
-  println("Hit: " + ray.object.name)
-  println("Distance: " + ray.distance)
-  println("Normal: " + ray.normal)
-}</pre>`
-  },
-  {
-    id: 'assets', title: 'Assets & Files', section: 'Game Development',
-    content: `<h2>Assets &amp; Files</h2>
-<h3>Loading Assets</h3>
-<pre>// Images
-let img = Asset.loadImage("player.png")
-let tex = Asset.loadImage("tileset.png")
-
-// Audio
-let bgm = Asset.loadAudio("music.mp3")
-let sfx = Asset.loadAudio("jump.wav")
-
-// Fonts
-let font = Asset.loadFont("MyFont.ttf", "MyFont")
-
-// JSON Data
-let level = Asset.loadJSON("level1.json")
-
-// 3D Models
-let model = Asset.loadModel("character.glb")
-
-// Preload multiple
-await Asset.preload([
-  "player.png", "tileset.png",
-  "music.mp3", "jump.wav"
-])</pre>
-<h3>Audio System</h3>
-<pre>// Play background music
-let music = Audio.create(bgm)
-music.volume = 0.8
-music.loop = true
-music.play()
-
-// One-shot SFX
-Audio.play(sfx, { volume: 0.6, pitch: 1.0 })
-
-// 3D positional audio
-let snd3d = Audio.create(sfx)
-snd3d.position = Vec3(5, 0, 0)
-snd3d.maxDistance = 20
-snd3d.play()</pre>
-<h3>File I/O</h3>
-<pre>// Read a text file
-let text = await File.read("data.txt")
-
-// Write / save
-await File.write("save.json", JSON.stringify(saveData))
-
-// Download to user's machine
-File.download("export.ar", codeContent)
-
-// Upload from user
-let content = await File.upload()
-
-// List files
-let list = await File.list("./assets/")</pre>
-<h3>Asset Cache</h3>
-<pre>// Assets are cached after first load
-let img = Asset.loadImage("bg.png")  // loads
-let img2 = Asset.loadImage("bg.png") // returns cached
-
-// Clear cache
-Asset.cache.clear("bg.png")
-Asset.cache.clearAll()</pre>`
-  },
-  {
-    id: 'ui', title: 'UI System', section: 'Advanced',
-    content: `<h2>UI System</h2>
-<h3>Creating UI Elements</h3>
-<pre>// Button
-let btn = UI.button("Click Me", func() {
-  println("Clicked!")
-})
-btn.style({ x: 100, y: 50, w: 120, h: 40, color: "#5b8cff" })
-
-// Text
-let lbl = UI.text("Score: 0", { x: 10, y: 10, size: 18, color: "#fff" })
-lbl.set("Score: " + score)
-
-// Input field
-let nameInput = UI.input({ placeholder: "Enter name...", x:100, y:100 })
-let value = nameInput.value
-
-// Panel (container)
-let panel = UI.panel({ x:0, y:0, w:200, h:300, bg:"rgba(0,0,0,0.5)" })
-panel.add(btn)
-panel.add(lbl)</pre>
-<h3>Modal &amp; Toast</h3>
-<pre>// Toast notification
-UI.toast("Level Up!", { type: "success", duration: 3000 })
-UI.toast("Low HP!", { type: "warn" })
-
-// Modal dialog
-UI.modal({
-  title: "Game Over",
-  body: "Your score: " + score,
-  buttons: [
-    { label: "Restart", action: func() { restart() } },
-    { label: "Quit",    action: func() { Sys.exit() } }
-  ]
-})</pre>
-<h3>Progress Bar &amp; Slider</h3>
-<pre>let hp = UI.progress({ value: 80, max: 100, color: "#3ddc84" })
-hp.setValue(60)
-
-let vol = UI.slider({ min: 0, max: 100, value: 80 })
-vol.onChange(func(v) { Audio.volume(v / 100) })</pre>`
-  },
-  {
-    id: 'stdlib', title: 'Standard Library', section: 'Advanced',
-    content: `<h2>Standard Library Reference</h2>
-<h3>Math</h3>
-<pre>Math.sin(x)  Math.cos(x)  Math.tan(x)
-Math.asin(x) Math.acos(x) Math.atan2(y, x)
-Math.sqrt(x) Math.pow(b, e) Math.abs(x)
-Math.floor(x) Math.ceil(x) Math.round(x)
-Math.min(...) Math.max(...)
-Math.random()        // 0..1
-Math.randomInt(a,b)  // int in [a,b)
-Math.lerp(a, b, t)
-Math.clamp(v, lo, hi)
-Math.PI  Math.E  Math.TAU  Math.INF</pre>
-<h3>String</h3>
-<pre>let s = "Hello World"
-s.length          // 11
-s.upper()         // "HELLO WORLD"
-s.lower()         // "hello world"
-s.trim()          // remove whitespace
-s.split(" ")      // ["Hello", "World"]
-s.replace("l","L")
-s.includes("ello")   // true
-s.startsWith("He")   // true
-s.endsWith("ld")     // true
-s.slice(0, 5)        // "Hello"
-s.indexOf("o")       // 4
-s.repeat(2)          // "Hello WorldHello World"
-String.format("{0} + {1} = {2}", 1, 2, 3)</pre>
-<h3>Array</h3>
-<pre>let a = [3,1,4,1,5,9]
-a.push(2)          // append
-a.pop()            // remove last
-a.shift()          // remove first
-a.unshift(0)       // prepend
-a.map(x => x*2)
-a.filter(x => x>3)
-a.reduce((s,x) => s+x, 0)
-a.find(x => x > 4)
-a.includes(5)
-a.sort()
-a.sort((a,b) => b-a)  // descending
-a.reverse()
-a.join(", ")
-a.slice(1, 3)
-a.flat()
-a.concat([7,8,9])
-a.indexOf(5)
-a.length</pre>
-<h3>Object</h3>
-<pre>let obj = { a: 1, b: 2 }
-Object.keys(obj)       // ["a","b"]
-Object.values(obj)     // [1,2]
-Object.entries(obj)    // [["a",1],["b",2]]
-Object.merge(obj, {c:3})
-Object.clone(obj)
-Object.has(obj, "a")  // true
-Object.freeze(obj)</pre>
-<h3>JSON</h3>
-<pre>let s = JSON.stringify({ x: 1, y: 2 })
-let o = JSON.parse(s)
-let pretty = JSON.stringify(obj, null, 2)</pre>
-<h3>Time</h3>
-<pre>Time.now()            // current timestamp ms
-Time.delta            // frame delta seconds
-Time.fps              // current FPS
-await Time.wait(1000) // pause 1s
-let id = Time.repeat(func() { ... }, 500)  // every 500ms
-Time.cancel(id)</pre>`
-  },
-  {
-    id: 'advanced', title: 'Advanced Features', section: 'Advanced',
-    content: `<h2>Advanced Features</h2>
-<h3>Generics</h3>
-<pre>func first&lt;T&gt;(arr: array&lt;T&gt;): T {
-  return arr[0]
-}
-
-class Stack&lt;T&gt; {
-  let items: array&lt;T&gt; = []
-  func push(item: T) { this.items.push(item) }
-  func pop(): T { return this.items.pop() }
-}</pre>
-<h3>Decorators</h3>
-<pre>@log
-@memoize
-func fib(n: int): int {
-  if n &lt;= 1 { return n }
-  return fib(n-1) + fib(n-2)
-}
-
-@singleton
-class GameManager {
-  static instance = null
-  // ...
-}</pre>
-<h3>Pattern Matching</h3>
-<pre>match shape {
-  case { type: "circle", r }:
-    println("Circle r=" + r)
-  case { type: "rect", w, h }:
-    println("Rect " + w + "x" + h)
-  case null:
-    println("No shape")
-  default:
-    println("Unknown")
-}</pre>
-<h3>Destructuring</h3>
-<pre>let [x, y, z] = [1, 2, 3]
-let { name, age, ...rest } = person
-let [first, ...others] = list
-
-// Swap
-[a, b] = [b, a]
-
-// Function param destructuring
-func draw({ x, y, color = "#fff" }) { ... }</pre>
-<h3>Spread &amp; Rest</h3>
-<pre>let merged = [...arr1, ...arr2]
-let obj2 = { ...obj1, extra: true }
-func sum(...nums) { return nums.reduce((a,b) => a+b, 0) }</pre>
-<h3>Proxy &amp; Reflect</h3>
-<pre>let tracked = new Proxy(obj, {
-  get(target, key) {
-    println("get: " + key)
-    return target[key]
-  },
-  set(target, key, value) {
-    println("set: " + key + " = " + value)
-    target[key] = value
-    return true
-  }
-})</pre>
-<h3>Coroutines</h3>
-<pre>spawn func enemy() {
-  while true {
-    moveToPlayer()
-    await Time.wait(500)
-    attack()
-    await Time.wait(1000)
-  }
-}
-
-// Kill later
-let task = spawn func() { ... }
-kill task</pre>`
-  },
-  {
-    id: 'examples', title: 'Full Examples', section: 'Examples',
-    content: `<h2>Full Code Examples</h2>
-<h3>Fibonacci</h3>
-<pre>func fib(n: int): int {
-  if n &lt;= 1 { return n }
-  return fib(n-1) + fib(n-2)
-}
-for i in 0..15 { print(fib(i) + " ") }
-// 0 1 1 2 3 5 8 13 21 34 55 89 144 233 377</pre>
-<h3>Sorting</h3>
-<pre>func quickSort(arr: array): array {
-  if arr.length &lt;= 1 { return arr }
-  let pivot = arr[0]
-  let left  = arr.slice(1).filter(x => x &lt; pivot)
-  let right = arr.slice(1).filter(x => x &gt;= pivot)
-  return [...quickSort(left), pivot, ...quickSort(right)]
-}
-let sorted = quickSort([5,3,8,1,9,2])
-println(sorted)</pre>
-<h3>Mini HTTP Server (Node target)</h3>
-<pre>import Net from "arlib/net"
-
-let server = Net.createServer(func(req, res) {
-  if req.url == "/" {
-    res.send("Hello from AR(&gt;!")
-  } elif req.url == "/api" {
-    res.json({ status: "ok", version: "1.0" })
-  } else {
-    res.status(404).send("Not Found")
-  }
-})
-
-server.listen(3000)
-println("Server running on port 3000")</pre>
-<h3>Event System</h3>
-<pre>class EventEmitter {
-  constructor() { this.handlers = {} }
-
-  on(event, fn) {
-    if not this.handlers[event] { this.handlers[event] = [] }
-    this.handlers[event].push(fn)
-  }
-
-  emit(event, ...args) {
-    if this.handlers[event] {
-      for fn in this.handlers[event] { fn(...args) }
-    }
-  }
-
-  off(event, fn) {
-    if this.handlers[event] {
-      this.handlers[event] = this.handlers[event].filter(f => f != fn)
-    }
-  }
-}
-
-let bus = new EventEmitter()
-bus.on("levelUp", func(level) { println("Level: " + level) })
-bus.emit("levelUp", 5)</pre>`
-  },
-];
-
-// ============================================================
-// INIT
-// ============================================================
-function init() {
-  buildThemeGrid();
-  buildShortcutList();
-  buildManual();
-  buildPresetGrid();
-  loadSettings();
-  createDefaultFile();
-  renderFileTree();
-  renderTabs();
-  setupEditorEvents();
-  setupResizeHandle();
-  setupCmdBar();
-  setupKeyboardShortcuts();
-  updateStatus();
-  log('system', '🔷 AR(> Playground v1.0 ready');
-  log('system', 'Type AR(> code and press F5 or click Run');
-}
-
-function createDefaultFile() {
-  const id = uid();
-  state.files.push({
-    id, name: 'main.ar',
-    content: `// Welcome to AR(> Playground!
-// A fully custom language for game development
-
-let greeting = "Hello, AR(>!"
-println(greeting)
-
-// Try a quick 2D game base:
-// Press F5 or click Run to execute
-
-func add(a, b) {
-  return a + b
-}
-
-for i in 0..5 {
-  println("Count: " + i + " | Sum so far: " + add(i, i+1))
-}
-`,
-    folderId: null, modified: false
-  });
-  state.history[id] = { past: [], future: [] };
-  state.openTabs.push(id);
-  state.activeFileId = id;
-}
-
-function uid() { return Math.random().toString(36).slice(2,10); }
-
-// ============================================================
-// FILE TREE
-// ============================================================
-function renderFileTree() {
-  const tree = document.getElementById('file-tree');
-  tree.innerHTML = '';
-  
-  // Root files (no folder)
-  const rootFiles = state.files.filter(f => !f.folderId);
-  
-  // Render folders
-  for (const folder of state.folders) {
-    const folderEl = document.createElement('div');
-    folderEl.className = 'tree-folder';
-    folderEl.innerHTML = `
-      <div class="tree-item tree-folder open" data-id="${folder.id}" data-type="folder"
-           onclick="toggleFolder('${folder.id}',this)"
-           oncontextmenu="showCtx(event,'${folder.id}','folder')">
-        <span class="fold-arrow">▶</span>
-        <span class="fi">📁</span>
-        <span class="fname">${escHtml(folder.name)}</span>
-        <div class="factions">
-          <button class="faction-btn" onclick="event.stopPropagation();renameItem('${folder.id}','folder')" title="Rename">✏️</button>
-          <button class="faction-btn" onclick="event.stopPropagation();deleteItem('${folder.id}','folder')" title="Delete">🗑️</button>
-        </div>
-      </div>
-      <div class="tree-children" id="fc-${folder.id}"></div>`;
-    tree.appendChild(folderEl);
+<script type="module">
+    // --- Editor Setup ---
+    import { EditorView, basicSetup } from "@codemirror/view";
+    import { EditorState } from "@codemirror/state";
+    import { javascript } from "@nextjournal/lang-javascript";
     
-    const children = document.getElementById('fc-' + folder.id);
-    const folderFiles = state.files.filter(f => f.folderId === folder.id);
-    for (const f of folderFiles) renderFileItem(children, f);
-  }
-  
-  // Root files
-  for (const f of rootFiles) renderFileItem(tree, f);
-}
+    // --- Database (Dexie) ---
+    const db = new Dexie("AR_IDE_DB");
+    db.version(1).stores({ scripts: 'id, name, content, type', assets: 'id, name, data' });
 
-function renderFileItem(container, f) {
-  const div = document.createElement('div');
-  const isActive = f.id === state.activeFileId;
-  div.className = 'tree-item' + (isActive ? ' active' : '');
-  div.innerHTML = `
-    <span class="fi">${fileIcon(f.name)}</span>
-    <span class="fname">${escHtml(f.name)}</span>
-    <div class="factions">
-      <button class="faction-btn" onclick="event.stopPropagation();renameItem('${f.id}','file')" title="Rename">✏️</button>
-      <button class="faction-btn" onclick="event.stopPropagation();deleteItem('${f.id}','file')" title="Delete">🗑️</button>
-    </div>`;
-  div.onclick = () => openFile(f.id);
-  div.oncontextmenu = (e) => showCtx(e, f.id, 'file');
-  container.appendChild(div);
-}
+    let editor;
+    let currentFileId = 'main';
+    let files = [];
 
-function fileIcon(name) {
-  if (name.endsWith('.ar'))   return '🔷';
-  if (name.endsWith('.json')) return '📋';
-  if (name.endsWith('.md'))   return '📝';
-  if (name.endsWith('.png') || name.endsWith('.jpg')) return '🖼️';
-  if (name.endsWith('.mp3') || name.endsWith('.wav')) return '🎵';
-  return '📄';
-}
+    // --- AR(> Interpreter Logic ---
+    const AR_Interpreter = {
+        transpile(code) {
+            let js = `(async (engine) => { 
+                const { draw, create, print, move, rotate, set, input, math } = engine;
+                let __running = true;
+            `;
 
-function toggleFolder(id, el) {
-  const row = el.closest ? el : el;
-  const ti = el.closest ? el.closest('.tree-item') : el;
-  const fc = document.getElementById('fc-' + id);
-  if (!fc) return;
-  const open = fc.classList.toggle('hidden');
-  const arrow = ti.querySelector('.fold-arrow');
-  if (arrow) arrow.style.transform = open ? '' : 'rotate(90deg)';
-}
+            const lines = code.split('\n');
+            lines.forEach(line => {
+                let l = line.trim();
+                if(!l || l.startsWith('//')) return;
 
-// ============================================================
-// TABS
-// ============================================================
-function renderTabs() {
-  const bar = document.getElementById('tab-bar');
-  bar.innerHTML = '';
-  for (const fid of state.openTabs) {
-    const f = state.files.find(x => x.id === fid);
-    if (!f) continue;
-    const div = document.createElement('div');
-    div.className = 'tab' + (fid === state.activeFileId ? ' active' : '') + (f.modified ? ' modified' : '');
-    div.title = f.name;
-    div.innerHTML = `<span class="fi" style="font-size:11px">${fileIcon(f.name)}</span><span class="tab-name">${escHtml(f.name)}</span><span class="tab-close" onclick="event.stopPropagation();closeTab('${fid}')">✕</span>`;
-    div.onclick = () => openFile(fid);
-    bar.appendChild(div);
-  }
-  const nbtn = document.createElement('button');
-  nbtn.id = 'new-tab-btn';
-  nbtn.innerHTML = '＋';
-  nbtn.onclick = newFile;
-  bar.appendChild(nbtn);
-  updateBreadcrumb();
-}
+                // 1. Variable Assignment: set x to 10
+                l = l.replace(/set (\w+) to (.+)/g, 'let $1 = $2;');
 
-function openFile(id) {
-  // Save current content
-  saveActiveContent();
-  state.activeFileId = id;
-  if (!state.openTabs.includes(id)) state.openTabs.push(id);
-  const f = state.files.find(x => x.id === id);
-  if (!f) return;
-  const input = document.getElementById('code-input');
-  input.value = f.content;
-  highlightCode();
-  updateLineNumbers();
-  updateStatus();
-  renderTabs();
-  renderFileTree();
-  updateBreadcrumb();
-}
+                // 2. Logic Blocks
+                l = l.replace(/if (.+) do/g, 'if ($1) {');
+                l = l.replace(/every frame do/g, 'engine.onFrame(() => {');
+                l = l.replace(/when key "(.+)" do/g, 'engine.onKey("$1", () => {');
+                l = l.replace(/repeat (\d+) times do/g, 'for(let i=0; i<$1; i++) {');
+                l = l.replace(/end/g, '});'); // This is a bit naive but works for simple structure
+                
+                // 3. Draw commands
+                l = l.replace(/draw circle at ([\d\w.]+), ([\d\w.]+) radius ([\d\w.]+) color "(.+)"/g, 'draw.circle($1, $2, $3, "$4")');
+                l = l.replace(/draw rect at ([\d\w.]+), ([\d\w.]+) size ([\d\w.]+), ([\d\w.]+) color "(.+)"/g, 'draw.rect($1, $2, $3, $4, "$5")');
+                
+                // 4. Print
+                l = l.replace(/print (.+)/g, 'print($1)');
 
-function closeTab(id) {
-  const idx = state.openTabs.indexOf(id);
-  state.openTabs.splice(idx, 1);
-  if (state.activeFileId === id) {
-    state.activeFileId = state.openTabs[Math.min(idx, state.openTabs.length - 1)] || null;
-    if (state.activeFileId) {
-      const f = state.files.find(x => x.id === state.activeFileId);
-      document.getElementById('code-input').value = f ? f.content : '';
-      highlightCode();
-    } else {
-      document.getElementById('code-input').value = '';
-      document.getElementById('code-highlight').innerHTML = '';
-    }
-    updateLineNumbers();
-  }
-  renderTabs();
-  renderFileTree();
-}
+                // 5. 3D Commands
+                l = l.replace(/create box at ([\d.-]+), ([\d.-]+), ([\d.-]+) name "(.+)"/g, 'create.box($1, $2, $3, "$4")');
+                l = l.replace(/rotate "(.+)" (\w) ([\d\w.]+)/g, 'rotate("$1", "$2", $3)');
+                l = l.replace(/move "(.+)" (\w) ([\d\w.]+)/g, 'move("$1", "$2", $3)');
 
-function updateBreadcrumb() {
-  const bc = document.getElementById('breadcrumb');
-  if (!state.activeFileId) { bc.innerHTML = '<span class="bc-part">AR(&gt; Playground</span>'; return; }
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f) return;
-  let parts = ['AR(&gt; Playground'];
-  if (f.folderId) {
-    const folder = state.folders.find(x => x.id === f.folderId);
-    if (folder) parts.push(folder.name);
-  }
-  parts.push(f.name);
-  bc.innerHTML = parts.map((p, i) => 
-    `<span class="bc-part">${escHtml(p)}</span>` + (i < parts.length-1 ? '<span class="bc-sep">›</span>' : '')
-  ).join('');
-}
+                js += l + '\n';
+            });
 
-// ============================================================
-// FILE MANAGEMENT
-// ============================================================
-function newFile() {
-  // Populate folder select
-  const sel = document.getElementById('new-file-folder');
-  sel.innerHTML = '<option value="">/ (root)</option>';
-  for (const f of state.folders) {
-    sel.innerHTML += `<option value="${f.id}">${escHtml(f.name)}</option>`;
-  }
-  openModal('new-file-modal');
-  setTimeout(() => document.getElementById('new-file-name').focus(), 100);
-}
-
-function confirmNewFile() {
-  const name = document.getElementById('new-file-name').value.trim();
-  const folderId = document.getElementById('new-file-folder').value || null;
-  if (!name) { showToast('Enter a file name', 'error'); return; }
-  const finalName = name.endsWith('.ar') ? name : name + '.ar';
-  const id = uid();
-  state.files.push({ id, name: finalName, content: `// ${finalName}\n`, folderId, modified: false });
-  state.history[id] = { past: [], future: [] };
-  closeModal('new-file-modal');
-  document.getElementById('new-file-name').value = '';
-  openFile(id);
-  renderFileTree();
-  showToast('Created ' + finalName, 'success');
-}
-
-function newFolder() {
-  openModal('new-folder-modal');
-  setTimeout(() => document.getElementById('new-folder-name').focus(), 100);
-}
-
-function confirmNewFolder() {
-  const name = document.getElementById('new-folder-name').value.trim();
-  if (!name) { showToast('Enter a folder name', 'error'); return; }
-  const id = uid();
-  state.folders.push({ id, name, parentId: null });
-  closeModal('new-folder-modal');
-  document.getElementById('new-folder-name').value = '';
-  renderFileTree();
-  showToast('Folder created: ' + name, 'success');
-}
-
-function deleteItem(id, type) {
-  if (type === 'file') {
-    const f = state.files.find(x => x.id === id);
-    if (!confirm(`Delete "${f?.name}"?`)) return;
-    state.files = state.files.filter(x => x.id !== id);
-    state.openTabs = state.openTabs.filter(x => x !== id);
-    if (state.activeFileId === id) {
-      state.activeFileId = state.openTabs[0] || null;
-      document.getElementById('code-input').value = '';
-      if (state.activeFileId) {
-        const nf = state.files.find(x => x.id === state.activeFileId);
-        document.getElementById('code-input').value = nf?.content || '';
-      }
-      highlightCode(); updateLineNumbers();
-    }
-  } else {
-    const folder = state.folders.find(x => x.id === id);
-    if (!confirm(`Delete folder "${folder?.name}" and all its files?`)) return;
-    const filesInFolder = state.files.filter(f => f.folderId === id);
-    for (const f of filesInFolder) {
-      state.openTabs = state.openTabs.filter(x => x !== f.id);
-      if (state.activeFileId === f.id) {
-        state.activeFileId = null;
-        document.getElementById('code-input').value = '';
-      }
-    }
-    state.files = state.files.filter(f => f.folderId !== id);
-    state.folders = state.folders.filter(x => x.id !== id);
-  }
-  renderFileTree(); renderTabs();
-}
-
-function renameItem(id, type) {
-  state.renameTarget = { id, type };
-  const name = type === 'file' 
-    ? state.files.find(x=>x.id===id)?.name 
-    : state.folders.find(x=>x.id===id)?.name;
-  const inp = document.getElementById('rename-input');
-  inp.value = name || '';
-  openModal('rename-modal');
-  setTimeout(() => { inp.focus(); inp.select(); }, 100);
-}
-
-function confirmRename() {
-  const val = document.getElementById('rename-input').value.trim();
-  if (!val) return;
-  const { id, type } = state.renameTarget;
-  if (type === 'file') {
-    const f = state.files.find(x=>x.id===id);
-    if (f) f.name = val.endsWith('.ar')||val.includes('.') ? val : val+'.ar';
-  } else {
-    const folder = state.folders.find(x=>x.id===id);
-    if (folder) folder.name = val;
-  }
-  closeModal('rename-modal');
-  renderFileTree(); renderTabs();
-}
-
-function saveActiveContent() {
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f) return;
-  const val = document.getElementById('code-input').value;
-  if (val !== f.content) {
-    pushHistory(f.id, f.content);
-    f.content = val;
-    f.modified = true;
-  }
-}
-
-function saveFile() {
-  saveActiveContent();
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (f) { f.modified = false; }
-  renderTabs();
-  showToast('Saved', 'success');
-}
-
-function downloadCurrentFile() {
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f) return;
-  dlBlob(f.content, f.name, 'text/plain');
-}
-
-function downloadAllFiles() {
-  let out = '';
-  for (const f of state.files) {
-    out += `${'='.repeat(60)}\n// FILE: ${f.name}\n${'='.repeat(60)}\n${f.content}\n\n`;
-  }
-  dlBlob(out, 'ar-export.txt', 'text/plain');
-  showToast('All scripts exported!', 'success');
-}
-
-function openUpload() {
-  document.getElementById('upload-input').click();
-}
-
-function handleUpload(e) {
-  for (const file of e.target.files) {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const id = uid();
-      state.files.push({ id, name: file.name, content: ev.target.result, folderId: null, modified: false });
-      state.history[id] = { past: [], future: [] };
-      openFile(id); renderFileTree();
-      showToast('Imported: ' + file.name, 'success');
+            js += `\n})(runtime_engine);`;
+            return js;
+        }
     };
-    reader.readAsText(file);
-  }
-  e.target.value = '';
-}
 
-// ============================================================
-// EDITOR & HIGHLIGHTING
-// ============================================================
-function setupEditorEvents() {
-  const input = document.getElementById('code-input');
-  const scroll = document.getElementById('code-scroll');
+    // --- Runtime Engine ---
+    let threeScene, threeCamera, threeRenderer, frameCallbacks = [], keysDown = {};
+    const runtime_engine = {
+        onFrame: (cb) => frameCallbacks.push(cb),
+        onKey: (key, cb) => {
+            window.addEventListener('keydown', (e) => { if(e.key === key) cb(); });
+        },
+        print: (msg) => {
+            const out = document.getElementById('console-out');
+            out.innerHTML += `> ${JSON.stringify(msg)}<br>`;
+            out.scrollTop = out.scrollHeight;
+        },
+        draw: {
+            circle: (x, y, r, color) => {
+                const ctx = document.getElementById('canvas2d').getContext('2d');
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2);
+                ctx.fill();
+            },
+            rect: (x, y, w, h, color) => {
+                const ctx = document.getElementById('canvas2d').getContext('2d');
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, w, h);
+            }
+        },
+        create: {
+            box: (x, y, z, name) => {
+                const geo = new THREE.BoxGeometry(1, 1, 1);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, y, z);
+                mesh.name = name;
+                threeScene.add(mesh);
+            }
+        },
+        rotate: (name, axis, val) => {
+            const obj = threeScene.getObjectByName(name);
+            if(obj) obj.rotation[axis] += parseFloat(val);
+        },
+        move: (name, axis, val) => {
+            const obj = threeScene.getObjectByName(name);
+            if(obj) obj.position[axis] += parseFloat(val);
+        }
+    };
 
-  input.addEventListener('input', onEditorInput);
-  input.addEventListener('keydown', onEditorKeydown);
-  input.addEventListener('click', updateCursorPos);
-  input.addEventListener('keyup', updateCursorPos);
-  input.addEventListener('scroll', syncScroll);
-  scroll.addEventListener('scroll', () => {
-    document.getElementById('line-numbers').scrollTop = scroll.scrollTop;
-  });
+    // --- Initialization ---
+    async function init() {
+        lucide.createIcons();
+        
+        // Load Scripts from DB
+        files = await db.scripts.toArray();
+        if(files.length === 0) {
+            await db.scripts.add({ id: 'main', name: 'main.arg', content: 'set score to 0\n\nprint "AR(> Environment Loaded"\n\ncreate box at 0, 0, 0 name "hero"\n\nevery frame do\n  rotate "hero" y 0.02\n  rotate "hero" x 0.01\nend' });
+            files = await db.scripts.toArray();
+        }
 
-  // Sync initial
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (f) input.value = f.content;
-  highlightCode();
-  updateLineNumbers();
-}
+        renderFileTree();
+        setupEditor(files[0].content);
+        
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        };
+        
+        window.newFilePrompt = () => {
+            document.getElementById('new-file-modal').style.display = 'flex';
+        };
 
-let acTimer = null;
+        window.closeModals = () => {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        };
 
-function onEditorInput(e) {
-  saveActiveContent();
-  highlightCode();
-  updateLineNumbers();
-  updateCursorPos();
-  if (state.settings.autosave) {
-    const f = state.files.find(x => x.id === state.activeFileId);
-    if (f) f.modified = false;
-    renderTabs();
-  }
-  // Autocomplete
-  clearTimeout(acTimer);
-  acTimer = setTimeout(showAutocomplete, state.settings.acDelay || 300);
-}
+        window.showSettings = () => {
+            document.getElementById('manual-modal').style.display = 'flex';
+        };
 
-function onEditorKeydown(e) {
-  // Autocomplete navigation
-  if (state.acVisible) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); acMove(1); return; }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); acMove(-1); return; }
-    if (e.key === 'Tab' || e.key === 'Enter') {
-      if (state.acIndex >= 0) { e.preventDefault(); acAccept(); return; }
+        window.createFile = async (template) => {
+            const name = document.getElementById('new-filename').value || 'untitled';
+            let content = '// New AR(> Script';
+            if(template === '3d') content = 'create box at 0, 0, 0 name "box"\nevery frame do\n  rotate "box" y 0.01\nend';
+            if(template === 'pong') content = 'set ball_y to 200\nset dir to 2\n\nevery frame do\n  set ball_y to ball_y + dir\n  draw circle at 400, ball_y radius 10 color "white"\nend';
+            
+            const id = Date.now().toString();
+            await db.scripts.add({ id, name: name + '.arg', content });
+            files.push({ id, name: name + '.arg', content });
+            renderFileTree();
+            closeModals();
+            loadScript(id);
+        };
     }
-    if (e.key === 'Escape') { e.preventDefault(); hideAc(); return; }
-  }
 
-  // Tab / Shift-Tab indent
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    const inp = e.target;
-    const start = inp.selectionStart, end = inp.selectionEnd;
-    const tab = ' '.repeat(state.settings.tabSize || 2);
-    if (!e.shiftKey) {
-      if (start === end) {
-        insertAtCursor(tab);
-      } else {
-        indentSelection(inp, false);
-      }
-    } else {
-      indentSelection(inp, true);
+    function setupEditor(initialContent) {
+        editor = new EditorView({
+            state: EditorState.create({
+                doc: initialContent,
+                extensions: [
+                    basicSetup,
+                    javascript(),
+                    EditorView.theme({
+                        "&": { backgroundColor: "#000", color: "#c9d1d9", height: "100%" },
+                        ".cm-content": { caretColor: "#58a6ff" },
+                        ".cm-gutters": { backgroundColor: "#000", color: "#8b949e", border: "none" }
+                    }, {dark: true}),
+                    EditorView.updateListener.of((v) => {
+                        if (v.docChanged) saveCurrentFile(v.state.doc.toString());
+                    })
+                ]
+            }),
+            parent: document.getElementById("cm-editor")
+        });
     }
-    return;
-  }
 
-  // Auto brackets
-  if (state.settings.brackets) {
-    const pairs = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
-    if (pairs[e.key]) {
-      const inp = e.target;
-      const s = inp.selectionStart, en = inp.selectionEnd;
-      if (s !== en) {
-        e.preventDefault();
-        const sel = inp.value.slice(s, en);
-        insertAt(inp, s, e.key + sel + pairs[e.key], s+1, en+1);
-        return;
-      }
+    async function saveCurrentFile(content) {
+        await db.scripts.update(currentFileId, { content });
     }
-    // Skip closing pair
-    const close = [')', ']', '}', '"', "'"];
-    if (close.includes(e.key)) {
-      const inp = e.target;
-      const s = inp.selectionStart;
-      if (inp.value[s] === e.key) {
-        e.preventDefault();
-        inp.selectionStart = inp.selectionEnd = s + 1;
-        return;
-      }
+
+    function renderFileTree() {
+        const tree = document.getElementById('file-tree');
+        tree.innerHTML = '';
+        files.forEach(f => {
+            const div = document.createElement('div');
+            div.className = `file-item ${f.id === currentFileId ? 'active' : ''}`;
+            div.innerHTML = `<i data-lucide="file-code"></i> ${f.name}`;
+            div.onclick = () => loadScript(f.id);
+            tree.appendChild(div);
+        });
+        lucide.createIcons();
     }
-  }
 
-  // Auto-indent
-  if (e.key === 'Enter' && state.settings.autoindent) {
-    e.preventDefault();
-    const inp = e.target;
-    const s = inp.selectionStart;
-    const lineStart = inp.value.lastIndexOf('\n', s-1) + 1;
-    const lineContent = inp.value.slice(lineStart, s);
-    const indent = lineContent.match(/^(\s*)/)[1];
-    const prevChar = inp.value[s-1];
-    const extra = (prevChar === '{' || prevChar === '(' || prevChar === '[') ? ' '.repeat(state.settings.tabSize || 2) : '';
-    insertAtCursor('\n' + indent + extra);
-    return;
-  }
-
-  // Ctrl shortcuts
-  if (e.ctrlKey || e.metaKey) {
-    if (e.key === 's') { e.preventDefault(); saveFile(); return; }
-    if (e.key === 'z') { e.preventDefault(); edUndo(); return; }
-    if (e.key === 'y') { e.preventDefault(); edRedo(); return; }
-    if (e.key === '/') { e.preventDefault(); commentToggle(); return; }
-    if (e.key === 'h') { e.preventDefault(); openFind(); return; }
-    if (e.key === 'a') { e.preventDefault(); selectAll(); return; }
-    if (e.key === 'd') { e.preventDefault(); duplicateLine(); return; }
-    if (e.key === 'f') { e.preventDefault(); formatCode(); return; }
-    if (e.key === '\\') { e.preventDefault(); toggleSidebar(); return; }
-    if (e.key === '`') { e.preventDefault(); toggleOutput(); return; }
-  }
-  if (e.key === 'F5') { e.preventDefault(); runCode(); return; }
-}
-
-function insertAtCursor(text) {
-  const inp = document.getElementById('code-input');
-  const s = inp.selectionStart;
-  const e2 = inp.selectionEnd;
-  inp.value = inp.value.slice(0, s) + text + inp.value.slice(e2);
-  inp.selectionStart = inp.selectionEnd = s + text.length;
-  inp.dispatchEvent(new Event('input'));
-}
-
-function insertAt(inp, from, text, selStart, selEnd) {
-  inp.value = inp.value.slice(0, from) + text + inp.value.slice(inp.selectionEnd);
-  inp.selectionStart = selStart;
-  inp.selectionEnd = selEnd;
-  inp.dispatchEvent(new Event('input'));
-}
-
-function indentSelection(inp, unindent) {
-  const s = inp.selectionStart, e2 = inp.selectionEnd;
-  const before = inp.value.slice(0, s);
-  const after = inp.value.slice(e2);
-  const selected = inp.value.slice(s, e2);
-  const tab = ' '.repeat(state.settings.tabSize || 2);
-  const lines = selected.split('\n');
-  const result = lines.map(l => unindent ? l.replace(new RegExp('^' + tab), '') : tab + l).join('\n');
-  inp.value = before + result + after;
-  inp.selectionStart = s;
-  inp.selectionEnd = s + result.length;
-  inp.dispatchEvent(new Event('input'));
-}
-
-function syncScroll() {
-  const inp = document.getElementById('code-input');
-  const hl = document.getElementById('code-highlight');
-  hl.style.transform = `translate(${-inp.scrollLeft}px, ${-inp.scrollTop}px)`;
-}
-
-// ===== SYNTAX HIGHLIGHT =====
-function highlightCode() {
-  const inp = document.getElementById('code-input');
-  const hl = document.getElementById('code-highlight');
-  hl.innerHTML = highlight(inp.value);
-  updateLineNumbers();
-  drawMinimap();
-}
-
-function highlight(code) {
-  // Escape HTML first
-  let tokens = [];
-  let i = 0;
-  const len = code.length;
-  
-  while (i < len) {
-    // Single-line comment
-    if (code[i] === '/' && code[i+1] === '/') {
-      let j = i;
-      while (j < len && code[j] !== '\n') j++;
-      tokens.push({ type: 'cmt', val: code.slice(i, j) });
-      i = j;
-      continue;
+    async function loadScript(id) {
+        const file = files.find(f => f.id === id);
+        currentFileId = id;
+        const transaction = editor.state.update({
+            changes: { from: 0, to: editor.state.doc.length, insert: file.content }
+        });
+        editor.dispatch(transaction);
+        renderFileTree();
     }
-    // Multi-line comment
-    if (code[i] === '/' && code[i+1] === '*') {
-      let j = i + 2;
-      while (j < len - 1 && !(code[j]==='*'&&code[j+1]==='/')) j++;
-      j += 2;
-      tokens.push({ type: 'cmt', val: code.slice(i, j) });
-      i = j;
-      continue;
-    }
-    // Template literal
-    if (code[i] === '`') {
-      let j = i + 1;
-      while (j < len && code[j] !== '`') { if (code[j] === '\\') j++; j++; }
-      j++;
-      tokens.push({ type: 'str', val: code.slice(i, j) });
-      i = j;
-      continue;
-    }
-    // String
-    if (code[i] === '"' || code[i] === "'") {
-      const q = code[i];
-      let j = i + 1;
-      while (j < len && code[j] !== q && code[j] !== '\n') { if (code[j] === '\\') j++; j++; }
-      j++;
-      tokens.push({ type: 'str', val: code.slice(i, j) });
-      i = j;
-      continue;
-    }
-    // Number
-    if (/[0-9]/.test(code[i]) || (code[i] === '.' && /[0-9]/.test(code[i+1]||''))) {
-      let j = i;
-      while (j < len && /[0-9._xXa-fA-F]/.test(code[j])) j++;
-      tokens.push({ type: 'num', val: code.slice(i, j) });
-      i = j;
-      continue;
-    }
-    // Identifier / keyword
-    if (/[a-zA-Z_$]/.test(code[i])) {
-      let j = i;
-      while (j < len && /[a-zA-Z0-9_$]/.test(code[j])) j++;
-      const word = code.slice(i, j);
-      // Check what follows
-      const after = code.slice(j).trimStart();
-      let type = 'text';
-      if (AR_KEYWORDS.includes(word)) type = 'kw';
-      else if (['true','false','null','undefined','NaN','Infinity'].includes(word)) type = 'bool';
-      else if (AR_TYPES.includes(word)) type = 'type';
-      else if (after[0] === '(') type = 'fn';
-      tokens.push({ type, val: word });
-      i = j;
-      continue;
-    }
-    // Dot notation builtins (already tokenized via identifier chain)
-    // Operators
-    if (/[+\-*/%=!<>&|^~?:@]/.test(code[i])) {
-      tokens.push({ type: 'op', val: code[i] });
-      i++;
-      continue;
-    }
-    // Braces/parens/brackets
-    if (/[{}()\[\];,.]/.test(code[i])) {
-      tokens.push({ type: 'punc', val: code[i] });
-      i++;
-      continue;
-    }
-    // Whitespace / newlines
-    tokens.push({ type: 'text', val: code[i] });
-    i++;
-  }
-  
-  // Identify builtins by joining consecutive tokens
-  let html = '';
-  for (const t of tokens) {
-    const v = escHtml(t.val);
-    switch(t.type) {
-      case 'kw':    html += `<span class="kw">${v}</span>`; break;
-      case 'kw2':   html += `<span class="kw2">${v}</span>`; break;
-      case 'str':   html += `<span class="str">${v}</span>`; break;
-      case 'num':   html += `<span class="num">${v}</span>`; break;
-      case 'cmt':   html += `<span class="cmt">${v}</span>`; break;
-      case 'fn':    html += `<span class="fn">${v}</span>`; break;
-      case 'op':    html += `<span class="op">${v}</span>`; break;
-      case 'punc':  html += `<span class="punc">${v}</span>`; break;
-      case 'bool':  html += `<span class="bool">${v}</span>`; break;
-      case 'type':  html += `<span class="type">${v}</span>`; break;
-      case 'builtin': html += `<span class="builtin">${v}</span>`; break;
-      default:      html += v;
-    }
-  }
-  return html;
-}
 
-function updateLineNumbers() {
-  const inp = document.getElementById('code-input');
-  const ln = document.getElementById('line-numbers');
-  const lines = inp.value.split('\n').length;
-  let html = '';
-  for (let i = 1; i <= lines; i++) html += `<span class="line-num">${i}</span>\n`;
-  ln.innerHTML = html;
-  ln.scrollTop = document.getElementById('code-scroll').scrollTop;
-}
-
-function updateCursorPos() {
-  const inp = document.getElementById('code-input');
-  const s = inp.selectionStart;
-  const text = inp.value.slice(0, s);
-  const lines = text.split('\n');
-  state.cursor = { line: lines.length, col: lines[lines.length-1].length + 1 };
-  document.getElementById('status-pos').textContent = `Ln ${state.cursor.line}, Col ${state.cursor.col}`;
-  const sel = Math.abs(inp.selectionEnd - inp.selectionStart);
-  document.getElementById('status-sel').textContent = sel ? `(${sel} selected)` : '';
-}
-
-// ===== UNDO/REDO =====
-function pushHistory(id, content) {
-  if (!state.history[id]) state.history[id] = { past: [], future: [] };
-  state.history[id].past.push(content);
-  if (state.history[id].past.length > 100) state.history[id].past.shift();
-  state.history[id].future = [];
-}
-
-function edUndo() {
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f || !state.history[f.id] || !state.history[f.id].past.length) return;
-  const prev = state.history[f.id].past.pop();
-  state.history[f.id].future.push(f.content);
-  f.content = prev;
-  document.getElementById('code-input').value = prev;
-  highlightCode(); updateLineNumbers();
-}
-
-function edRedo() {
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f || !state.history[f.id] || !state.history[f.id].future.length) return;
-  const next = state.history[f.id].future.pop();
-  state.history[f.id].past.push(f.content);
-  f.content = next;
-  document.getElementById('code-input').value = next;
-  highlightCode(); updateLineNumbers();
-}
-
-// ===== SELECT ALL =====
-function selectAll() {
-  const inp = document.getElementById('code-input');
-  inp.focus();
-  inp.select();
-}
-
-// ===== COMMENT TOGGLE =====
-function commentToggle() {
-  const inp = document.getElementById('code-input');
-  const s = inp.selectionStart, e2 = inp.selectionEnd;
-  const lines = inp.value.split('\n');
-  let start = inp.value.slice(0, s).split('\n').length - 1;
-  let end = inp.value.slice(0, e2).split('\n').length - 1;
-  const allCommented = lines.slice(start, end+1).every(l => l.trimStart().startsWith('//'));
-  for (let i = start; i <= end; i++) {
-    if (allCommented) lines[i] = lines[i].replace(/^(\s*)\/\/\s?/, '$1');
-    else lines[i] = lines[i].replace(/^(\s*)/, '$1// ');
-  }
-  inp.value = lines.join('\n');
-  inp.selectionStart = s; inp.selectionEnd = e2;
-  inp.dispatchEvent(new Event('input'));
-}
-
-// ===== DUPLICATE LINE =====
-function duplicateLine() {
-  const inp = document.getElementById('code-input');
-  const s = inp.selectionStart;
-  const lines = inp.value.split('\n');
-  const lineIdx = inp.value.slice(0,s).split('\n').length - 1;
-  lines.splice(lineIdx+1, 0, lines[lineIdx]);
-  inp.value = lines.join('\n');
-  inp.selectionStart = inp.selectionEnd = s + lines[lineIdx].length + 1;
-  inp.dispatchEvent(new Event('input'));
-}
-
-// ===== FORMAT CODE =====
-function formatCode() {
-  const inp = document.getElementById('code-input');
-  let code = inp.value;
-  // Simple formatter: fix indentation around { }
-  let indent = 0;
-  const tab = ' '.repeat(state.settings.tabSize || 2);
-  const lines = code.split('\n').map(l => l.trim());
-  const result = [];
-  for (let l of lines) {
-    if (l.startsWith('}') || l.startsWith(')') || l.startsWith(']')) indent = Math.max(0, indent-1);
-    result.push(tab.repeat(indent) + l);
-    const opens = (l.match(/[{(\[]/g)||[]).length;
-    const closes = (l.match(/[})\]]/g)||[]).length;
-    indent = Math.max(0, indent + opens - closes);
-  }
-  inp.value = result.join('\n');
-  inp.dispatchEvent(new Event('input'));
-  showToast('Code formatted!', 'success');
-}
-
-// ===== AUTOCOMPLETE =====
-function getWordBefore(inp) {
-  const s = inp.selectionStart;
-  const text = inp.value.slice(0, s);
-  const m = text.match(/[\w.]+$/);
-  return m ? m[0] : '';
-}
-
-function showAutocomplete() {
-  const inp = document.getElementById('code-input');
-  const word = getWordBefore(inp);
-  if (!word || word.length < 1) { hideAc(); return; }
-  
-  const items = [];
-  const wl = word.toLowerCase();
-  
-  // Keywords
-  for (const kw of AR_KEYWORDS) {
-    if (kw.toLowerCase().startsWith(wl) && kw !== word)
-      items.push({ name: kw, type: 'kw', icon: 'kw', doc: 'keyword' });
-  }
-  // Types
-  for (const ty of AR_TYPES) {
-    if (ty.toLowerCase().startsWith(wl) && ty !== word)
-      items.push({ name: ty, type: 'type', icon: 'ty', doc: 'type' });
-  }
-  // Builtins
-  for (const bi of AR_BUILTINS) {
-    if (bi.toLowerCase().includes(wl) || bi.toLowerCase().startsWith(wl))
-      items.push({ name: bi, type: 'builtin', icon: 'bi', doc: 'built-in' });
-  }
-  // Snippets
-  for (const sn of AR_SNIPPETS) {
-    if (sn.name.toLowerCase().startsWith(wl))
-      items.push({ name: sn.name, type: 'snippet', icon: 'sn', doc: sn.doc });
-  }
-  
-  // Also add identifiers from current code
-  const codeWords = inp.value.match(/\b[a-zA-Z_][a-zA-Z0-9_]{2,}\b/g) || [];
-  const seen = new Set(items.map(x=>x.name));
-  for (const w of new Set(codeWords)) {
-    if (w.toLowerCase().startsWith(wl) && !seen.has(w) && w !== word)
-      items.push({ name: w, type: 'var', icon: 'sn', doc: 'identifier' });
-  }
-  
-  if (!items.length) { hideAc(); return; }
-  
-  state.acItems = items.slice(0, 20);
-  state.acIndex = 0;
-  
-  const ac = document.getElementById('autocomplete');
-  ac.innerHTML = '';
-  for (let i = 0; i < state.acItems.length; i++) {
-    const item = state.acItems[i];
-    const div = document.createElement('div');
-    div.className = 'ac-item' + (i === 0 ? ' selected' : '');
-    div.innerHTML = `<span class="ac-icon ${item.icon}">${item.icon[0].toUpperCase()}</span><span class="ac-name">${escHtml(item.name)}</span><span class="ac-type">${item.doc}</span>`;
-    div.onmousedown = (e) => { e.preventDefault(); state.acIndex = i; acAccept(); };
-    ac.appendChild(div);
-  }
-  
-  // Position
-  const rect = inp.getBoundingClientRect();
-  const linesBefore = inp.value.slice(0, inp.selectionStart).split('\n');
-  const lineH = state.settings.lineHeight || 22;
-  const fontSize = state.settings.fontSize || 14;
-  const approxX = rect.left + (linesBefore[linesBefore.length-1].length * fontSize * 0.6) + 16;
-  const approxY = rect.top + (linesBefore.length * lineH) + 10;
-  
-  ac.style.left = Math.min(approxX, window.innerWidth - 260) + 'px';
-  ac.style.top = Math.min(approxY, window.innerHeight - 240) + 'px';
-  ac.style.display = 'block';
-  state.acVisible = true;
-}
-
-function hideAc() {
-  document.getElementById('autocomplete').style.display = 'none';
-  state.acVisible = false;
-  state.acIndex = -1;
-}
-
-function acMove(dir) {
-  state.acIndex = Math.max(0, Math.min(state.acItems.length-1, state.acIndex + dir));
-  const items = document.querySelectorAll('#autocomplete .ac-item');
-  items.forEach((el, i) => el.classList.toggle('selected', i === state.acIndex));
-  items[state.acIndex]?.scrollIntoView({ block: 'nearest' });
-}
-
-function acAccept() {
-  const item = state.acItems[state.acIndex];
-  if (!item) { hideAc(); return; }
-  const inp = document.getElementById('code-input');
-  const s = inp.selectionStart;
-  const text = inp.value.slice(0, s);
-  const m = text.match(/[\w.]+$/);
-  const word = m ? m[0] : '';
-  const before = text.slice(0, s - word.length);
-  const after = inp.value.slice(s);
-  
-  let insert = item.name;
-  // For snippets, insert the snippet template
-  if (item.type === 'snippet') {
-    const sn = AR_SNIPPETS.find(x => x.name === item.name);
-    if (sn) insert = sn.insert.replace(/\${[^}]+}/g, '');
-  } else if (item.type === 'fn' || (item.type === 'builtin' && !item.name.includes('.'))) {
-    insert = item.name + '()';
-  }
-  
-  inp.value = before + insert + after;
-  const newPos = before.length + insert.length;
-  inp.selectionStart = inp.selectionEnd = newPos;
-  hideAc();
-  inp.dispatchEvent(new Event('input'));
-}
-
-// ===== FIND & REPLACE =====
-function openFind() { openModal('find-modal'); setTimeout(()=>document.getElementById('find-input').focus(),100); }
-
-function toggleFindOpt(id) {
-  const btn = document.getElementById(id);
-  btn.classList.toggle('active');
-  const map = { 'find-case': 'case', 'find-whole': 'whole', 'find-regex': 'regex' };
-  state.findOpts[map[id]] = btn.classList.contains('active');
-  doFind();
-}
-
-function doFind() {
-  const q = document.getElementById('find-input').value;
-  const inp = document.getElementById('code-input');
-  state.findMatches = [];
-  state.findIdx = 0;
-  if (!q) { document.getElementById('find-count').textContent = '0 results'; return; }
-  const code = inp.value;
-  let re;
-  try {
-    const flags = state.findOpts.case ? 'g' : 'gi';
-    const pat = state.findOpts.regex ? q : q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const wp = state.findOpts.whole ? `\\b${pat}\\b` : pat;
-    re = new RegExp(wp, flags);
-  } catch(e) { document.getElementById('find-count').textContent = 'Invalid regex'; return; }
-  let m;
-  while ((m = re.exec(code)) !== null) {
-    state.findMatches.push({ start: m.index, end: m.index + m[0].length });
-    if (state.findMatches.length > 500) break;
-  }
-  document.getElementById('find-count').textContent = state.findMatches.length + ' results';
-  if (state.findMatches.length) highlightFindMatch(0);
-}
-
-function findNext() {
-  if (!state.findMatches.length) return;
-  state.findIdx = (state.findIdx + 1) % state.findMatches.length;
-  highlightFindMatch(state.findIdx);
-}
-
-function findPrev() {
-  if (!state.findMatches.length) return;
-  state.findIdx = (state.findIdx - 1 + state.findMatches.length) % state.findMatches.length;
-  highlightFindMatch(state.findIdx);
-}
-
-function highlightFindMatch(idx) {
-  const m = state.findMatches[idx];
-  const inp = document.getElementById('code-input');
-  inp.focus();
-  inp.selectionStart = m.start;
-  inp.selectionEnd = m.end;
-}
-
-function doReplace(all) {
-  const q = document.getElementById('find-input').value;
-  const r = document.getElementById('replace-input').value;
-  const inp = document.getElementById('code-input');
-  if (!q) return;
-  if (all) {
-    let re;
-    try {
-      const flags = state.findOpts.case ? 'g' : 'gi';
-      const pat = state.findOpts.regex ? q : q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      re = new RegExp(pat, flags);
-    } catch(e) { return; }
-    inp.value = inp.value.replace(re, r);
-    inp.dispatchEvent(new Event('input'));
-    showToast('Replaced all occurrences', 'success');
-  } else {
-    if (!state.findMatches.length) return;
-    const m = state.findMatches[state.findIdx];
-    inp.value = inp.value.slice(0, m.start) + r + inp.value.slice(m.end);
-    inp.dispatchEvent(new Event('input'));
-    doFind();
-  }
-}
-
-// ============================================================
-// RUNNER
-// ============================================================
-function buildRunnerHTML(scripts) {
-  const combined = scripts.map(s => `// === ${s.name} ===\n` + transpileAR(s.content)).join('\n\n');
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>AR(> Runner</title>
-<style>
-  body { margin:0; background:#111; color:#eee; font-family:monospace; }
-  canvas { display:block; }
-  #output { position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.8); padding:6px 10px; font-size:12px; max-height:120px; overflow-y:auto; }
-  .err { color:#ff5555; } .warn { color:#ffb347; } .ok { color:#3ddc84; }
-</style>
-</head>
-<body>
-<canvas id="__ar_canvas__" width="800" height="600" style="display:none"></canvas>
-<div id="output"></div>
-<script>
-(function(){
-const __out = document.getElementById('output');
-const __log = (msg, cls) => {
-  const d = document.createElement('div');
-  d.className = cls||'';
-  d.textContent = msg;
-  __out.appendChild(d);
-  __out.scrollTop = __out.scrollHeight;
-};
-window.print = window.println = (v) => { __log(String(v)); parent.postMessage({type:'log',msg:String(v)},'*'); };
-window.console = { log: window.print, warn: (v)=>__log('[WARN] '+v,'warn'), error: (v)=>__log('[ERR] '+v,'err') };
-const Math2 = { ...Math, randomInt: (a,b)=>Math.floor(Math.random()*(b-a))+a, lerp:(a,b,t)=>a+(b-a)*t, clamp:(v,lo,hi)=>Math.max(lo,Math.min(hi,v)) };
-Object.assign(window, { Math: {...Math,...Math2}, Vec2:(x,y)=>({x,y}), Vec3:(x,y,z)=>({x,y,z}), Vec4:(x,y,z,w)=>({x,y,z,w}), Color:{ hex:h=>h, rgb:(r,g,b)=>\`rgb(\${r},\${g},\${b})\`, rgba:(r,g,b,a)=>\`rgba(\${r},\${g},\${b},\${a})\` }, Time:{ now:Date.now, wait:(ms)=>new Promise(r=>setTimeout(r,ms)) }, JSON:JSON, Asset:{ loadImage:(s)=>s, loadAudio:(s)=>s, loadJSON:async(s)=>({}) } });
-// 2D Game stub
-window.Game2D = { create:(cfg)=>{const c=document.getElementById('__ar_canvas__');c.style.display='block';if(cfg.width)c.width=cfg.width;if(cfg.height)c.height=cfg.height;const ctx=c.getContext('2d');let uFn,rFn;const g={width:cfg.width||800,height:cfg.height||600,input:{keys:{},mouseX:0,mouseY:0,key:k=>!!g.input.keys[k],keyDown:k=>!!g.input.keys[k],mouseDown:()=>false},update:fn=>{uFn=fn;return g},render:fn=>{rFn=fn;return g},run:()=>{let last=0;function loop(t){const dt=Math.min((t-last)/1000,0.1);last=t;if(cfg.bg){ctx.fillStyle=cfg.bg;ctx.fillRect(0,0,c.width,c.height);}if(uFn)uFn(dt);if(rFn)rFn();requestAnimationFrame(loop);}requestAnimationFrame(loop);print('▶ 2D Game running!');return g;}};window.addEventListener('keydown',e=>{g.input.keys[e.key]=true;g.input.keys[e.code]=true;});window.addEventListener('keyup',e=>{g.input.keys[e.key]=false;g.input.keys[e.code]=false;});window.Game2D.rect=(x,y,w,h,col)=>{ctx.fillStyle=col||'#fff';ctx.fillRect(x,y,w,h);};window.Game2D.circle=(x,y,r,col)=>{ctx.fillStyle=col||'#fff';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();};window.Game2D.text=(t,x,y,opts={})=>{ctx.fillStyle=opts.color||'#fff';ctx.font=(opts.size||16)+'px '+(opts.font||'monospace');ctx.fillText(t,x,y+(opts.size||16));};window.Game2D.line=(x1,y1,x2,y2,col,w)=>{ctx.strokeStyle=col||'#fff';ctx.lineWidth=w||1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};window.Game2D.image=(img,x,y,w,h)=>{try{const i=new Image();i.src=img;ctx.drawImage(i,x,y,w||32,h||32);}catch(e){}};return g;} };
-window.Game3D = { create:(cfg)=>{ print('▶ 3D Scene initialized (WebGL preview)'); const g={run:()=>{print('Game3D running (3D renderer active)');},update:fn=>g,render:fn=>g,scene:g}; return g; }, camera:(c)=>c||{}, light:(l)=>l||{}, mesh:(m)=>({...m,position:{x:0,y:0,z:0},rotation:{x:0,y:0,z:0},scale:{x:1,y:1,z:1}}), material:(m)=>m||{}, physics:(p)=>({step:()=>{}}), rigidbody:(r)=>r||{}, collider:(c)=>c||{}, particle:(p)=>p||{} };
-window.Audio = { play:(s,o)=>print('[Audio] play: '+s), stop:()=>{}, volume:()=>{}, create:(s)=>({play:()=>print('[Audio] playing '+s),stop:()=>{},loop:false,volume:1}) };
-window.Net = { fetch:async(u)=>'{}', post:async()=>'{}', get:async()=>'{}' };
-window.File = { read:async(p)=>'', write:async(p,d)=>{}, download:(n,d)=>{}, upload:async()=>'' };
-window.UI = { toast:(m,o)=>print('[UI] '+m), modal:(o)=>print('[UI Modal] '+o.title), button:(t,fn)=>({style:()=>{}}), text:(t,o)=>({set:v=>{}}), panel:(o)=>({add:()=>{}}) };
-window.Event = { on:(e,fn)=>{window.addEventListener(e,fn)}, emit:(e,d)=>{window.dispatchEvent(new CustomEvent(e,{detail:d}))}, off:()=>{} };
-window.Sys = { platform:'web', version:'1.0', exit:()=>print('[Sys] exit called') };
-try {
-${combined}
-} catch(e) {
-  __log('[Runtime Error] ' + e.message, 'err');
-  parent.postMessage({type:'error',msg:e.message},'*');
-}
-})();
-<\/script>
-</body>
-</html>`;
-}
-
-function transpileAR(code) {
-  // Minimal AR(> to JS transpiler
-  return code
-    .replace(/\bfunc\b/g, 'function')
-    .replace(/\bprintln\b/g, 'print')
-    .replace(/\belif\b/g, 'else if')
-    .replace(/\band\b/g, '&&')
-    .replace(/\bor\b/g, '||')
-    .replace(/\bnot\b/g, '!')
-    .replace(/\bisnt\b/g, '!==')
-    .replace(/\bis\b(?!\s*[a-zA-Z])/g, '===')
-    .replace(/\blet\b/g, 'let')
-    .replace(/\bconst\b/g, 'const')
-    .replace(/\bfor\s+(\w+)\s+in\s+(\d+)\.\.=(\d+)/g, 'for(let $1=$2;$1<=$3;$1++)')
-    .replace(/\bfor\s+(\w+)\s+in\s+(\d+)\.\.(\d+)/g, 'for(let $1=$2;$1<$3;$1++)')
-    .replace(/\bfor\s+(\w+)\s+in\s+/g, 'for(let $1 of ')
-    .replace(/\bfor\s*\(let\s+(\w+)\s+of\s+([^{]+)\)\s*\{/g, 'for(let $1 of $2){')
-    .replace(/`([^`]*)\{([^}]+)\}([^`]*)`/g, '`$1${$2}$3`')
-    .replace(/\/\/.*$/gm, m => m) // keep comments
-    .replace(/\bspawn\s+function\b/g, '// spawn')
-    .replace(/\bkill\s+/g, '// kill ')
-    .replace(/\bawait\s+Time\.wait/g, 'await new Promise(r=>setTimeout(r,1))||Time.wait')
-    ;
-}
-
-function runCode() {
-  saveActiveContent();
-  const f = state.files.find(x => x.id === state.activeFileId);
-  if (!f) { showToast('No file open', 'error'); return; }
-  log('system', '▶ Running: ' + f.name);
-  const html = buildRunnerHTML([f]);
-  openRunner(html);
-}
-
-function runAllCode() {
-  saveActiveContent();
-  const scripts = state.files.filter(f => f.name.endsWith('.ar'));
-  log('system', '▶ Running all ' + scripts.length + ' scripts');
-  const html = buildRunnerHTML(scripts);
-  openRunner(html);
-}
-
-function openRunner(html) {
-  const overlay = document.getElementById('runner-overlay');
-  const frame = document.getElementById('runner-frame');
-  overlay.classList.add('open');
-  state.runnerOpen = true;
-  frame.srcdoc = html;
-  const f = state.files.find(x => x.id === state.activeFileId);
-  document.getElementById('runner-title').textContent = 'Running: ' + (f ? f.name : 'scripts');
-}
-
-function closeRunner() {
-  document.getElementById('runner-overlay').classList.remove('open');
-  document.getElementById('runner-frame').srcdoc = '';
-  state.runnerOpen = false;
-}
-
-function toggleRunnerSize() {
-  const o = document.getElementById('runner-overlay');
-  o.style.top = o.style.top === '50%' ? '0' : '50%';
-}
-
-function stopRun() { closeRunner(); log('system', '⏹ Runner stopped'); }
-
-// Runner messages
-window.addEventListener('message', (e) => {
-  if (e.data?.type === 'log') log('log', e.data.msg);
-  if (e.data?.type === 'error') log('error', '⚠ ' + e.data.msg);
-});
-
-function lintCode() {
-  const inp = document.getElementById('code-input');
-  const code = inp.value;
-  const problems = [];
-  const lines = code.split('\n');
-  
-  lines.forEach((line, i) => {
-    const trimmed = line.trim();
-    // Check unclosed brackets (simple)
-    const opens = (line.match(/[{(\[]/g)||[]).length;
-    const closes = (line.match(/[})\]]/g)||[]).length;
-    // Semicolons (style)
-    if (trimmed.endsWith(';') && !trimmed.startsWith('//')) {
-      problems.push({ line: i+1, msg: 'Style: AR(> does not require semicolons', severity: 'warn' });
-    }
-  });
-  
-  if (problems.length === 0) {
-    log('success', '✅ No issues found!');
-    showToast('No lint issues!', 'success');
-  } else {
-    for (const p of problems) {
-      log(p.severity === 'warn' ? 'warn' : 'error', `[Ln ${p.line}] ${p.msg}`);
-    }
-    showToast(`${problems.length} lint issue(s)`, 'warn');
-  }
-}
-
-// ============================================================
-// OUTPUT CONSOLE
-// ============================================================
-function log(type, msg) {
-  const body = document.getElementById('output-body');
-  const ts = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const div = document.createElement('div');
-  div.className = 'out-line ' + type;
-  div.innerHTML = `<span class="out-ts">${ts}</span>${escHtml(String(msg))}`;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-}
-
-function clearOutput() { document.getElementById('output-body').innerHTML = ''; }
-
-function switchOutTab(tab) {
-  state.outputTab = tab;
-  document.getElementById('out-tab-console').classList.toggle('active', tab==='console');
-  document.getElementById('out-tab-problems').classList.toggle('active', tab==='problems');
-}
-
-// ============================================================
-// COMMAND BAR
-// ============================================================
-function setupCmdBar() {
-  const inp = document.getElementById('cmd-input');
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Enter') runCommand();
-    if (e.key === 'Escape') inp.blur();
-  });
-}
-
-function runCommand() {
-  const inp = document.getElementById('cmd-input');
-  const cmd = inp.value.trim();
-  if (!cmd) return;
-  log('info', '> ' + cmd);
-  
-  // Built-in commands
-  const cmds = {
-    'clear': () => clearOutput(),
-    'help': () => { openManual(); },
-    'run': () => runCode(),
-    'run all': () => runAllCode(),
-    'save': () => saveFile(),
-    'new': () => newFile(),
-    'ls': () => log('log', state.files.map(f=>f.name).join('  ')),
-    'files': () => log('log', state.files.map(f=>f.name).join('  ')),
-    'version': () => log('system', 'AR(> v1.0.0 | Playground v1.0'),
-    'theme dark': () => applyTheme('dark'),
-    'theme light': () => applyTheme('light'),
-    'theme monokai': () => applyTheme('monokai'),
-    'theme dracula': () => applyTheme('dracula'),
-    'format': () => formatCode(),
-    'lint': () => lintCode(),
-  };
-  
-  if (cmds[cmd.toLowerCase()]) {
-    cmds[cmd.toLowerCase()]();
-  } else {
-    // Evaluate as AR(> expression (simple JS eval with our shims)
-    try {
-      const result = new Function('"use strict"; const println=v=>""+v; const print=println; return (' + transpileAR(cmd) + ')')();
-      if (result !== undefined) log('log', '← ' + JSON.stringify(result));
-    } catch(e) {
-      log('error', '✗ ' + e.message);
-    }
-  }
-  
-  inp.value = '';
-}
-
-// ============================================================
-// RESIZE HANDLE
-// ============================================================
-function setupResizeHandle() {
-  const handle = document.getElementById('resize-handle');
-  let dragging = false, startY = 0, startH = 0;
-  
-  handle.addEventListener('mousedown', e => {
-    dragging = true; startY = e.clientY;
-    const op = document.getElementById('output-panel');
-    startH = op.offsetHeight;
-    document.body.style.cursor = 'row-resize';
-  });
-  
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const op = document.getElementById('output-panel');
-    const newH = Math.max(60, Math.min(500, startH + startY - e.clientY));
-    op.style.height = newH + 'px';
-    op.classList.remove('collapsed');
-  });
-  
-  document.addEventListener('mouseup', () => {
-    dragging = false;
-    document.body.style.cursor = '';
-  });
-  
-  // Touch support for iPad
-  handle.addEventListener('touchstart', e => {
-    dragging = true; startY = e.touches[0].clientY;
-    const op = document.getElementById('output-panel');
-    startH = op.offsetHeight;
-  });
-  document.addEventListener('touchmove', e => {
-    if (!dragging) return;
-    const op = document.getElementById('output-panel');
-    const newH = Math.max(60, Math.min(500, startH + startY - e.touches[0].clientY));
-    op.style.height = newH + 'px';
-    op.classList.remove('collapsed');
-  });
-  document.addEventListener('touchend', () => dragging = false);
-}
-
-// ============================================================
-// SETTINGS
-// ============================================================
-function buildThemeGrid() {
-  const grid = document.getElementById('theme-grid');
-  grid.innerHTML = '';
-  for (const t of THEMES) {
-    const div = document.createElement('div');
-    div.className = 'theme-card' + (t.id === state.settings.theme ? ' active' : '');
-    div.innerHTML = `
-      <div class="theme-preview" style="background:linear-gradient(135deg,${t.colors[0]} 40%,${t.colors[1]} 70%,${t.colors[2]})"></div>
-      <div>${t.name}</div>`;
-    div.onclick = () => { applyTheme(t.id); document.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active')); div.classList.add('active'); };
-    grid.appendChild(div);
-  }
-}
-
-function applyTheme(id) {
-  state.settings.theme = id;
-  const app = document.getElementById('app');
-  app.className = app.className.replace(/theme-\w+/g, '').trim() + ' theme-' + id;
-  showToast('Theme: ' + id, 'info');
-}
-
-function applyFontSize(sz) {
-  state.settings.fontSize = parseInt(sz);
-  document.documentElement.style.setProperty('--font-sz', sz + 'px');
-}
-
-function applyLineHeight(lh) {
-  state.settings.lineHeight = parseInt(lh);
-  document.documentElement.style.setProperty('--line-h', lh + 'px');
-}
-
-function applyFontFamily(ff) {
-  state.settings.fontFamily = ff;
-  document.documentElement.style.setProperty('--font-mono', ff);
-}
-
-function applyTabSize(sz) {
-  state.settings.tabSize = parseInt(sz);
-}
-
-function toggleSetting(key, el) {
-  el.classList.toggle('on');
-  state.settings[key] = el.classList.contains('on');
-  if (key === 'minimap') toggleMinimap(state.settings.minimap);
-  if (key === 'linenums') document.getElementById('line-numbers').style.display = state.settings.linenums ? '' : 'none';
-  if (key === 'wrap') document.getElementById('code-input').style.whiteSpace = state.settings.wrap ? 'pre-wrap' : 'pre';
-}
-
-function loadSettings() {
-  try {
-    const s = localStorage.getItem('ar_settings');
-    if (s) Object.assign(state.settings, JSON.parse(s));
-  } catch(e) {}
-  applyTheme(state.settings.theme || 'dark');
-  document.getElementById('font-sz-input').value = state.settings.fontSize;
-  document.getElementById('line-h-input').value = state.settings.lineHeight;
-}
-
-function buildShortcutList() {
-  const el = document.getElementById('shortcut-list');
-  el.innerHTML = SHORTCUTS.map(s => 
-    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);align-items:center">
-      <span style="color:var(--text2)">${s.action}</span>
-      <span style="background:var(--bg4);padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;color:var(--text)">${s.key}</span>
-    </div>`
-  ).join('');
-}
-
-function openSettings(section) {
-  openModal('settings-modal');
-  switchSettings(section || 'general');
-}
-
-function switchSettings(sec) {
-  document.querySelectorAll('.settings-section').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.snav-item').forEach(el => el.classList.remove('active'));
-  const secEl = document.getElementById('sec-' + sec);
-  if (secEl) secEl.classList.add('active');
-  document.querySelector(`.snav-item[data-sec="${sec}"]`)?.classList.add('active');
-}
-
-function increaseFontSize() { applyFontSize(Math.min(28, (state.settings.fontSize||14) + 1)); }
-function decreaseFontSize() { applyFontSize(Math.max(8, (state.settings.fontSize||14) - 1)); }
-
-// ============================================================
-// PRESETS
-// ============================================================
-function openPresets() {
-  openModal('presets-modal');
-}
-
-function buildPresetGrid() {
-  const grid = document.getElementById('preset-grid');
-  grid.innerHTML = '';
-  for (const p of PRESETS) {
-    const div = document.createElement('div');
-    div.className = 'preset-card';
-    div.innerHTML = `<div class="preset-icon">${p.icon}</div><div class="preset-name">${p.name}</div><div class="preset-desc">${p.desc}</div><span class="preset-tag">${p.tag}</span>`;
-    div.onclick = () => applyPreset(p);
-    grid.appendChild(div);
-  }
-}
-
-function applyPreset(preset) {
-  closeModal('presets-modal');
-  for (const pf of preset.files) {
-    const id = uid();
-    state.files.push({ id, name: pf.name, content: pf.content, folderId: null, modified: false });
-    state.history[id] = { past: [], future: [] };
-    if (!state.openTabs.includes(id)) state.openTabs.push(id);
-    state.activeFileId = id;
-  }
-  const lastFile = state.files[state.files.length-1];
-  openFile(lastFile.id);
-  renderFileTree();
-  showToast('Preset loaded: ' + preset.name, 'success');
-}
-
-// ============================================================
-// TRAINING MANUAL
-// ============================================================
-function buildManual() {
-  const toc = document.getElementById('manual-toc');
-  const content = document.getElementById('manual-content');
-  toc.innerHTML = '';
-  content.innerHTML = '';
-  
-  let currentSection = '';
-  for (const page of MANUAL_PAGES) {
-    if (page.section !== currentSection) {
-      currentSection = page.section;
-      const s = document.createElement('div');
-      s.className = 'manual-toc-item section';
-      s.textContent = page.section;
-      toc.appendChild(s);
-    }
-    const item = document.createElement('div');
-    item.className = 'manual-toc-item' + (page.id === MANUAL_PAGES[0].id ? ' active' : '');
-    item.textContent = page.title;
-    item.onclick = () => switchManualPage(page.id);
-    toc.appendChild(item);
-    
-    const div = document.createElement('div');
-    div.className = 'manual-page' + (page.id === MANUAL_PAGES[0].id ? ' active' : '');
-    div.id = 'manual-page-' + page.id;
-    div.innerHTML = page.content;
-    content.appendChild(div);
-  }
-}
-
-function switchManualPage(id) {
-  document.querySelectorAll('.manual-page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.manual-toc-item:not(.section)').forEach((item, i) => {
-    item.classList.toggle('active', MANUAL_PAGES[i]?.id === id);
-  });
-  const p = document.getElementById('manual-page-' + id);
-  if (p) { p.classList.add('active'); p.parentElement.scrollTop = 0; }
-}
-
-function openManual() {
-  openModal('manual-modal');
-}
-
-function downloadSpec() {
-  const spec = generateFullSpec();
-  dlBlob(spec, 'AR-Language-Specification.txt', 'text/plain');
-  showToast('Spec downloaded!', 'success');
-}
-
-function generateFullSpec() {
-  let out = '';
-  out += `${'='.repeat(70)}\n`;
-  out += `  AR(> LANGUAGE FULL SPECIFICATION\n`;
-  out += `  Version 1.0.0 — Complete Reference\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  
-  out += `TABLE OF CONTENTS\n${'-'.repeat(40)}\n`;
-  for (const p of MANUAL_PAGES) out += `  ${p.section} > ${p.title}\n`;
-  out += '\n';
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 1: LANGUAGE OVERVIEW\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `AR(> is a modern, custom-designed programming language for game and creative development.\n`;
-  out += `Syntax is inspired by Lua, Python, and JavaScript but is its own unique language.\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 2: KEYWORDS\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += AR_KEYWORDS.map(k => `  ${k}`).join('\n') + '\n\n';
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 3: BUILT-IN TYPES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += AR_TYPES.map(t => `  ${t}`).join('\n') + '\n\n';
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 4: BUILT-IN FUNCTIONS & MODULES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  const modules = {};
-  for (const b of AR_BUILTINS) {
-    const mod = b.includes('.') ? b.split('.')[0] : 'Global';
-    if (!modules[mod]) modules[mod] = [];
-    modules[mod].push(b);
-  }
-  for (const [mod, fns] of Object.entries(modules)) {
-    out += `  [${mod}]\n`;
-    out += fns.map(f => `    ${f}`).join('\n') + '\n\n';
-  }
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 5: SNIPPETS & TEMPLATES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  for (const sn of AR_SNIPPETS) {
-    out += `  [${sn.name}] — ${sn.doc}\n`;
-    out += sn.insert.split('\n').map(l => '    ' + l).join('\n') + '\n\n';
-  }
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 6: OPERATORS\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  Arithmetic:   +  -  *  /  %  **  //\n`;
-  out += `  Comparison:   ==  !=  <  >  <=  >=  is  isnt\n`;
-  out += `  Logical:      and  or  not  ??\n`;
-  out += `  Assignment:   =  +=  -=  *=  /=  **=  %=  ++  --\n`;
-  out += `  Spread:       ...  (rest/spread)\n`;
-  out += `  Ternary:      cond ? a : b\n`;
-  out += `  Optional:     a?.b  a?.[k]  a?.()\n`;
-  out += `  Bitwise:      &  |  ^  ~  <<  >>\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 7: CONTROL FLOW\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  if / elif / else\n  while / do..while\n  for..in  (range: 0..10, 0..=10)\n`;
-  out += `  match / case / default\n  break / continue\n  return / yield\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 8: FUNCTIONS\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  func name(params) { ... }\n`;
-  out += `  func name(p = default) { ... }   // default params\n`;
-  out += `  func name(...rest) { ... }        // variadic\n`;
-  out += `  (x) => expr                       // arrow function\n`;
-  out += `  async func name() { await ... }   // async\n`;
-  out += `  func* gen() { yield v }           // generator\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 9: CLASSES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  class Name { constructor() {} method() {} }\n`;
-  out += `  class Child extends Parent { super() }\n`;
-  out += `  static members, get/set properties\n`;
-  out += `  interface / impl for structural typing\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 10: MODULES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  import { x } from "./file"\n`;
-  out += `  import Default from "./file"\n`;
-  out += `  import * as ns from "./file"\n`;
-  out += `  export func / export const / export default\n`;
-  out += `  module Name { export ... }\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 11: 2D GAME API\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  Game2D.create(cfg)         Create game instance\n`;
-  out += `  game.update(fn(dt))        Update loop\n`;
-  out += `  game.render(fn())          Render loop\n`;
-  out += `  game.run()                 Start\n`;
-  out += `  Game2D.rect(x,y,w,h,col)  Draw rectangle\n`;
-  out += `  Game2D.circle(x,y,r,col)  Draw circle\n`;
-  out += `  Game2D.text(t,x,y,opts)   Draw text\n`;
-  out += `  Game2D.image(img,x,y,w,h) Draw image\n`;
-  out += `  Game2D.input.key(k)       Key held\n`;
-  out += `  Game2D.input.keyDown(k)   Key just pressed\n`;
-  out += `  Game2D.physics(cfg)       Physics engine\n`;
-  out += `  Game2D.camera()           2D camera\n`;
-  out += `  Game2D.animate(cfg)       Sprite animation\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 12: 3D GAME API\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  Game3D.create(cfg)         Create 3D scene\n`;
-  out += `  Game3D.camera(cfg)         Perspective camera\n`;
-  out += `  Game3D.light(cfg)          directional/point/spot/ambient\n`;
-  out += `  Game3D.mesh(cfg)           box/sphere/plane/custom\n`;
-  out += `  Game3D.material(cfg)       PBR material\n`;
-  out += `  Game3D.physics(cfg)        3D physics\n`;
-  out += `  Game3D.rigidbody(cfg)      Rigid body\n`;
-  out += `  Game3D.collider(cfg)       Collision shape\n`;
-  out += `  Game3D.rayCast(o,d)        Raycasting\n`;
-  out += `  Game3D.particle(cfg)       Particle system\n`;
-  out += `  Game3D.terrain(cfg)        Heightmap terrain\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 13: ASSET & AUDIO\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  Asset.loadImage(path)       Load image\n`;
-  out += `  Asset.loadAudio(path)       Load audio\n`;
-  out += `  Asset.loadModel(path)       Load 3D model\n`;
-  out += `  Asset.loadJSON(path)        Load JSON data\n`;
-  out += `  Asset.preload([...paths])   Preload assets\n`;
-  out += `  Audio.create(asset)         Create audio node\n`;
-  out += `  audio.play() / .stop()      Playback control\n`;
-  out += `  audio.volume / .pitch / .loop\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 14: ADVANCED FEATURES\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  out += `  Generics:           func f<T>(x: T): T { return x }\n`;
-  out += `  Decorators:         @log @memoize @singleton\n`;
-  out += `  Pattern matching:   match obj { case {type}: ... }\n`;
-  out += `  Destructuring:      let [a,b] = arr; let {x,y} = obj\n`;
-  out += `  Spread:             let merged = [...a, ...b]\n`;
-  out += `  Coroutines:         spawn func task() { ... }; kill task\n`;
-  out += `  Proxy:              new Proxy(obj, {get,set})\n`;
-  out += `  Optional chaining:  a?.b?.c\n`;
-  out += `  Nullish:            a ?? fallback\n\n`;
-
-  out += `${'='.repeat(70)}\n`;
-  out += `SECTION 15: KEYBOARD SHORTCUTS\n`;
-  out += `${'='.repeat(70)}\n\n`;
-  for (const s of SHORTCUTS) {
-    out += `  ${s.key.padEnd(18)} ${s.action}\n`;
-  }
-
-  out += `\n${'='.repeat(70)}\n`;
-  out += `  END OF AR(> LANGUAGE SPECIFICATION v1.0\n`;
-  out += `${'='.repeat(70)}\n`;
-  return out;
-}
-
-// ============================================================
-// MINIMAP
-// ============================================================
-function toggleMinimap(show) {
-  const mm = document.getElementById('minimap');
-  const show2 = typeof show === 'boolean' ? show : (mm.style.width === '0px');
-  mm.style.width = show2 ? '' : '0px';
-}
-
-function drawMinimap() {
-  const canvas = document.getElementById('minimap-canvas');
-  const mm = document.getElementById('minimap');
-  const w = mm.offsetWidth;
-  const h = mm.offsetHeight;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  const inp = document.getElementById('code-input');
-  const lines = inp.value.split('\n');
-  const lh = Math.max(1.5, h / Math.max(lines.length, 1));
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = getComputedStyle(document.getElementById('app')).getPropertyValue('--bg').trim() || '#0d0f14';
-  ctx.fillRect(0, 0, w, h);
-  lines.forEach((line, i) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    // Color by content
-    let col = '#3a4060';
-    if (/^\/\//.test(trimmed)) col = '#3a5040';
-    else if (/\b(func|class|if|for|while)\b/.test(trimmed)) col = '#3a3870';
-    else if (/["'`]/.test(trimmed)) col = '#3a5060';
-    ctx.fillStyle = col;
-    const barW = Math.min(w - 4, Math.max(4, trimmed.length * 0.7));
-    ctx.fillRect(2, i * lh, barW, Math.max(lh - 0.5, 1));
-  });
-}
-
-// ============================================================
-// CONTEXT MENU
-// ============================================================
-function showCtx(e, id, type) {
-  e.preventDefault();
-  state.ctxTarget = { id, type };
-  const menu = document.getElementById('ctx-menu');
-  menu.style.display = 'block';
-  menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
-  menu.style.top = Math.min(e.clientY, window.innerHeight - 160) + 'px';
-  
-  document.getElementById('ctx-open').style.display = type === 'file' ? '' : 'none';
-  document.getElementById('ctx-duplicate').style.display = type === 'file' ? '' : 'none';
-  
-  document.getElementById('ctx-open').onclick = () => { openFile(id); hideCtx(); };
-  document.getElementById('ctx-rename').onclick = () => { renameItem(id, type); hideCtx(); };
-  document.getElementById('ctx-duplicate').onclick = () => {
-    const f = state.files.find(x=>x.id===id);
-    if (f) {
-      const nid = uid();
-      state.files.push({ id: nid, name: f.name.replace(/\.ar$/, '') + '_copy.ar', content: f.content, folderId: f.folderId, modified: false });
-      state.history[nid] = { past: [], future: [] };
-      renderFileTree();
-    }
-    hideCtx();
-  };
-  document.getElementById('ctx-delete').onclick = () => { deleteItem(id, type); hideCtx(); };
-}
-
-function hideCtx() { document.getElementById('ctx-menu').style.display = 'none'; }
-
-document.addEventListener('click', (e) => {
-  if (!document.getElementById('ctx-menu').contains(e.target)) hideCtx();
-  if (!e.target.closest('.dropdown')) closeMenus();
-  if (!e.target.closest('#autocomplete') && !e.target.closest('#code-input')) hideAc();
-});
-
-// ============================================================
-// MENUS
-// ============================================================
-function toggleMenu(id) {
-  const drop = document.getElementById(id + '-drop');
-  const isOpen = drop.style.display === 'block';
-  closeMenus();
-  if (!isOpen) drop.style.display = 'block';
-}
-
-function closeMenus() {
-  document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
-}
-
-// ============================================================
-// MODALS
-// ============================================================
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
-    hideAc();
-    closeMenus();
-  }
-});
-
-document.querySelectorAll && document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.add('hidden');
-  });
-});
-
-// ============================================================
-// KEYBOARD SHORTCUTS
-// ============================================================
-function setupKeyboardShortcuts() {
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); newFile(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('cmd-input').focus(); }
-    if (e.key === 'F5') { e.preventDefault(); runCode(); }
-  });
-}
-
-// ============================================================
-// STATUS / MISC
-// ============================================================
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('collapsed');
-}
-
-function toggleOutput() {
-  document.getElementById('output-panel').classList.toggle('collapsed');
-}
-
-function updateStatus() {
-  const f = state.files.find(x => x.id === state.activeFileId);
-  document.getElementById('status-file').textContent = f ? f.name : 'No file open';
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function dlBlob(content, name, type) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type }));
-  a.download = name;
-  a.click();
-}
-
-function showToast(msg, type = 'info') {
-  const container = document.getElementById('toast-container');
-  const div = document.createElement('div');
-  div.className = 'toast ' + type;
-  div.textContent = msg;
-  container.appendChild(div);
-  setTimeout(() => div.remove(), 3100);
-}
-
-function aboutDialog() {
-  openSettings('about');
-}
-
-// ============================================================
-// RUN
-// ============================================================
-init();
+    // --- Execution Logic ---
+    window.runProject = async () => {
+        const code = editor.state.doc.toString();
+        const transpiled = AR_Interpreter.transpile(code);
+        
+        document.getElementById('run-panel').style.display = 'flex';
+        document.getElementById('console-out').innerHTML = 'Starting AR(> Engine...<br>';
+        
+        // Init 3D Scene
+        const viewport = document.getElementById('viewport');
+        threeScene = new THREE.Scene();
+        threeCamera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
+        threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+        threeRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        viewport.appendChild(threeRenderer.domElement);
+        
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5).normalize();
+        threeScene.add(light);
+        threeScene.add(new THREE.AmbientLight(0x404040));
+        threeCamera.position.z = 5;
+
+        // Init 2D Layer
+        const canvas2d = document.getElementById('canvas2d');
+        canvas2d.width = viewport.clientWidth;
+        canvas2d.height = viewport.clientHeight;
+        canvas2d.style.display = 'block';
+        canvas2d.style.position = 'absolute';
+        canvas2d.style.top = '0';
+        canvas2d.style.left = '0';
+        canvas2d.style.pointerEvents = 'none';
+
+        frameCallbacks = [];
+        
+        // Execute Transpiled JS
+        try {
+            const runner = new Function('runtime_engine', 'THREE', transpiled);
+            runner(runtime_engine, THREE);
+            
+            function animate() {
+                if(!threeRenderer) return;
+                requestAnimationFrame(animate);
+                frameCallbacks.forEach(cb => cb());
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+        } catch(e) {
+            runtime_engine.print("RUNTIME ERROR: " + e.message);
+        }
+    };
+
+    window.stopProject = () => {
+        document.getElementById('run-panel').style.display = 'none';
+        const viewport = document.getElementById('viewport');
+        while(viewport.firstChild) {
+            if(viewport.firstChild.id !== 'canvas2d') viewport.removeChild(viewport.firstChild);
+        }
+        threeRenderer.dispose();
+        threeRenderer = null;
+        frameCallbacks = [];
+    };
+
+    window.downloadSpec = () => {
+        const spec = `AR(> LANGUAGE SPECIFICATION\n==========================\n\n- Variables: set [name] to [value]\n- Loops: repeat [n] times do ... end\n- Game Loop: every frame do ... end\n- Input: when key "[key]" do ... end\n- 2D: draw circle at x, y radius r color c\n- 3D: create box at x, y, z name n`;
+        const blob = new Blob([spec], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'AR_Language_Spec.txt';
+        a.click();
+    };
+
+    init();
 </script>
 </body>
 </html>
