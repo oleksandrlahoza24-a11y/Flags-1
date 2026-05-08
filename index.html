@@ -1,511 +1,3366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR(> Script Playground</title>
-    
-    <!-- Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.4/dexie.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    
-    <!-- CodeMirror 6 via ESM.sh -->
-    <script type="importmap">
-    {
-      "imports": {
-        "@codemirror/view": "https://esm.sh/@codemirror/view@6.0.0",
-        "@codemirror/state": "https://esm.sh/@codemirror/state@6.0.0",
-        "@codemirror/language": "https://esm.sh/@codemirror/language@6.0.0",
-        "@codemirror/commands": "https://esm.sh/@codemirror/commands@6.0.0",
-        "@codemirror/search": "https://esm.sh/@codemirror/search@6.0.0",
-        "@codemirror/autocomplete": "https://esm.sh/@codemirror/autocomplete@6.0.0",
-        "@nextjournal/lang-javascript": "https://esm.sh/@nextjournal/lang-javascript@1.0.0"
-      }
-    }
-    </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AR(> Script Playground</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/fullscreen.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --bg-0: #0d0e11;
+  --bg-1: #13151a;
+  --bg-2: #1a1d24;
+  --bg-3: #22262f;
+  --bg-4: #2a2e38;
+  --border: #2e3340;
+  --border-bright: #3d4352;
+  --text-0: #e8eaf0;
+  --text-1: #b0b8cc;
+  --text-2: #6b7485;
+  --text-3: #404654;
+  --accent: #4f9eff;
+  --accent-dim: #2a5a9a;
+  --accent-glow: rgba(79,158,255,0.15);
+  --green: #3dd68c;
+  --red: #ff5c5c;
+  --yellow: #f0c040;
+  --orange: #ff8c42;
+  --purple: #b48eff;
+  --cyan: #4fd6ff;
+  --pink: #ff6eb4;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-ui: 'IBM Plex Sans', sans-serif;
+  --radius: 6px;
+  --radius-sm: 3px;
+  --sidebar-w: 220px;
+  --header-h: 48px;
+  --console-h: 160px;
+  --statusbar-h: 24px;
+}
+[data-theme="light"] {
+  --bg-0: #f0f1f4; --bg-1: #fafbfc; --bg-2: #ffffff; --bg-3: #eff1f5;
+  --bg-4: #e4e7ed; --border: #d0d4de; --border-bright: #b8bece;
+  --text-0: #1a1d24; --text-1: #404654; --text-2: #8891a5; --text-3: #c0c8d8;
+  --accent: #1a6fd4;
+}
+[data-theme="solarized"] {
+  --bg-0: #001f27; --bg-1: #002b36; --bg-2: #073642; --bg-3: #094553;
+  --bg-4: #0d5060; --border: #1a6070; --border-bright: #268bd2;
+  --text-0: #eee8d5; --text-1: #93a1a1; --text-2: #657b83; --text-3: #3d5560;
+  --accent: #268bd2;
+}
+[data-theme="retro"] {
+  --bg-0: #0a0a00; --bg-1: #0f0f00; --bg-2: #141400; --bg-3: #1c1c00;
+  --bg-4: #242400; --border: #333300; --border-bright: #555500;
+  --text-0: #aaff00; --text-1: #88cc00; --text-2: #446600; --text-3: #223300;
+  --accent: #aaff00;
+}
+[data-theme="hc"] {
+  --bg-0: #000000; --bg-1: #000000; --bg-2: #0a0a0a; --bg-3: #111111;
+  --bg-4: #1a1a1a; --border: #ffffff; --border-bright: #ffffff;
+  --text-0: #ffffff; --text-1: #ffffff; --text-2: #aaaaaa; --text-3: #555555;
+  --accent: #ffff00;
+}
 
-    <style>
-        :root {
-            --bg-darker: #0d1117;
-            --bg-dark: #161b22;
-            --bg-light: #21262d;
-            --accent: #58a6ff;
-            --text-main: #c9d1d9;
-            --text-dim: #8b949e;
-            --border: #30363d;
-            --sidebar-width: 260px;
-            --header-height: 50px;
-            --tap-target: 44px;
-        }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg-0); color: var(--text-0); font-family: var(--font-ui); font-size: 14px; }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            background: var(--bg-darker); color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            overflow: hidden;
-        }
+/* ── HEADER ── */
+#header {
+  height: var(--header-h); background: var(--bg-1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 12px; gap: 8px; flex-shrink: 0; z-index: 100;
+}
+.logo-badge {
+  display: flex; align-items: center; gap: 8px; margin-right: 8px; cursor: default;
+}
+.logo-svg { width: 30px; height: 30px; }
+.logo-text { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--accent); letter-spacing: -0.5px; }
+.logo-text span { color: var(--text-1); }
+.header-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+.hbtn {
+  height: 32px; padding: 0 10px; border: none; border-radius: var(--radius-sm); cursor: pointer;
+  font-family: var(--font-ui); font-size: 12px; font-weight: 500; display: flex; align-items: center;
+  gap: 6px; transition: all 0.15s; background: transparent; color: var(--text-1); white-space: nowrap;
+  min-width: 44px; justify-content: center;
+}
+.hbtn:hover { background: var(--bg-3); color: var(--text-0); }
+.hbtn.primary { background: var(--accent); color: #fff; font-weight: 600; }
+.hbtn.primary:hover { background: #3a8ae8; }
+.hbtn.danger { background: var(--red); color: #fff; }
+.hbtn.danger:hover { background: #e04040; }
+.hbtn.success { background: var(--green); color: #0a1a0f; }
+.hbtn.icon-only { padding: 0; width: 32px; }
+.header-spacer { flex: 1; }
+.file-tabs {
+  display: flex; align-items: center; gap: 2px; flex: 1; overflow-x: auto; scrollbar-width: none;
+}
+.file-tabs::-webkit-scrollbar { display: none; }
+.file-tab {
+  height: 32px; padding: 0 12px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer; font-family: var(--font-mono); font-size: 11px; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px; border: 1px solid transparent;
+  border-bottom: none; transition: all 0.1s; color: var(--text-2); background: transparent;
+  position: relative; flex-shrink: 0;
+}
+.file-tab:hover { color: var(--text-0); background: var(--bg-2); }
+.file-tab.active { color: var(--text-0); background: var(--bg-2); border-color: var(--border); }
+.file-tab .tab-close { opacity: 0; font-size: 14px; color: var(--text-2); padding: 0 2px; border-radius: 2px; }
+.file-tab:hover .tab-close, .file-tab.active .tab-close { opacity: 1; }
+.file-tab .tab-close:hover { background: var(--bg-4); color: var(--red); }
+.tab-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); flex-shrink: 0; display: none; }
+.file-tab.dirty .tab-dot { display: block; }
 
-        /* --- Layout --- */
-        #app-container {
-            display: flex; height: 100vh; flex-direction: column;
-        }
+/* ── LAYOUT ── */
+#app {
+  display: flex; flex-direction: column; height: calc(100vh - var(--header-h)); overflow: hidden;
+}
+#main-area { display: flex; flex: 1; overflow: hidden; }
+#sidebar {
+  width: var(--sidebar-w); background: var(--bg-1); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s; overflow: hidden;
+}
+#sidebar.collapsed { width: 0; }
+#sidebar-header {
+  height: 36px; display: flex; align-items: center; padding: 0 8px; gap: 4px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.sidebar-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.8px; flex: 1; }
+.sidebar-btn {
+  width: 24px; height: 24px; border: none; background: transparent; color: var(--text-2);
+  cursor: pointer; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all 0.15s;
+}
+.sidebar-btn:hover { background: var(--bg-3); color: var(--text-0); }
+#file-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+.tree-item {
+  display: flex; align-items: center; gap: 6px; padding: 5px 8px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-1); border-radius: 3px;
+  margin: 0 4px; transition: all 0.1s; min-height: 30px;
+}
+.tree-item:hover { background: var(--bg-3); color: var(--text-0); }
+.tree-item.active { background: var(--accent-glow); color: var(--accent); border-left: 2px solid var(--accent); padding-left: 6px; }
+.tree-item .ti-icon { font-size: 12px; flex-shrink: 0; }
+.tree-item .ti-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-item .ti-actions { display: none; gap: 2px; }
+.tree-item:hover .ti-actions { display: flex; }
+.ti-act-btn { width: 20px; height: 20px; border: none; background: transparent; color: var(--text-2); cursor: pointer; font-size: 12px; border-radius: 2px; }
+.ti-act-btn:hover { background: var(--bg-4); color: var(--text-0); }
+.tree-folder { font-weight: 600; }
+.tree-indent { padding-left: 20px; }
 
-        header {
-            height: var(--header-height);
-            background: var(--bg-dark);
-            border-bottom: 1px border var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px;
-            z-index: 100;
-        }
+#editor-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-2);
+}
+.editor-toolbar {
+  height: 32px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0;
+}
+.etbtn {
+  height: 24px; padding: 0 8px; border: none; background: transparent; color: var(--text-2);
+  cursor: pointer; font-size: 11px; border-radius: var(--radius-sm); transition: all 0.1s;
+  display: flex; align-items: center; gap: 4px; font-family: var(--font-ui); white-space: nowrap;
+}
+.etbtn:hover { background: var(--bg-3); color: var(--text-0); }
+.etbtn.active { background: var(--bg-4); color: var(--accent); }
+.et-sep { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
+#editor-wrap { flex: 1; overflow: hidden; position: relative; }
+.CodeMirror {
+  height: 100% !important; font-family: var(--font-mono) !important; font-size: 13px !important;
+  background: var(--bg-2) !important; color: var(--text-0) !important; line-height: 1.6 !important;
+}
+.CodeMirror-gutters { background: var(--bg-1) !important; border-right: 1px solid var(--border) !important; }
+.CodeMirror-linenumber { color: var(--text-3) !important; padding: 0 8px !important; }
+.CodeMirror-cursor { border-left: 2px solid var(--accent) !important; }
+.CodeMirror-selected { background: rgba(79,158,255,0.2) !important; }
+.CodeMirror-matchingbracket { background: rgba(79,158,255,0.3) !important; color: var(--accent) !important; font-weight: bold; }
+.cm-ar-keyword { color: var(--accent) !important; font-weight: 600 !important; }
+.cm-ar-string { color: var(--green) !important; }
+.cm-ar-number { color: var(--orange) !important; }
+.cm-ar-comment { color: var(--text-3) !important; font-style: italic !important; }
+.cm-ar-function { color: var(--yellow) !important; }
+.cm-ar-operator { color: var(--cyan) !important; }
+.cm-ar-type { color: var(--purple) !important; }
+.cm-ar-builtin { color: var(--pink) !important; }
+.cm-ar-variable { color: var(--text-0) !important; }
+.CodeMirror-hint { background: var(--bg-3) !important; color: var(--text-0) !important; font-family: var(--font-mono) !important; font-size: 12px !important; }
+.CodeMirror-hint-active { background: var(--accent) !important; color: #fff !important; }
+.CodeMirror-hints { background: var(--bg-2) !important; border: 1px solid var(--border) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important; border-radius: var(--radius) !important; }
 
-        .logo {
-            display: flex; align-items: center; gap: 10px;
-            font-weight: 800; font-size: 1.2rem; color: var(--accent);
-        }
+/* ── OUTPUT PANEL ── */
+#output-panel {
+  width: 45%; background: var(--bg-0); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s;
+}
+#output-panel.hidden { width: 0; border-left: none; overflow: hidden; }
+#output-header {
+  height: 36px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 8px; gap: 8px; flex-shrink: 0;
+}
+.output-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.8px; flex: 1; }
+#canvas-wrap {
+  flex: 1; position: relative; overflow: hidden; background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+#game-canvas { display: block; max-width: 100%; max-height: 100%; }
+#three-canvas { display: none; max-width: 100%; max-height: 100%; }
+#output-placeholder {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; color: var(--text-3); pointer-events: none;
+}
+.placeholder-logo { font-family: var(--font-mono); font-size: 28px; color: var(--text-3); }
+.placeholder-text { font-size: 12px; }
 
-        main { display: flex; flex: 1; overflow: hidden; position: relative; }
+#console-area {
+  height: var(--console-h); border-top: 1px solid var(--border); display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+#console-header {
+  height: 28px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0;
+}
+.console-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.8px; flex: 1; }
+#console-log {
+  flex: 1; overflow-y: auto; padding: 4px 8px; font-family: var(--font-mono); font-size: 11px;
+  line-height: 1.7; background: var(--bg-0);
+}
+.log-line { display: flex; gap: 8px; padding: 1px 0; }
+.log-time { color: var(--text-3); flex-shrink: 0; }
+.log-info { color: var(--text-1); }
+.log-error { color: var(--red); }
+.log-warn { color: var(--yellow); }
+.log-success { color: var(--green); }
+.log-print { color: var(--cyan); }
 
-        /* --- Sidebar --- */
-        #sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-darker);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-            transition: transform 0.3s ease;
-        }
+/* ── STATUS BAR ── */
+#statusbar {
+  height: var(--statusbar-h); background: var(--accent); display: flex; align-items: center;
+  padding: 0 12px; gap: 16px; flex-shrink: 0;
+}
+.sb-item { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.8); display: flex; align-items: center; gap: 4px; }
+.sb-item b { color: #fff; }
+#run-status { margin-left: auto; }
+.run-indicator { display: flex; align-items: center; gap: 6px; }
+.run-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        .sidebar-header {
-            padding: 10px; font-size: 0.8rem; text-transform: uppercase;
-            color: var(--text-dim); display: flex; justify-content: space-between;
-        }
+/* ── DRAG HANDLE ── */
+.drag-handle {
+  width: 4px; background: var(--border); cursor: col-resize; flex-shrink: 0; transition: background 0.1s;
+}
+.drag-handle:hover { background: var(--accent); }
 
-        #file-tree { flex: 1; overflow-y: auto; padding: 5px; }
-        .file-item {
-            padding: 10px; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; gap: 10px; font-size: 0.95rem;
-            margin-bottom: 2px;
-        }
-        .file-item:hover { background: var(--bg-light); }
-        .file-item.active { background: var(--bg-light); border-left: 3px solid var(--accent); }
+/* ── MODAL BASE ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6); overflow: hidden; transform: translateY(8px);
+  transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  height: 44px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px; gap: 8px;
+}
+.modal-title { font-size: 13px; font-weight: 600; flex: 1; }
+.modal-close { width: 28px; height: 28px; border: none; background: transparent; color: var(--text-2); cursor: pointer; font-size: 18px; border-radius: var(--radius-sm); transition: all 0.1s; }
+.modal-close:hover { background: var(--bg-3); color: var(--red); }
+.modal-body { padding: 16px; }
+.modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 
-        /* --- Editor Area --- */
-        #editor-container { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
-        #cm-editor { flex: 1; font-size: 16px; overflow: hidden; }
+/* ── COMMAND PALETTE ── */
+#cmd-palette { width: min(560px, 90vw); }
+#cmd-input {
+  width: 100%; height: 44px; background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 0 12px; font-family: var(--font-mono); font-size: 13px;
+  color: var(--text-0); outline: none; margin-bottom: 8px;
+}
+#cmd-input:focus { border-color: var(--accent); }
+#cmd-list { max-height: 300px; overflow-y: auto; }
+.cmd-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.1s;
+}
+.cmd-item:hover, .cmd-item.focused { background: var(--bg-3); }
+.cmd-icon { width: 28px; height: 28px; background: var(--bg-4); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.cmd-name { font-size: 12px; font-weight: 500; }
+.cmd-desc { font-size: 11px; color: var(--text-2); }
+.cmd-shortcut { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--text-3); background: var(--bg-4); padding: 2px 6px; border-radius: var(--radius-sm); }
 
-        /* --- Toolbar --- */
-        .toolbar {
-            display: flex; gap: 8px; align-items: center;
-        }
-        .btn {
-            background: var(--bg-light); border: 1px solid var(--border);
-            color: white; padding: 0 15px; height: 36px; border-radius: 6px;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            font-size: 14px; white-space: nowrap;
-        }
-        .btn:active { opacity: 0.7; }
-        .btn-primary { background: var(--accent); border-color: transparent; }
+/* ── SETTINGS MODAL ── */
+#settings-modal .modal { width: min(720px, 95vw); max-height: 80vh; display: flex; flex-direction: column; }
+.settings-tabs { display: flex; gap: 2px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--bg-1); flex-shrink: 0; }
+.stab { padding: 6px 14px; border: none; background: transparent; color: var(--text-2); cursor: pointer; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; transition: all 0.1s; }
+.stab.active { background: var(--bg-3); color: var(--text-0); }
+.stab:hover { color: var(--text-0); }
+.settings-content { flex: 1; overflow-y: auto; padding: 16px; }
+.setting-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+.setting-row:last-child { border-bottom: none; }
+.setting-label { flex: 1; }
+.setting-label b { display: block; font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.setting-label span { font-size: 11px; color: var(--text-2); }
+.setting-control input[type=range] { width: 120px; accent-color: var(--accent); }
+.setting-control select {
+  background: var(--bg-3); color: var(--text-0); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 5px 8px; font-size: 12px; outline: none;
+}
+.setting-control select:focus { border-color: var(--accent); }
+.toggle {
+  width: 40px; height: 22px; background: var(--bg-4); border-radius: 11px; cursor: pointer;
+  position: relative; transition: background 0.2s; border: none; flex-shrink: 0;
+}
+.toggle::after { content: ''; width: 16px; height: 16px; background: var(--text-2); border-radius: 50%; position: absolute; left: 3px; top: 3px; transition: all 0.2s; }
+.toggle.on { background: var(--accent); }
+.toggle.on::after { left: 21px; background: #fff; }
+.theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.theme-swatch {
+  height: 40px; border-radius: var(--radius-sm); cursor: pointer; border: 2px solid transparent;
+  transition: all 0.15s; display: flex; align-items: flex-end; padding: 4px; font-size: 9px; font-weight: 600;
+}
+.theme-swatch:hover, .theme-swatch.active { border-color: var(--accent); }
+.theme-swatch.ts-dark { background: #0d0e11; color: #4f9eff; }
+.theme-swatch.ts-light { background: #f0f1f4; color: #1a6fd4; }
+.theme-swatch.ts-sol { background: #002b36; color: #268bd2; }
+.theme-swatch.ts-retro { background: #0a0a00; color: #aaff00; }
+.theme-swatch.ts-hc { background: #000; color: #ffff00; border: 1px solid #fff; }
 
-        /* --- Run Overlay --- */
-        #run-panel {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; z-index: 1000; display: none;
-            flex-direction: column;
-        }
-        #run-header {
-            height: 50px; background: #111; display: flex; 
-            align-items: center; justify-content: space-between; padding: 0 20px;
-        }
-        #viewport { flex: 1; position: relative; background: #000; overflow: hidden; }
-        #console-out {
-            height: 150px; background: #050505; border-top: 1px solid #333;
-            font-family: monospace; padding: 10px; overflow-y: auto; color: #0f0;
-            font-size: 12px;
-        }
+/* ── TRAINING MANUAL ── */
+.manual-content {
+  font-size: 12px; line-height: 1.8; color: var(--text-1);
+}
+.manual-content h2 { font-size: 16px; font-weight: 700; color: var(--accent); margin: 20px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.manual-content h3 { font-size: 13px; font-weight: 600; color: var(--text-0); margin: 14px 0 4px; }
+.manual-content p { margin-bottom: 8px; }
+.manual-content pre {
+  background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 12px; font-family: var(--font-mono); font-size: 11px; overflow-x: auto;
+  margin: 8px 0; color: var(--cyan);
+}
+.manual-content .kw { color: var(--accent); font-weight: 600; }
+.manual-content .str { color: var(--green); }
+.manual-content .num { color: var(--orange); }
+.manual-content .cmt { color: var(--text-3); font-style: italic; }
+.manual-content table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.manual-content th { background: var(--bg-3); padding: 6px 10px; text-align: left; font-size: 11px; color: var(--text-0); }
+.manual-content td { padding: 5px 10px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.dl-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent);
+  color: #fff; border: none; border-radius: var(--radius); cursor: pointer; font-size: 12px; font-weight: 600;
+  margin-top: 16px; transition: all 0.15s;
+}
+.dl-btn:hover { background: #3a8ae8; }
 
-        /* --- Modals --- */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            display: none; align-items: center; justify-content: center; z-index: 2000;
-        }
-        .modal {
-            background: var(--bg-dark); border: 1px solid var(--border);
-            width: 90%; max-width: 600px; border-radius: 12px; padding: 20px;
-            max-height: 80vh; overflow-y: auto;
-        }
+/* ── NEW FILE MODAL ── */
+#new-file-modal .modal { width: min(500px, 90vw); }
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.preset-card {
+  padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer;
+  transition: all 0.15s; background: var(--bg-1);
+}
+.preset-card:hover, .preset-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+.preset-card .pc-icon { font-size: 20px; margin-bottom: 4px; }
+.preset-card .pc-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.preset-card .pc-desc { font-size: 10px; color: var(--text-2); }
+.inp {
+  width: 100%; height: 36px; background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0 10px; font-size: 12px; color: var(--text-0); outline: none;
+  margin-top: 4px; font-family: var(--font-mono);
+}
+.inp:focus { border-color: var(--accent); }
+.inp-label { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* --- Responsive iPad Fixes --- */
-        @media (max-width: 768px) {
-            #sidebar { position: absolute; left: -100%; height: 100%; z-index: 50; }
-            #sidebar.open { transform: translateX(100%); }
-            .btn span { display: none; }
-            .btn { padding: 0 10px; width: 44px; justify-content: center; }
-        }
+/* ── ASSETS PANEL ── */
+#assets-panel {
+  height: 0; background: var(--bg-1); border-top: 1px solid var(--border); overflow: hidden;
+  transition: height 0.2s; flex-shrink: 0;
+}
+#assets-panel.open { height: 160px; }
+#assets-header {
+  height: 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+  padding: 0 8px; gap: 4px;
+}
+.assets-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.8px; flex: 1; }
+#asset-drop-zone {
+  height: calc(100% - 28px); display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px; color: var(--text-3); font-size: 11px; cursor: pointer;
+  overflow-y: auto; padding: 8px;
+}
+#asset-drop-zone.has-assets { flex-direction: row; flex-wrap: wrap; align-items: flex-start; justify-content: flex-start; gap: 6px; }
+.asset-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+  transition: all 0.1s; background: var(--bg-2); min-width: 60px; max-width: 80px;
+}
+.asset-item:hover { border-color: var(--accent); }
+.asset-icon { font-size: 20px; }
+.asset-name { font-size: 9px; color: var(--text-2); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 
-        /* --- Syntax Guide CSS --- */
-        .guide-code { background: #000; padding: 10px; border-radius: 5px; color: #58a6ff; font-family: monospace; display: block; margin: 10px 0; }
-    </style>
+/* ── TOAST ── */
+#toast-container { position: fixed; bottom: 40px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; pointer-events: none; }
+.toast {
+  background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 14px; font-size: 12px; font-weight: 500; display: flex; align-items: center;
+  gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transform: translateX(100px); opacity: 0;
+  transition: all 0.25s; pointer-events: all; max-width: 320px; min-width: 200px;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.toast-success { border-color: var(--green); }
+.toast.toast-error { border-color: var(--red); }
+.toast.toast-warn { border-color: var(--yellow); }
+.toast-icon { font-size: 16px; }
+
+/* ── AUTOCOMPLETE HINT ── */
+.ar-hint-doc {
+  background: var(--bg-2) !important; border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important; padding: 8px 12px !important; font-size: 11px !important;
+  color: var(--text-1) !important; max-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+}
+
+/* ── RESIZE ── */
+.v-resize {
+  height: 4px; background: var(--border); cursor: row-resize; transition: background 0.1s; flex-shrink: 0;
+}
+.v-resize:hover { background: var(--accent); }
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+/* ── MOBILE/TABLET ── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 200px; --console-h: 120px; }
+  #output-panel { width: 100% !important; position: fixed; inset: 0; z-index: 500; transform: translateY(100%); transition: transform 0.3s; }
+  #output-panel.mobile-open { transform: translateY(0); }
+  #output-panel.hidden { width: 100% !important; transform: translateY(100%); }
+}
+</style>
 </head>
 <body>
 
-<div id="app-container">
-    <header>
-        <div class="logo">
-            <i data-lucide="zap"></i> AR(> <span style="font-weight: 300; opacity: 0.5;">STUDIO</span>
-        </div>
-        <div class="toolbar">
-            <button class="btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
-            <button class="btn" onclick="showCommandBar()"><i data-lucide="search"></i></button>
-            <button class="btn btn-primary" onclick="runProject()"><i data-lucide="play"></i> <span>RUN</span></button>
-            <button class="btn" onclick="showSettings()"><i data-lucide="settings"></i></button>
-        </div>
-    </header>
-
-    <main>
-        <div id="sidebar">
-            <div class="sidebar-header">
-                <span>Files</span>
-                <button class="btn" style="height: 24px; padding: 0 5px;" onclick="newFilePrompt()"><i data-lucide="plus" size="14"></i></button>
-            </div>
-            <div id="file-tree"></div>
-        </div>
-
-        <div id="editor-container">
-            <div id="cm-editor"></div>
-        </div>
-    </main>
+<!-- ── HEADER ── -->
+<div id="header">
+  <div class="logo-badge">
+    <svg class="logo-svg" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="30" height="30" rx="6" fill="#1a1d24"/>
+      <path d="M5 22L11 8h3l6 14h-3l-1.5-3.5h-5.5L8.5 22H5zm4.5-6h3.8L11.4 12l-1.9 4z" fill="#4f9eff"/>
+      <path d="M20 8h2v8c0 1.1.5 1.8 1.6 1.8.4 0 .8-.1 1.2-.3l.7 2.2c-.7.3-1.5.5-2.3.5-2.4 0-3.2-1.5-3.2-3.3V8z" fill="#4fd6ff"/>
+      <text x="22" y="27" font-family="monospace" font-size="7" fill="#4f9eff" font-weight="bold">(></text>
+    </svg>
+    <span class="logo-text">AR<span>(></span></span>
+  </div>
+  <div class="header-sep"></div>
+  <div class="file-tabs" id="file-tabs"></div>
+  <div class="header-spacer"></div>
+  <button class="hbtn" onclick="showNewFile()" title="New Script">＋ New</button>
+  <button class="hbtn" onclick="saveCurrentFile()" title="Save (Ctrl+S)">💾 Save</button>
+  <button class="hbtn" onclick="toggleAssets()">📁 Assets</button>
+  <div class="header-sep"></div>
+  <button class="hbtn primary" id="run-btn" onclick="runCode()" title="Run (Ctrl+Enter)">▶ Run</button>
+  <button class="hbtn danger" id="stop-btn" onclick="stopCode()" style="display:none" title="Stop">■ Stop</button>
+  <div class="header-sep"></div>
+  <button class="hbtn icon-only" onclick="showCommandPalette()" title="Command Palette (Ctrl+P)">⌘</button>
+  <button class="hbtn icon-only" onclick="showSettings()" title="Settings">⚙</button>
 </div>
 
-<!-- Run Screen -->
-<div id="run-panel">
-    <div id="run-header">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <span id="run-title" style="font-weight: bold;">Execution Mode</span>
+<!-- ── APP ── -->
+<div id="app">
+  <div id="main-area">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div id="sidebar-header">
+        <span class="sidebar-title">Explorer</span>
+        <button class="sidebar-btn" onclick="showNewFile()">＋</button>
+        <button class="sidebar-btn" onclick="toggleSidebar()">✕</button>
+      </div>
+      <div id="file-tree"></div>
+    </div>
+    <div class="drag-handle" id="sidebar-handle"></div>
+
+    <!-- EDITOR -->
+    <div id="editor-area">
+      <div class="editor-toolbar">
+        <button class="etbtn" onclick="editorSelectAll()">Select All</button>
+        <button class="etbtn" onclick="editorUndo()">↩ Undo</button>
+        <button class="etbtn" onclick="editorRedo()">↪ Redo</button>
+        <div class="et-sep"></div>
+        <button class="etbtn" onclick="formatCode()">⟨/⟩ Format</button>
+        <button class="etbtn" onclick="commentLine()">// Comment</button>
+        <div class="et-sep"></div>
+        <button class="etbtn" onclick="showCommandPalette()">⌘ Palette</button>
+        <div class="et-sep"></div>
+        <span id="cursor-pos" style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-left:auto;">Ln 1, Col 1</span>
+      </div>
+      <div id="editor-wrap">
+        <textarea id="code-editor"></textarea>
+      </div>
+      <div id="assets-panel">
+        <div id="assets-header">
+          <span class="assets-title">Assets</span>
+          <button class="sidebar-btn" onclick="document.getElementById('file-upload').click()">＋ Upload</button>
+          <input type="file" id="file-upload" multiple style="display:none" onchange="handleFileUpload(event)">
+          <button class="sidebar-btn" onclick="toggleAssets()">✕</button>
         </div>
-        <button class="btn" onclick="stopProject()" style="background: #e74c3c;"><i data-lucide="square"></i> STOP</button>
-    </div>
-    <div id="viewport">
-        <canvas id="canvas2d" style="width: 100%; height: 100%; display: none;"></canvas>
-    </div>
-    <div id="console-out"></div>
-</div>
-
-<!-- New File Modal -->
-<div id="new-file-modal" class="modal-overlay">
-    <div class="modal">
-        <h3>Create New Script</h3>
-        <input type="text" id="new-filename" placeholder="script_name" style="width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: white; margin-bottom: 20px;">
-        <p>Choose a template:</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="btn" onclick="createFile('blank')">Empty</button>
-            <button class="btn" onclick="createFile('2d')">2D Platformer</button>
-            <button class="btn" onclick="createFile('3d')">3D Scene</button>
-            <button class="btn" onclick="createFile('pong')">Pong Arcade</button>
-            <button class="btn" onclick="createFile('rpg')">RPG Base</button>
+        <div id="asset-drop-zone" onclick="document.getElementById('file-upload').click()">
+          <span style="font-size:24px">📂</span>
+          <span>Drop files or tap to upload</span>
         </div>
-        <br>
-        <button class="btn" style="width: 100%;" onclick="closeModals()">Cancel</button>
+      </div>
     </div>
+
+    <div class="drag-handle" id="output-handle"></div>
+
+    <!-- OUTPUT -->
+    <div id="output-panel" class="hidden">
+      <div id="output-header">
+        <span class="output-title">Output</span>
+        <button class="hbtn" onclick="toggleFullscreen()" style="font-size:11px;height:24px;padding:0 8px;">⛶ Full</button>
+        <button class="sidebar-btn" onclick="clearOutput()">🗑</button>
+        <button class="sidebar-btn" onclick="closeOutput()">✕</button>
+      </div>
+      <div id="canvas-wrap">
+        <canvas id="game-canvas" width="800" height="500"></canvas>
+        <canvas id="three-canvas" width="800" height="500"></canvas>
+        <div id="output-placeholder">
+          <div class="placeholder-logo">AR(></div>
+          <div class="placeholder-text">Press ▶ Run to execute</div>
+        </div>
+      </div>
+      <div class="v-resize" id="console-resize"></div>
+      <div id="console-area">
+        <div id="console-header">
+          <span class="console-title">Console</span>
+          <button class="sidebar-btn" onclick="clearConsole()">🗑</button>
+        </div>
+        <div id="console-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <div class="sb-item">AR(> Playground</div>
+    <div class="sb-item" id="sb-file">No file</div>
+    <div class="sb-item" id="sb-lang">AR(&gt; 1.0</div>
+    <div class="sb-item" id="sb-assets">0 assets</div>
+    <div class="sb-item" id="run-status"></div>
+  </div>
 </div>
 
-<!-- Manual Modal -->
-<div id="manual-modal" class="modal-overlay">
-    <div class="modal" style="max-width: 800px;">
-        <h2>AR(> Language Manual</h2>
-        <p>AR(> is a natural-language wrapper for high-performance logic and rendering.</p>
-        
-        <h3>Basics</h3>
-        <code class="guide-code">set score to 0<br>set name to "Player 1"</code>
-        
-        <h3>Logic</h3>
-        <code class="guide-code">if score > 10 do<br>&nbsp;&nbsp;print "Level Up!"<br>end</code>
-        
-        <h3>2D Graphics</h3>
-        <code class="guide-code">draw circle at 100, 100 radius 50 color "red"<br>draw rect at x, y size 50, 50 color "blue"</code>
-        
-        <h3>3D Graphics</h3>
-        <code class="guide-code">create box at 0, 0, 0 name "cube1"<br>rotate "cube1" x 0.01</code>
+<!-- ── TOAST CONTAINER ── -->
+<div id="toast-container"></div>
 
-        <h3>Events</h3>
-        <code class="guide-code">every frame do<br>&nbsp;&nbsp;move "cube1" x 0.1<br>end<br><br>when key "space" do<br>&nbsp;&nbsp;print "Jump!"<br>end</code>
-
-        <button class="btn" style="width: 100%;" onclick="downloadSpec()">Download Complete Spec</button>
-        <br>
-        <button class="btn" style="width: 100%;" onclick="closeModals()">Close</button>
+<!-- ── COMMAND PALETTE MODAL ── -->
+<div class="modal-overlay" id="cmd-modal">
+  <div class="modal" id="cmd-palette">
+    <div class="modal-header">
+      <span class="modal-title">⌘ Command Palette</span>
+      <button class="modal-close" onclick="closeModal('cmd-modal')">✕</button>
     </div>
+    <div class="modal-body">
+      <input type="text" id="cmd-input" placeholder="Search commands, files, functions..." oninput="filterCommands()" onkeydown="cmdKeydown(event)">
+      <div id="cmd-list"></div>
+    </div>
+  </div>
 </div>
 
-<script type="module">
-    // --- Editor Setup ---
-    import { EditorView, basicSetup } from "@codemirror/view";
-    import { EditorState } from "@codemirror/state";
-    import { javascript } from "@nextjournal/lang-javascript";
-    
-    // --- Database (Dexie) ---
-    const db = new Dexie("AR_IDE_DB");
-    db.version(1).stores({ scripts: 'id, name, content, type', assets: 'id, name, data' });
+<!-- ── NEW FILE MODAL ── -->
+<div class="modal-overlay" id="new-file-modal">
+  <div class="modal" id="new-file-modal-inner">
+    <div class="modal-header">
+      <span class="modal-title">+ New Script</span>
+      <button class="modal-close" onclick="closeModal('new-file-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="inp-label">File Name</div>
+      <input type="text" id="new-file-name" class="inp" placeholder="my_game.ar" value="untitled.ar">
+      <div class="inp-label" style="margin-top:12px;">Choose Preset</div>
+      <div class="preset-grid" id="preset-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="hbtn" onclick="closeModal('new-file-modal')">Cancel</button>
+      <button class="hbtn primary" onclick="createNewFile()">Create</button>
+    </div>
+  </div>
+</div>
 
-    let editor;
-    let currentFileId = 'main';
-    let files = [];
+<!-- ── SETTINGS MODAL ── -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal" id="settings-inner">
+    <div class="modal-header">
+      <span class="modal-title">⚙ Settings</span>
+      <button class="modal-close" onclick="closeModal('settings-modal')">✕</button>
+    </div>
+    <div class="settings-tabs">
+      <button class="stab active" onclick="switchSettingsTab('editor')">Editor</button>
+      <button class="stab" onclick="switchSettingsTab('theme')">Theme</button>
+      <button class="stab" onclick="switchSettingsTab('manual')">Training Manual</button>
+    </div>
+    <div class="settings-content" id="settings-content"></div>
+  </div>
+</div>
 
-    // --- AR(> Interpreter Logic ---
-    const AR_Interpreter = {
-        transpile(code) {
-            let js = `(async (engine) => { 
-                const { draw, create, print, move, rotate, set, input, math } = engine;
-                let __running = true;
-            `;
+<script>
+// ═══════════════════════════════════════════════════
+//  AR(> LANGUAGE SPECIFICATION & INTERPRETER
+// ═══════════════════════════════════════════════════
 
-            const lines = code.split('\n');
-            lines.forEach(line => {
-                let l = line.trim();
-                if(!l || l.startsWith('//')) return;
+const AR_KEYWORDS = [
+  'let','set','make','const','var',
+  'fn','function','return','end',
+  'if','elif','else','then',
+  'loop','repeat','while','for','each','in','break','continue',
+  'class','new','self','extends','super',
+  'emit','on','off','once',
+  'print','log','warn','error',
+  'wait','every','after','cancel',
+  'canvas','draw','fill','stroke','clear','color','rect','circle','line','text','image',
+  'scene3d','cube','sphere','plane','light','camera','ambient','mesh',
+  'load','read','write','save',
+  'play','stop','pause','resume',
+  'input','key','mouse','touch','gamepad',
+  'math','random','abs','floor','ceil','round','min','max','sqrt','pow','sin','cos','tan',
+  'string','number','bool','array','object','null','true','false',
+  'push','pop','shift','unshift','splice','join','split','slice','reverse','sort',
+  'keys','values','has','get','set',
+  'type','len','size','is',
+  'import','export','use',
+  'try','catch','throw',
+  'async','await','promise',
+  'show','hide','move','scale','rotate','alpha','tint',
+  'ui','button','label','slider','checkbox','panel',
+  'debug','inspect','assert',
+  'global','local','private','public'
+];
 
-                // 1. Variable Assignment: set x to 10
-                l = l.replace(/set (\w+) to (.+)/g, 'let $1 = $2;');
+const AR_BUILTINS = [
+  'Canvas','Scene3D','Audio','Image','Timer','Input','Math','String','Array','Object',
+  'File','Network','Storage','Game','Physics','Particle','Tween','Camera2D'
+];
 
-                // 2. Logic Blocks
-                l = l.replace(/if (.+) do/g, 'if ($1) {');
-                l = l.replace(/every frame do/g, 'engine.onFrame(() => {');
-                l = l.replace(/when key "(.+)" do/g, 'engine.onKey("$1", () => {');
-                l = l.replace(/repeat (\d+) times do/g, 'for(let i=0; i<$1; i++) {');
-                l = l.replace(/end/g, '});'); // This is a bit naive but works for simple structure
-                
-                // 3. Draw commands
-                l = l.replace(/draw circle at ([\d\w.]+), ([\d\w.]+) radius ([\d\w.]+) color "(.+)"/g, 'draw.circle($1, $2, $3, "$4")');
-                l = l.replace(/draw rect at ([\d\w.]+), ([\d\w.]+) size ([\d\w.]+), ([\d\w.]+) color "(.+)"/g, 'draw.rect($1, $2, $3, $4, "$5")');
-                
-                // 4. Print
-                l = l.replace(/print (.+)/g, 'print($1)');
+const AR_SNIPPETS = {
+  'fn': 'fn ${name}(${params})\n  ${body}\nend',
+  'if': 'if ${condition} then\n  ${body}\nend',
+  'loop': 'loop ${n} times\n  ${body}\nend',
+  'while': 'while ${condition}\n  ${body}\nend',
+  'for': 'for each ${item} in ${list}\n  ${body}\nend',
+  'class': 'class ${Name}\n  fn init(${params})\n    ${body}\n  end\nend',
+  'every': 'every ${ms}ms\n  ${body}\nend',
+  'after': 'after ${ms}ms\n  ${body}\nend',
+  'canvas': 'let c = Canvas.new()\nc.clear("black")\nc.color("white")\nc.rect(10, 10, 100, 50)',
+  'scene3d': 'let s = Scene3D.new()\nlet box = s.cube(1, 1, 1)\nbox.color("royalblue")\ns.light("point", 5, 5, 5)\ns.run()',
+};
 
-                // 5. 3D Commands
-                l = l.replace(/create box at ([\d.-]+), ([\d.-]+), ([\d.-]+) name "(.+)"/g, 'create.box($1, $2, $3, "$4")');
-                l = l.replace(/rotate "(.+)" (\w) ([\d\w.]+)/g, 'rotate("$1", "$2", $3)');
-                l = l.replace(/move "(.+)" (\w) ([\d\w.]+)/g, 'move("$1", "$2", $3)');
+// AR(> Interpreter
+class ARInterpreter {
+  constructor(outputCallbacks) {
+    this.cb = outputCallbacks; // { print, error, warn, canvas2d, canvas3d }
+    this.env = [{}];
+    this.functions = {};
+    this.classes = {};
+    this.timers = [];
+    this.running = false;
+    this.canvas = null;
+    this.ctx = null;
+    this.threeScene = null;
+    this.threeRenderer = null;
+    this.threeCamera = null;
+    this.animId = null;
+    this.eventListeners = {};
+    this.keyState = {};
+    this.mouseState = { x: 0, y: 0, down: false };
+    this.assets = {};
+    this.gameLoop = null;
+    this.useThree = false;
+  }
 
-                js += l + '\n';
-            });
+  reset() {
+    this.timers.forEach(t => clearInterval(t.id));
+    this.timers = [];
+    if (this.animId) cancelAnimationFrame(this.animId);
+    if (this.threeRenderer) { this.threeRenderer.dispose(); this.threeRenderer = null; }
+    this.threeScene = null; this.threeCamera = null;
+    this.env = [{}]; this.functions = {}; this.classes = {};
+    this.eventListeners = {}; this.keyState = {}; this.running = false;
+    this.useThree = false;
+  }
 
-            js += `\n})(runtime_engine);`;
-            return js;
+  scope() { return this.env[this.env.length - 1]; }
+  pushScope() { this.env.push(Object.create(this.scope())); }
+  popScope() { this.env.pop(); }
+  getVar(name) { return this.scope()[name]; }
+  setVar(name, val) {
+    let s = this.env.length - 1;
+    while (s >= 0) {
+      if (Object.prototype.hasOwnProperty.call(this.env[s], name)) {
+        this.env[s][name] = val; return;
+      }
+      s--;
+    }
+    this.env[0][name] = val;
+  }
+  defVar(name, val) { this.scope()[name] = val; }
+
+  // ── TOKENIZER ──
+  tokenize(src) {
+    const tokens = [];
+    let i = 0;
+    const lines = src.split('\n');
+    let lineNum = 0;
+    for (const line of lines) {
+      lineNum++;
+      let col = 0;
+      const trimmed = line.trimStart();
+      const indent = line.length - trimmed.length;
+      if (trimmed.startsWith('//') || trimmed.startsWith('#')) {
+        tokens.push({ type: 'COMMENT', val: trimmed, line: lineNum, indent });
+        continue;
+      }
+      const chars = [...trimmed];
+      let ci = 0;
+      while (ci < chars.length) {
+        // Skip whitespace
+        if (/\s/.test(chars[ci])) { ci++; continue; }
+        // String
+        if (chars[ci] === '"' || chars[ci] === "'") {
+          const q = chars[ci++]; let s = '';
+          while (ci < chars.length && chars[ci] !== q) {
+            if (chars[ci] === '\\') { ci++; s += ({ 'n':'\n','t':'\t','\\':'\\' }[chars[ci]] || chars[ci]); }
+            else s += chars[ci];
+            ci++;
+          }
+          ci++;
+          tokens.push({ type: 'STRING', val: s, line: lineNum, indent });
+          continue;
         }
-    };
-
-    // --- Runtime Engine ---
-    let threeScene, threeCamera, threeRenderer, frameCallbacks = [], keysDown = {};
-    const runtime_engine = {
-        onFrame: (cb) => frameCallbacks.push(cb),
-        onKey: (key, cb) => {
-            window.addEventListener('keydown', (e) => { if(e.key === key) cb(); });
-        },
-        print: (msg) => {
-            const out = document.getElementById('console-out');
-            out.innerHTML += `> ${JSON.stringify(msg)}<br>`;
-            out.scrollTop = out.scrollHeight;
-        },
-        draw: {
-            circle: (x, y, r, color) => {
-                const ctx = document.getElementById('canvas2d').getContext('2d');
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(x, y, r, 0, Math.PI*2);
-                ctx.fill();
-            },
-            rect: (x, y, w, h, color) => {
-                const ctx = document.getElementById('canvas2d').getContext('2d');
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, w, h);
-            }
-        },
-        create: {
-            box: (x, y, z, name) => {
-                const geo = new THREE.BoxGeometry(1, 1, 1);
-                const mat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, y, z);
-                mesh.name = name;
-                threeScene.add(mesh);
-            }
-        },
-        rotate: (name, axis, val) => {
-            const obj = threeScene.getObjectByName(name);
-            if(obj) obj.rotation[axis] += parseFloat(val);
-        },
-        move: (name, axis, val) => {
-            const obj = threeScene.getObjectByName(name);
-            if(obj) obj.position[axis] += parseFloat(val);
+        // Number
+        if (/\d/.test(chars[ci]) || (chars[ci] === '-' && /\d/.test(chars[ci+1]))) {
+          let n = '';
+          if (chars[ci] === '-') n += chars[ci++];
+          while (ci < chars.length && /[\d.]/.test(chars[ci])) n += chars[ci++];
+          tokens.push({ type: 'NUMBER', val: parseFloat(n), line: lineNum, indent });
+          continue;
         }
-    };
-
-    // --- Initialization ---
-    async function init() {
-        lucide.createIcons();
-        
-        // Load Scripts from DB
-        files = await db.scripts.toArray();
-        if(files.length === 0) {
-            await db.scripts.add({ id: 'main', name: 'main.arg', content: 'set score to 0\n\nprint "AR(> Environment Loaded"\n\ncreate box at 0, 0, 0 name "hero"\n\nevery frame do\n  rotate "hero" y 0.02\n  rotate "hero" x 0.01\nend' });
-            files = await db.scripts.toArray();
+        // Multi-char operators
+        const twoChar = chars[ci] + (chars[ci+1] || '');
+        if (['==','!=','<=','>=','&&','||','->','**','++','--','+=','-=','*=','/='].includes(twoChar)) {
+          tokens.push({ type: 'OP', val: twoChar, line: lineNum, indent }); ci += 2; continue;
         }
+        // Single-char operators / punctuation
+        if ('+-*/<>=!%&|^~.,:;()[]{}@?'.includes(chars[ci])) {
+          tokens.push({ type: 'OP', val: chars[ci], line: lineNum, indent }); ci++; continue;
+        }
+        // Identifier/keyword
+        if (/[a-zA-Z_$]/.test(chars[ci])) {
+          let id = '';
+          while (ci < chars.length && /[a-zA-Z0-9_$]/.test(chars[ci])) id += chars[ci++];
+          const type = AR_KEYWORDS.includes(id) ? 'KEYWORD' : (AR_BUILTINS.includes(id) ? 'BUILTIN' : 'IDENT');
+          tokens.push({ type, val: id, line: lineNum, indent });
+          continue;
+        }
+        ci++;
+      }
+      tokens.push({ type: 'NEWLINE', val: '\n', line: lineNum, indent });
+    }
+    return tokens;
+  }
 
-        renderFileTree();
-        setupEditor(files[0].content);
-        
-        window.toggleSidebar = () => {
-            document.getElementById('sidebar').classList.toggle('open');
-        };
-        
-        window.newFilePrompt = () => {
-            document.getElementById('new-file-modal').style.display = 'flex';
-        };
+  // ── PARSER / EVALUATOR ──
+  async run(src, canvasEl, threeCanvasEl, assets) {
+    this.running = true;
+    this.canvas = canvasEl;
+    this.ctx = canvasEl.getContext('2d');
+    this.assets = assets || {};
+    this.threeCanvasEl = threeCanvasEl;
 
-        window.closeModals = () => {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
-        };
+    // Pre-pass: collect fn/class defs
+    const lines = src.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//') && !l.startsWith('#'));
 
-        window.showSettings = () => {
-            document.getElementById('manual-modal').style.display = 'flex';
-        };
+    try {
+      await this.execLines(lines, 0);
+    } catch(e) {
+      if (e.message !== 'STOP') {
+        this.cb.error('Runtime error: ' + e.message);
+      }
+    }
+  }
 
-        window.createFile = async (template) => {
-            const name = document.getElementById('new-filename').value || 'untitled';
-            let content = '// New AR(> Script';
-            if(template === '3d') content = 'create box at 0, 0, 0 name "box"\nevery frame do\n  rotate "box" y 0.01\nend';
-            if(template === 'pong') content = 'set ball_y to 200\nset dir to 2\n\nevery frame do\n  set ball_y to ball_y + dir\n  draw circle at 400, ball_y radius 10 color "white"\nend';
-            
-            const id = Date.now().toString();
-            await db.scripts.add({ id, name: name + '.arg', content });
-            files.push({ id, name: name + '.arg', content });
-            renderFileTree();
-            closeModals();
-            loadScript(id);
-        };
+  async execLines(lines, depth) {
+    let i = 0;
+    while (i < lines.length && this.running) {
+      const result = await this.execLine(lines, i, depth);
+      if (result && result.type === 'return') return result;
+      if (result && result.type === 'break') return result;
+      if (result && result.type === 'continue') return result;
+      i = (result && result.next !== undefined) ? result.next : i + 1;
+    }
+  }
+
+  async execLine(lines, i, depth) {
+    if (!this.running) throw new Error('STOP');
+    const raw = lines[i];
+    if (!raw || !raw.trim()) return { next: i + 1 };
+    const line = raw.trim();
+
+    // ── Variable declaration ──
+    const declMatch = line.match(/^(let|make|const|var|set)\s+(\w+)\s*=\s*(.+)$/);
+    if (declMatch) {
+      const val = await this.evalExpr(declMatch[3]);
+      this.defVar(declMatch[2], val);
+      return { next: i + 1 };
     }
 
-    function setupEditor(initialContent) {
-        editor = new EditorView({
-            state: EditorState.create({
-                doc: initialContent,
-                extensions: [
-                    basicSetup,
-                    javascript(),
-                    EditorView.theme({
-                        "&": { backgroundColor: "#000", color: "#c9d1d9", height: "100%" },
-                        ".cm-content": { caretColor: "#58a6ff" },
-                        ".cm-gutters": { backgroundColor: "#000", color: "#8b949e", border: "none" }
-                    }, {dark: true}),
-                    EditorView.updateListener.of((v) => {
-                        if (v.docChanged) saveCurrentFile(v.state.doc.toString());
-                    })
-                ]
-            }),
-            parent: document.getElementById("cm-editor")
-        });
-    }
-
-    async function saveCurrentFile(content) {
-        await db.scripts.update(currentFileId, { content });
-    }
-
-    function renderFileTree() {
-        const tree = document.getElementById('file-tree');
-        tree.innerHTML = '';
-        files.forEach(f => {
-            const div = document.createElement('div');
-            div.className = `file-item ${f.id === currentFileId ? 'active' : ''}`;
-            div.innerHTML = `<i data-lucide="file-code"></i> ${f.name}`;
-            div.onclick = () => loadScript(f.id);
-            tree.appendChild(div);
-        });
-        lucide.createIcons();
-    }
-
-    async function loadScript(id) {
-        const file = files.find(f => f.id === id);
-        currentFileId = id;
-        const transaction = editor.state.update({
-            changes: { from: 0, to: editor.state.doc.length, insert: file.content }
-        });
-        editor.dispatch(transaction);
-        renderFileTree();
-    }
-
-    // --- Execution Logic ---
-    window.runProject = async () => {
-        const code = editor.state.doc.toString();
-        const transpiled = AR_Interpreter.transpile(code);
-        
-        document.getElementById('run-panel').style.display = 'flex';
-        document.getElementById('console-out').innerHTML = 'Starting AR(> Engine...<br>';
-        
-        // Init 3D Scene
-        const viewport = document.getElementById('viewport');
-        threeScene = new THREE.Scene();
-        threeCamera = new THREE.PerspectiveCamera(75, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
-        threeRenderer = new THREE.WebGLRenderer({ antialias: true });
-        threeRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
-        viewport.appendChild(threeRenderer.domElement);
-        
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 5, 5).normalize();
-        threeScene.add(light);
-        threeScene.add(new THREE.AmbientLight(0x404040));
-        threeCamera.position.z = 5;
-
-        // Init 2D Layer
-        const canvas2d = document.getElementById('canvas2d');
-        canvas2d.width = viewport.clientWidth;
-        canvas2d.height = viewport.clientHeight;
-        canvas2d.style.display = 'block';
-        canvas2d.style.position = 'absolute';
-        canvas2d.style.top = '0';
-        canvas2d.style.left = '0';
-        canvas2d.style.pointerEvents = 'none';
-
-        frameCallbacks = [];
-        
-        // Execute Transpiled JS
-        try {
-            const runner = new Function('runtime_engine', 'THREE', transpiled);
-            runner(runtime_engine, THREE);
-            
-            function animate() {
-                if(!threeRenderer) return;
-                requestAnimationFrame(animate);
-                frameCallbacks.forEach(cb => cb());
-                threeRenderer.render(threeScene, threeCamera);
-            }
-            animate();
-        } catch(e) {
-            runtime_engine.print("RUNTIME ERROR: " + e.message);
+    // ── Assignment ──
+    const assignMatch = line.match(/^(\w+(?:\[.+\])?(?:\.\w+)*)\s*([+\-*\/]?=)\s*(.+)$/);
+    if (assignMatch && !AR_KEYWORDS.includes(assignMatch[1])) {
+      const name = assignMatch[1];
+      const op = assignMatch[2];
+      const newVal = await this.evalExpr(assignMatch[3]);
+      if (op === '=') {
+        if (name.includes('[') || name.includes('.')) {
+          await this.setNestedVar(name, newVal);
+        } else {
+          this.setVar(name, newVal);
         }
-    };
+      } else {
+        const cur = await this.evalExpr(name);
+        const opMap = { '+=': cur+newVal, '-=': cur-newVal, '*=': cur*newVal, '/=': cur/newVal };
+        this.setVar(name.split('[')[0].split('.')[0], opMap[op]);
+      }
+      return { next: i + 1 };
+    }
 
-    window.stopProject = () => {
-        document.getElementById('run-panel').style.display = 'none';
-        const viewport = document.getElementById('viewport');
-        while(viewport.firstChild) {
-            if(viewport.firstChild.id !== 'canvas2d') viewport.removeChild(viewport.firstChild);
+    // ── print/log/warn/error ──
+    if (/^(print|log)\s+(.+)$/.test(line)) {
+      const m = line.match(/^(?:print|log)\s+(.+)$/);
+      const val = await this.evalExpr(m[1]);
+      this.cb.print(String(val));
+      return { next: i + 1 };
+    }
+    if (/^warn\s+(.+)$/.test(line)) {
+      const m = line.match(/^warn\s+(.+)$/);
+      this.cb.warn(String(await this.evalExpr(m[1])));
+      return { next: i + 1 };
+    }
+    if (/^error\s+(.+)$/.test(line)) {
+      const m = line.match(/^error\s+(.+)$/);
+      this.cb.error(String(await this.evalExpr(m[1])));
+      return { next: i + 1 };
+    }
+
+    // ── Function definition ──
+    if (/^fn\s+(\w+)\s*\(([^)]*)\)\s*$/.test(line)) {
+      const m = line.match(/^fn\s+(\w+)\s*\(([^)]*)\)\s*$/);
+      const name = m[1];
+      const params = m[2].split(',').map(p => p.trim()).filter(Boolean);
+      const body = this.collectBlock(lines, i + 1, 'end');
+      this.functions[name] = { params, body, closure: this.scope() };
+      this.defVar(name, { __type: 'function', name, params, body, closure: this.scope() });
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── Return ──
+    if (/^return\s*(.*)$/.test(line)) {
+      const m = line.match(/^return\s*(.*)$/);
+      const val = m[1] ? await this.evalExpr(m[1]) : undefined;
+      return { type: 'return', value: val };
+    }
+
+    // ── If/elif/else ──
+    if (/^if\s+(.+)\s+then\s*$/.test(line) || /^if\s+(.+)\s*$/.test(line)) {
+      return await this.execIfBlock(lines, i, depth);
+    }
+
+    // ── Loop N times ──
+    const loopTimesMatch = line.match(/^(?:loop|repeat)\s+(.+)\s+times?\s*$/);
+    if (loopTimesMatch) {
+      const n = Math.floor(Number(await this.evalExpr(loopTimesMatch[1])));
+      const body = this.collectBlock(lines, i + 1, 'end');
+      for (let j = 0; j < n && this.running; j++) {
+        this.pushScope(); this.defVar('i', j);
+        const r = await this.execLines(body, depth + 1);
+        this.popScope();
+        if (r && r.type === 'break') break;
+      }
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── While loop ──
+    if (/^while\s+(.+)$/.test(line)) {
+      const m = line.match(/^while\s+(.+)$/);
+      const body = this.collectBlock(lines, i + 1, 'end');
+      let safety = 100000;
+      while ((await this.evalExpr(m[1])) && this.running && safety-- > 0) {
+        this.pushScope();
+        const r = await this.execLines(body, depth + 1);
+        this.popScope();
+        if (r && r.type === 'break') break;
+      }
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── For each ──
+    const forEachMatch = line.match(/^for\s+each\s+(\w+)\s+in\s+(.+)$/);
+    if (forEachMatch) {
+      const iterVar = forEachMatch[1];
+      const arr = await this.evalExpr(forEachMatch[2]);
+      const body = this.collectBlock(lines, i + 1, 'end');
+      const items = Array.isArray(arr) ? arr : Object.values(arr || {});
+      for (const item of items) {
+        if (!this.running) break;
+        this.pushScope(); this.defVar(iterVar, item);
+        const r = await this.execLines(body, depth + 1);
+        this.popScope();
+        if (r && r.type === 'break') break;
+      }
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── For i = x to y ──
+    const forRangeMatch = line.match(/^for\s+(\w+)\s*=\s*(.+)\s+to\s+(.+?)(?:\s+step\s+(.+))?$/);
+    if (forRangeMatch) {
+      const [, iterVar, startExpr, endExpr, stepExpr] = forRangeMatch;
+      const start = Number(await this.evalExpr(startExpr));
+      const end = Number(await this.evalExpr(endExpr));
+      const step = stepExpr ? Number(await this.evalExpr(stepExpr)) : 1;
+      const body = this.collectBlock(lines, i + 1, 'end');
+      for (let n = start; step > 0 ? n <= end : n >= end; n += step) {
+        if (!this.running) break;
+        this.pushScope(); this.defVar(iterVar, n);
+        const r = await this.execLines(body, depth + 1);
+        this.popScope();
+        if (r && r.type === 'break') break;
+      }
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── Class ──
+    if (/^class\s+(\w+)(?:\s+extends\s+(\w+))?$/.test(line)) {
+      const m = line.match(/^class\s+(\w+)(?:\s+extends\s+(\w+))?$/);
+      const name = m[1]; const parent = m[2];
+      const body = this.collectBlock(lines, i + 1, 'end');
+      this.classes[name] = { body, parent };
+      this.defVar(name, { __type: 'class', name, body, parent });
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── every / after (timers) ──
+    const everyMatch = line.match(/^every\s+(\d+)\s*ms?\s*$/);
+    if (everyMatch) {
+      const ms = parseInt(everyMatch[1]);
+      const body = this.collectBlock(lines, i + 1, 'end');
+      const id = setInterval(async () => {
+        if (!this.running) return;
+        this.pushScope();
+        await this.execLines(body, depth + 1);
+        this.popScope();
+      }, ms);
+      this.timers.push({ id, type: 'interval' });
+      return { next: i + 1 + body.length + 1 };
+    }
+    const afterMatch = line.match(/^after\s+(\d+)\s*ms?\s*$/);
+    if (afterMatch) {
+      const ms = parseInt(afterMatch[1]);
+      const body = this.collectBlock(lines, i + 1, 'end');
+      const id = setTimeout(async () => {
+        if (!this.running) return;
+        this.pushScope();
+        await this.execLines(body, depth + 1);
+        this.popScope();
+      }, ms);
+      this.timers.push({ id, type: 'timeout' });
+      return { next: i + 1 + body.length + 1 };
+    }
+
+    // ── wait (async sleep) ──
+    if (/^wait\s+(\d+)\s*ms?$/.test(line)) {
+      const m = line.match(/^wait\s+(\d+)\s*ms?$/);
+      await new Promise(r => setTimeout(r, parseInt(m[1])));
+      return { next: i + 1 };
+    }
+
+    // ── break / continue ──
+    if (line === 'break') return { type: 'break' };
+    if (line === 'continue') return { type: 'continue' };
+
+    // ── end / else (block terminators, skip if encountered outside block) ──
+    if (line === 'end' || line === 'else' || /^elif\s/.test(line)) return { next: i + 1 };
+
+    // ── Expression / function call ──
+    try {
+      await this.evalExpr(line);
+    } catch(e) {
+      // Silently ignore expression evaluation errors in statement context
+    }
+    return { next: i + 1 };
+  }
+
+  collectBlock(lines, start, terminator) {
+    const block = [];
+    let depth = 0;
+    const openers = ['if', 'fn', 'loop', 'repeat', 'while', 'for', 'class', 'every', 'after'];
+    for (let i = start; i < lines.length; i++) {
+      const t = lines[i].trim();
+      const first = t.split(/\s/)[0];
+      if (openers.includes(first)) depth++;
+      if (t === terminator && depth === 0) return block;
+      if (t === terminator) depth--;
+      block.push(t);
+    }
+    return block;
+  }
+
+  async execIfBlock(lines, i, depth) {
+    const line = lines[i].trim();
+    const condMatch = line.match(/^if\s+(.+?)(?:\s+then)?$/);
+    if (!condMatch) return { next: i + 1 };
+    const cond = await this.evalExpr(condMatch[1]);
+
+    // Collect if body
+    let j = i + 1;
+    const branches = [{ cond, body: [] }];
+    let currentBranch = branches[0];
+    let depth2 = 0;
+    const openers = ['if', 'fn', 'loop', 'repeat', 'while', 'for', 'class', 'every', 'after'];
+
+    while (j < lines.length) {
+      const t = lines[j].trim();
+      const first = t.split(/\s/)[0];
+      if (openers.includes(first)) { depth2++; currentBranch.body.push(t); j++; continue; }
+      if (t === 'end' && depth2 === 0) { j++; break; }
+      if (t === 'end') { depth2--; currentBranch.body.push(t); j++; continue; }
+      if (depth2 === 0 && t === 'else') {
+        const elseBranch = { cond: true, body: [] };
+        branches.push(elseBranch);
+        currentBranch = elseBranch;
+        j++; continue;
+      }
+      if (depth2 === 0 && /^elif\s/.test(t)) {
+        const elifMatch = t.match(/^elif\s+(.+?)(?:\s+then)?$/);
+        const elifCond = await this.evalExpr(elifMatch[1]);
+        const elifBranch = { cond: elifCond, body: [] };
+        branches.push(elifBranch);
+        currentBranch = elifBranch;
+        j++; continue;
+      }
+      currentBranch.body.push(t);
+      j++;
+    }
+
+    for (const branch of branches) {
+      if (branch.cond) {
+        this.pushScope();
+        const r = await this.execLines(branch.body, depth + 1);
+        this.popScope();
+        if (r) return { ...r, next: j };
+        break;
+      }
+    }
+    return { next: j };
+  }
+
+  // ── EXPRESSION EVALUATOR ──
+  async evalExpr(expr) {
+    if (expr === undefined || expr === null) return null;
+    expr = String(expr).trim();
+    if (!expr) return null;
+
+    // Boolean literals
+    if (expr === 'true') return true;
+    if (expr === 'false') return false;
+    if (expr === 'null') return null;
+
+    // String literal
+    if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
+      return expr.slice(1, -1).replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    }
+
+    // Number literal
+    if (/^-?\d+(\.\d+)?$/.test(expr)) return parseFloat(expr);
+
+    // Array literal
+    if (expr.startsWith('[') && expr.endsWith(']')) {
+      const inner = expr.slice(1, -1).trim();
+      if (!inner) return [];
+      const items = this.splitArgs(inner);
+      return await Promise.all(items.map(it => this.evalExpr(it)));
+    }
+
+    // Object literal
+    if (expr.startsWith('{') && expr.endsWith('}')) {
+      const inner = expr.slice(1, -1).trim();
+      const obj = {};
+      if (inner) {
+        const pairs = this.splitArgs(inner);
+        for (const pair of pairs) {
+          const idx = pair.indexOf(':');
+          if (idx < 0) continue;
+          const k = pair.slice(0, idx).trim().replace(/^["']|["']$/g, '');
+          const v = await this.evalExpr(pair.slice(idx + 1).trim());
+          obj[k] = v;
         }
-        threeRenderer.dispose();
-        threeRenderer = null;
-        frameCallbacks = [];
+      }
+      return obj;
+    }
+
+    // Logical operators (short-circuit) — simple split
+    if (/ \|\| /.test(expr)) {
+      const parts = expr.split(/ \|\| /);
+      for (const p of parts) { const v = await this.evalExpr(p); if (v) return v; }
+      return false;
+    }
+    if (/ && /.test(expr)) {
+      const parts = expr.split(/ && /);
+      let last;
+      for (const p of parts) { last = await this.evalExpr(p); if (!last) return last; }
+      return last;
+    }
+
+    // Comparison operators
+    for (const op of ['==', '!=', '<=', '>=', '<', '>']) {
+      const idx = this.findOp(expr, op);
+      if (idx >= 0) {
+        const l = await this.evalExpr(expr.slice(0, idx).trim());
+        const r = await this.evalExpr(expr.slice(idx + op.length).trim());
+        switch(op) {
+          case '==': return l == r;
+          case '!=': return l != r;
+          case '<=': return l <= r;
+          case '>=': return l >= r;
+          case '<': return l < r;
+          case '>': return l > r;
+        }
+      }
+    }
+
+    // Arithmetic (low precedence +/- then *//)
+    // Split on + or - (not inside parens, not part of number)
+    for (const op of ['+', '-']) {
+      const idx = this.findArithOp(expr, op);
+      if (idx >= 0) {
+        const l = await this.evalExpr(expr.slice(0, idx).trim());
+        const r = await this.evalExpr(expr.slice(idx + 1).trim());
+        if (op === '+') return (typeof l === 'string' || typeof r === 'string') ? String(l) + String(r) : (l||0) + (r||0);
+        return (l||0) - (r||0);
+      }
+    }
+    for (const op of ['*', '/', '%', '**']) {
+      const idx = this.findOp(expr, op);
+      if (idx >= 0) {
+        const l = Number(await this.evalExpr(expr.slice(0, idx).trim()));
+        const r = Number(await this.evalExpr(expr.slice(idx + op.length).trim()));
+        if (op === '*') return l * r;
+        if (op === '/') return r !== 0 ? l / r : 0;
+        if (op === '%') return l % r;
+        if (op === '**') return Math.pow(l, r);
+      }
+    }
+
+    // Unary not
+    if (expr.startsWith('not ') || expr.startsWith('!')) {
+      const inner = expr.startsWith('not ') ? expr.slice(4) : expr.slice(1);
+      return !(await this.evalExpr(inner));
+    }
+
+    // Parenthesized expression
+    if (expr.startsWith('(') && expr.endsWith(')')) {
+      return await this.evalExpr(expr.slice(1, -1));
+    }
+
+    // String interpolation with {}
+    if (/"[^"]*\{[^}]+\}[^"]*"/.test(expr)) {
+      const str = expr.slice(1, -1);
+      let result = str;
+      const matches = [...str.matchAll(/\{([^}]+)\}/g)];
+      for (const m of matches) {
+        const val = await this.evalExpr(m[1]);
+        result = result.replace(m[0], String(val));
+      }
+      return result;
+    }
+
+    // Built-in function calls & method chains
+    const callMatch = expr.match(/^(\w+(?:\.\w+)*)\s*\(([^]*)\)$/);
+    if (callMatch) {
+      return await this.evalCall(callMatch[1], callMatch[2]);
+    }
+
+    // Member access / index
+    if (expr.includes('.') || (expr.includes('[') && expr.includes(']'))) {
+      return await this.evalMember(expr);
+    }
+
+    // Variable / identifier
+    const val = this.getVar(expr);
+    if (val !== undefined) return val;
+
+    // Try number fallback
+    const num = parseFloat(expr);
+    if (!isNaN(num)) return num;
+
+    return null;
+  }
+
+  findOp(expr, op) {
+    let depth = 0;
+    for (let i = expr.length - op.length; i >= 0; i--) {
+      const c = expr[i];
+      if (c === ')' || c === ']') depth++;
+      if (c === '(' || c === '[') depth--;
+      if (depth === 0 && expr.slice(i, i + op.length) === op) {
+        // Make sure not part of longer op
+        const before = expr[i - 1];
+        const after = expr[i + op.length];
+        if (op === '<' && (before === '<' || after === '<' || after === '=')) continue;
+        if (op === '>' && (before === '>' || after === '>' || after === '=')) continue;
+        if (op === '=' && (before === '!' || before === '<' || before === '>' || before === '=' || after === '=')) continue;
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  findArithOp(expr, op) {
+    let depth = 0;
+    for (let i = expr.length - 1; i >= 1; i--) {
+      const c = expr[i];
+      if (c === ')' || c === ']') depth++;
+      if (c === '(' || c === '[') depth--;
+      if (depth === 0 && c === op) {
+        // Not a number sign
+        const prev = expr[i - 1];
+        if (op === '-' && (prev === '*' || prev === '/' || prev === '(' || prev === '+' || prev === '-' || prev === ',' || prev === '=')) continue;
+        if (op === '+' && (prev === '(' || prev === ',')) continue;
+        // Not part of ++ or -=
+        if (expr[i+1] === op || expr[i-1] === op) continue;
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  splitArgs(str) {
+    const args = []; let depth = 0; let cur = ''; let inStr = false; let strChar = '';
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i];
+      if (!inStr && (c === '"' || c === "'")) { inStr = true; strChar = c; cur += c; continue; }
+      if (inStr && c === strChar && str[i-1] !== '\\') { inStr = false; cur += c; continue; }
+      if (inStr) { cur += c; continue; }
+      if (c === '(' || c === '[' || c === '{') { depth++; cur += c; continue; }
+      if (c === ')' || c === ']' || c === '}') { depth--; cur += c; continue; }
+      if (c === ',' && depth === 0) { args.push(cur.trim()); cur = ''; continue; }
+      cur += c;
+    }
+    if (cur.trim()) args.push(cur.trim());
+    return args;
+  }
+
+  async evalCall(name, argsStr) {
+    const argParts = argsStr.trim() ? this.splitArgs(argsStr) : [];
+    const args = await Promise.all(argParts.map(a => this.evalExpr(a)));
+
+    // Handle method chains: obj.method()
+    if (name.includes('.')) {
+      const parts = name.split('.');
+      const objName = parts[0];
+      const method = parts[parts.length - 1];
+      let obj = this.getVar(objName);
+      // Traverse chain
+      for (let p = 1; p < parts.length - 1; p++) obj = obj?.[parts[p]];
+
+      if (obj && obj.__type === 'canvas2d') return this.callCanvas2D(obj, method, args);
+      if (obj && obj.__type === 'scene3d') return this.callScene3D(obj, method, args);
+      if (obj && obj.__type === 'audio') return this.callAudio(obj, method, args);
+      if (obj && obj.__type === 'gameobj') return this.callGameObj(obj, method, args);
+      if (typeof obj === 'string') return this.callStringMethod(obj, method, args);
+      if (Array.isArray(obj)) return this.callArrayMethod(obj, objName, method, args);
+      if (obj && typeof obj === 'object') {
+        if (typeof obj[method] === 'function') return obj[method](...args);
+        return obj[method];
+      }
+    }
+
+    // Built-in constructors / statics
+    switch(name) {
+      case 'Canvas': case 'Canvas.new': return this.createCanvas2D();
+      case 'Scene3D': case 'Scene3D.new': return this.createScene3D();
+      case 'Audio': case 'Audio.new': return this.createAudio(args[0]);
+      case 'Image': case 'Image.new': return this.createImage(args[0]);
+      case 'Timer': case 'Timer.new': return { __type: 'timer' };
+      case 'Input': case 'Input.new': return this.getInputObj();
+
+      case 'Math.random': return Math.random();
+      case 'Math.floor': return Math.floor(args[0]);
+      case 'Math.ceil': return Math.ceil(args[0]);
+      case 'Math.round': return Math.round(args[0]);
+      case 'Math.abs': return Math.abs(args[0]);
+      case 'Math.min': return Math.min(...args);
+      case 'Math.max': return Math.max(...args);
+      case 'Math.sqrt': return Math.sqrt(args[0]);
+      case 'Math.pow': return Math.pow(args[0], args[1]);
+      case 'Math.sin': return Math.sin(args[0]);
+      case 'Math.cos': return Math.cos(args[0]);
+      case 'Math.tan': return Math.tan(args[0]);
+      case 'Math.PI': return Math.PI;
+      case 'Math.lerp': return args[0] + (args[1] - args[0]) * args[2];
+
+      case 'random': return args.length >= 2 ? Math.random() * (args[1] - args[0]) + args[0] : Math.random();
+      case 'floor': return Math.floor(args[0]);
+      case 'ceil': return Math.ceil(args[0]);
+      case 'round': return Math.round(args[0]);
+      case 'abs': return Math.abs(args[0]);
+      case 'sqrt': return Math.sqrt(args[0]);
+      case 'sin': return Math.sin(args[0]);
+      case 'cos': return Math.cos(args[0]);
+
+      case 'String.new': case 'str': return String(args[0]);
+      case 'Number.new': case 'num': return Number(args[0]);
+      case 'Array.new': return new Array(args[0]).fill(0);
+      case 'len': case 'length': return (args[0] || '').length;
+      case 'type': return typeof args[0];
+
+      case 'print': case 'log': this.cb.print(args.join(' ')); return;
+      case 'warn': this.cb.warn(args.join(' ')); return;
+      case 'error': this.cb.error(args.join(' ')); return;
+
+      case 'new': {
+        const className = argParts[0];
+        return await this.instantiateClass(className, args.slice(1));
+      }
+    }
+
+    // User-defined function
+    const fn = this.functions[name] || this.getVar(name);
+    if (fn && (fn.__type === 'function' || (fn && fn.params))) {
+      return await this.callUserFn(fn, args);
+    }
+
+    return null;
+  }
+
+  async callUserFn(fn, args) {
+    this.pushScope();
+    fn.params.forEach((p, i) => this.defVar(p, args[i]));
+    const result = await this.execLines(fn.body, 0);
+    this.popScope();
+    return result && result.type === 'return' ? result.value : undefined;
+  }
+
+  async instantiateClass(name, args) {
+    const classDef = this.classes[name] || (this.getVar(name) || {}).__type === 'class' ? this.getVar(name) : null;
+    if (!classDef) return {};
+    const instance = { __type: 'instance', __class: name };
+    // Find init method
+    const initLines = [];
+    let inInit = false, depth = 0;
+    const openers = ['if', 'fn', 'loop', 'repeat', 'while', 'for', 'class', 'every', 'after'];
+    const body = classDef.body || [];
+    for (const l of body) {
+      if (/^fn\s+init\s*\(/.test(l)) { inInit = true; depth = 0; continue; }
+      if (inInit) {
+        const f = l.split(/\s/)[0];
+        if (openers.includes(f)) depth++;
+        if (l.trim() === 'end' && depth === 0) break;
+        if (l.trim() === 'end') depth--;
+        initLines.push(l);
+      }
+    }
+    this.pushScope();
+    this.defVar('self', instance);
+    args.forEach((a, i) => this.defVar(`arg${i}`, a));
+    await this.execLines(initLines, 0);
+    Object.assign(instance, this.scope());
+    this.popScope();
+    return instance;
+  }
+
+  async evalMember(expr) {
+    // array[index] or obj.key
+    const bracketMatch = expr.match(/^(.+)\[(.+)\]$/);
+    if (bracketMatch) {
+      const obj = await this.evalExpr(bracketMatch[1]);
+      const key = await this.evalExpr(bracketMatch[2]);
+      return obj ? obj[key] : null;
+    }
+    const parts = expr.split('.');
+    let val = this.getVar(parts[0]);
+    for (let i = 1; i < parts.length; i++) {
+      if (val == null) return null;
+      val = val[parts[i]];
+    }
+    return val !== undefined ? val : null;
+  }
+
+  async setNestedVar(name, value) {
+    const bracketMatch = name.match(/^(\w+)\[(.+)\]$/);
+    if (bracketMatch) {
+      const obj = this.getVar(bracketMatch[0].split('[')[0]);
+      const key = await this.evalExpr(bracketMatch[2]);
+      if (obj) obj[key] = value;
+      return;
+    }
+    const parts = name.split('.');
+    let obj = this.getVar(parts[0]);
+    for (let i = 1; i < parts.length - 1; i++) obj = obj?.[parts[i]];
+    if (obj) obj[parts[parts.length - 1]] = value;
+  }
+
+  callStringMethod(str, method, args) {
+    switch(method) {
+      case 'upper': case 'toUpperCase': return str.toUpperCase();
+      case 'lower': case 'toLowerCase': return str.toLowerCase();
+      case 'trim': return str.trim();
+      case 'split': return str.split(args[0]);
+      case 'replace': return str.replace(args[0], args[1]);
+      case 'includes': case 'contains': return str.includes(args[0]);
+      case 'startsWith': return str.startsWith(args[0]);
+      case 'endsWith': return str.endsWith(args[0]);
+      case 'slice': return str.slice(args[0], args[1]);
+      case 'length': case 'len': return str.length;
+      case 'charAt': return str.charAt(args[0]);
+      case 'indexOf': return str.indexOf(args[0]);
+      case 'repeat': return str.repeat(args[0]);
+      default: return null;
+    }
+  }
+
+  callArrayMethod(arr, varName, method, args) {
+    switch(method) {
+      case 'push': case 'add': arr.push(args[0]); return arr.length;
+      case 'pop': return arr.pop();
+      case 'shift': return arr.shift();
+      case 'unshift': arr.unshift(args[0]); return arr.length;
+      case 'length': case 'len': case 'size': return arr.length;
+      case 'get': return arr[args[0]];
+      case 'set': arr[args[0]] = args[1]; return arr;
+      case 'includes': case 'contains': case 'has': return arr.includes(args[0]);
+      case 'indexOf': case 'find': return arr.indexOf(args[0]);
+      case 'join': return arr.join(args[0] || ',');
+      case 'reverse': return [...arr].reverse();
+      case 'sort': return [...arr].sort();
+      case 'slice': return arr.slice(args[0], args[1]);
+      case 'first': return arr[0];
+      case 'last': return arr[arr.length - 1];
+      case 'isEmpty': return arr.length === 0;
+      case 'clear': arr.length = 0; return arr;
+      default: return null;
+    }
+  }
+
+  // ── CANVAS 2D ──
+  createCanvas2D() {
+    const c = this.canvas; const ctx = this.ctx;
+    const obj = {
+      __type: 'canvas2d', width: c.width, height: c.height,
+      _fillColor: '#ffffff', _strokeColor: '#ffffff', _lineWidth: 1, _fontSize: 16, _fontFamily: 'sans-serif',
+      _images: {}, _sprites: {}
+    };
+    return obj;
+  }
+
+  callCanvas2D(obj, method, args) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    switch(method) {
+      case 'clear':
+        ctx.fillStyle = args[0] || '#000000';
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        break;
+      case 'color': case 'fill': obj._fillColor = args[0]; break;
+      case 'stroke': obj._strokeColor = args[0]; break;
+      case 'lineWidth': obj._lineWidth = args[0]; break;
+      case 'fontSize': obj._fontSize = args[0]; break;
+      case 'font': obj._fontFamily = args[0]; break;
+      case 'alpha': ctx.globalAlpha = args[0]; break;
+      case 'rect':
+        ctx.fillStyle = obj._fillColor;
+        ctx.fillRect(args[0], args[1], args[2], args[3]);
+        break;
+      case 'rectStroke':
+        ctx.strokeStyle = obj._strokeColor;
+        ctx.lineWidth = obj._lineWidth;
+        ctx.strokeRect(args[0], args[1], args[2], args[3]);
+        break;
+      case 'circle':
+        ctx.beginPath();
+        ctx.arc(args[0], args[1], args[2], 0, Math.PI * 2);
+        ctx.fillStyle = obj._fillColor;
+        ctx.fill();
+        break;
+      case 'circleStroke':
+        ctx.beginPath();
+        ctx.arc(args[0], args[1], args[2], 0, Math.PI * 2);
+        ctx.strokeStyle = obj._strokeColor;
+        ctx.lineWidth = obj._lineWidth;
+        ctx.stroke();
+        break;
+      case 'line':
+        ctx.beginPath();
+        ctx.moveTo(args[0], args[1]);
+        ctx.lineTo(args[2], args[3]);
+        ctx.strokeStyle = obj._strokeColor;
+        ctx.lineWidth = obj._lineWidth;
+        ctx.stroke();
+        break;
+      case 'text':
+        ctx.fillStyle = obj._fillColor;
+        ctx.font = `${obj._fontSize}px ${obj._fontFamily}`;
+        ctx.fillText(args[0], args[1], args[2]);
+        break;
+      case 'textCenter':
+        ctx.fillStyle = obj._fillColor;
+        ctx.font = `${obj._fontSize}px ${obj._fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(args[0], args[1], args[2]);
+        ctx.textAlign = 'left';
+        break;
+      case 'image': {
+        const img = this.assets[args[0]];
+        if (img && img.__img) ctx.drawImage(img.__img, args[1], args[2], args[3] || img.__img.width, args[4] || img.__img.height);
+        break;
+      }
+      case 'save': ctx.save(); break;
+      case 'restore': ctx.restore(); break;
+      case 'translate': ctx.translate(args[0], args[1]); break;
+      case 'rotate': ctx.rotate(args[0]); break;
+      case 'scale': ctx.scale(args[0], args[1] || args[0]); break;
+      case 'beginPath': ctx.beginPath(); break;
+      case 'closePath': ctx.closePath(); break;
+      case 'moveTo': ctx.moveTo(args[0], args[1]); break;
+      case 'lineTo': ctx.lineTo(args[0], args[1]); break;
+      case 'fillPath': ctx.fillStyle = obj._fillColor; ctx.fill(); break;
+      case 'strokePath': ctx.strokeStyle = obj._strokeColor; ctx.lineWidth = obj._lineWidth; ctx.stroke(); break;
+      case 'gradient': {
+        const g = ctx.createLinearGradient(args[0], args[1], args[2], args[3]);
+        g.addColorStop(0, args[4]); g.addColorStop(1, args[5]);
+        obj._fillColor = g; break;
+      }
+      case 'width': return obj.width;
+      case 'height': return obj.height;
+    }
+  }
+
+  // ── SCENE 3D ──
+  createScene3D() {
+    if (typeof THREE === 'undefined') { this.cb.error('Three.js not loaded'); return {}; }
+    this.useThree = true;
+    const canvas = this.threeCanvasEl;
+    const w = canvas.parentElement.clientWidth, h = canvas.parentElement.clientHeight;
+    canvas.width = w; canvas.height = h;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(w, h);
+    renderer.shadowMap.enabled = true;
+    renderer.setClearColor(0x111111);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.set(0, 3, 8);
+    camera.lookAt(0, 0, 0);
+
+    this.threeRenderer = renderer;
+    this.threeScene = scene;
+    this.threeCamera = camera;
+
+    // Default ambient light
+    scene.add(new THREE.AmbientLight(0x404040, 0.5));
+
+    const obj = { __type: 'scene3d', scene, camera, renderer, objects: {} };
+    return obj;
+  }
+
+  callScene3D(obj, method, args) {
+    if (!obj.scene) return;
+    const scene = obj.scene;
+    switch(method) {
+      case 'cube': case 'box': {
+        const geo = new THREE.BoxGeometry(args[0]||1, args[1]||1, args[2]||1);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x4488ff });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = true; mesh.receiveShadow = true;
+        scene.add(mesh);
+        const go = { __type: 'gameobj', __mesh: mesh };
+        return go;
+      }
+      case 'sphere': {
+        const geo = new THREE.SphereGeometry(args[0]||1, 32, 32);
+        const mat = new THREE.MeshStandardMaterial({ color: 0xff6644 });
+        const mesh = new THREE.Mesh(geo, mat);
+        scene.add(mesh);
+        return { __type: 'gameobj', __mesh: mesh };
+      }
+      case 'plane': case 'ground': {
+        const geo = new THREE.PlaneGeometry(args[0]||10, args[1]||10);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x336633 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+        return { __type: 'gameobj', __mesh: mesh };
+      }
+      case 'light': {
+        const type = String(args[0]).toLowerCase();
+        let light;
+        if (type === 'point') light = new THREE.PointLight(0xffffff, 1, 100);
+        else if (type === 'directional') light = new THREE.DirectionalLight(0xffffff, 1);
+        else if (type === 'spot') light = new THREE.SpotLight(0xffffff, 1);
+        else light = new THREE.AmbientLight(0xffffff, 0.5);
+        if (args[1] !== undefined) light.position.set(args[1], args[2]||0, args[3]||0);
+        light.castShadow = true;
+        scene.add(light);
+        return light;
+      }
+      case 'ambient': {
+        const light = new THREE.AmbientLight(args[0]||0xffffff, args[1]||0.5);
+        scene.add(light);
+        return light;
+      }
+      case 'sky': case 'background':
+        scene.background = new THREE.Color(args[0] || 0x87ceeb);
+        break;
+      case 'fog':
+        scene.fog = new THREE.Fog(args[0]||0x87ceeb, args[1]||10, args[2]||100);
+        break;
+      case 'camera':
+        if (args[0] !== undefined) obj.camera.position.set(args[0], args[1]||0, args[2]||0);
+        break;
+      case 'cameraLookAt':
+        obj.camera.lookAt(args[0]||0, args[1]||0, args[2]||0);
+        break;
+      case 'run': case 'start': {
+        let t = 0;
+        const loop = () => {
+          if (!this.running) return;
+          t += 0.01;
+          // Auto-rotate objects if no custom loop
+          this.animId = requestAnimationFrame(loop);
+          obj.renderer.render(scene, obj.camera);
+        };
+        this.animId = requestAnimationFrame(loop);
+        break;
+      }
+      case 'onFrame': {
+        // Will be handled by gameLoop
+        break;
+      }
+    }
+  }
+
+  callGameObj(obj, method, args) {
+    const mesh = obj.__mesh;
+    if (!mesh) return;
+    switch(method) {
+      case 'color': mesh.material.color.set(args[0]); break;
+      case 'move': case 'position': mesh.position.set(args[0]||0, args[1]||0, args[2]||0); break;
+      case 'x': mesh.position.x = args[0]; break;
+      case 'y': mesh.position.y = args[0]; break;
+      case 'z': mesh.position.z = args[0]; break;
+      case 'rotate': mesh.rotation.set(args[0]||0, args[1]||0, args[2]||0); break;
+      case 'scale': mesh.scale.set(args[0]||1, args[1]||args[0]||1, args[2]||args[0]||1); break;
+      case 'wireframe': mesh.material.wireframe = args[0] !== false; break;
+      case 'visible': mesh.visible = args[0] !== false; break;
+      case 'getX': return mesh.position.x;
+      case 'getY': return mesh.position.y;
+      case 'getZ': return mesh.position.z;
+    }
+  }
+
+  // ── AUDIO ──
+  createAudio(name) {
+    const asset = this.assets[name];
+    const obj = { __type: 'audio', _name: name, _asset: asset };
+    return obj;
+  }
+
+  callAudio(obj, method, args) {
+    switch(method) {
+      case 'play': {
+        const asset = obj._asset;
+        if (asset && asset.__audio) {
+          obj.__audio = asset.__audio.cloneNode ? asset.__audio.cloneNode() : new Audio(asset.url);
+          obj.__audio.volume = obj._volume || 1;
+          obj.__audio.loop = obj._loop || false;
+          obj.__audio.play().catch(()=>{});
+        }
+        break;
+      }
+      case 'stop': if (obj.__audio) { obj.__audio.pause(); obj.__audio.currentTime = 0; } break;
+      case 'pause': if (obj.__audio) obj.__audio.pause(); break;
+      case 'volume': obj._volume = args[0]; if (obj.__audio) obj.__audio.volume = args[0]; break;
+      case 'loop': obj._loop = args[0] !== false; break;
+    }
+  }
+
+  createImage(name) {
+    const asset = this.assets[name];
+    return { __type: 'image', _name: name, _asset: asset };
+  }
+
+  getInputObj() {
+    const state = this.keyState; const mouse = this.mouseState;
+    return {
+      __type: 'input',
+      isKeyDown: (k) => !!state[k.toLowerCase()],
+      isKeyUp: (k) => !state[k.toLowerCase()],
+      mouseX: mouse.x, mouseY: mouse.y, mouseDown: mouse.down,
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CODEMIRROR AR(> SYNTAX HIGHLIGHTING
+// ═══════════════════════════════════════════════════
+
+CodeMirror.defineMode('ar', function() {
+  const keywords = new Set(AR_KEYWORDS);
+  const builtins = new Set(AR_BUILTINS);
+  return {
+    startState() { return { inString: false, stringChar: '' }; },
+    token(stream, state) {
+      if (stream.eatSpace()) return null;
+      // Comments
+      if (stream.match('//') || stream.peek() === '#') { stream.skipToEnd(); return 'ar-comment'; }
+      // Strings
+      if (!state.inString && (stream.peek() === '"' || stream.peek() === "'")) {
+        state.inString = true; state.stringChar = stream.next();
+        while (!stream.eol()) {
+          const c = stream.next();
+          if (c === '\\') { stream.next(); continue; }
+          if (c === state.stringChar) { state.inString = false; break; }
+        }
+        return 'ar-string';
+      }
+      // Numbers
+      if (stream.match(/^-?\d+(\.\d+)?/)) return 'ar-number';
+      // Identifiers / keywords
+      if (stream.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*/)) {
+        const word = stream.current();
+        if (keywords.has(word)) return 'ar-keyword';
+        if (builtins.has(word)) return 'ar-type';
+        if (stream.peek() === '(') return 'ar-function';
+        return 'ar-variable';
+      }
+      // Operators
+      if (stream.match(/^[+\-*\/<>=!%&|^~@?:;,.()\[\]{}]/)) return 'ar-operator';
+      stream.next();
+      return null;
+    }
+  };
+});
+
+// ═══════════════════════════════════════════════════
+//  APP STATE
+// ═══════════════════════════════════════════════════
+
+const state = {
+  files: {},
+  activeFile: null,
+  editor: null,
+  isRunning: false,
+  assets: {},
+  settings: {
+    theme: 'dark', fontSize: 13, tabSize: 2,
+    autoCloseBrackets: true, lineWrap: false, minimap: false
+  },
+  selectedPreset: 'blank',
+};
+
+// ═══════════════════════════════════════════════════
+//  PRESETS
+// ═══════════════════════════════════════════════════
+
+const PRESETS = {
+  blank: {
+    name: 'Blank', icon: '📄', desc: 'Empty script', code: `// AR(> Script\n// Start writing your code below\n\nprint "Hello, AR(>!"\n`
+  },
+  platformer: {
+    name: '2D Platformer', icon: '🎮', desc: 'Character, gravity, platforms',
+    code: `// AR(> 2D Platformer Base
+// Controls: Arrow keys or WASD
+
+let c = Canvas.new()
+let W = 800
+let H = 500
+
+// Player state
+let px = 100
+let py = 300
+let pvx = 0
+let pvy = 0
+let onGround = false
+let speed = 4
+let jumpForce = -12
+let gravity = 0.5
+
+// Platforms
+let platforms = [{x: 0, y: 450, w: 800, h: 50}, {x: 150, y: 350, w: 200, h: 20}, {x: 400, y: 280, w: 180, h: 20}, {x: 600, y: 380, w: 150, h: 20}]
+
+// Input
+let inp = Input.new()
+let keys = {}
+
+on "keydown" event
+  keys[event.key] = true
+end
+
+on "keyup" event
+  keys[event.key] = false
+end
+
+fn checkPlatform(x, y, w, h)
+  for each p in platforms
+    if px + 28 > p.x && px + 4 < p.x + p.w && py + 40 > p.y && py + 40 < p.y + p.h + pvy + 2 then
+      return true
+    end
+  end
+  return false
+end
+
+every 16ms
+  // Input
+  pvx = 0
+  if keys["ArrowLeft"] || keys["a"] then
+    pvx = 0 - speed
+  end
+  if keys["ArrowRight"] || keys["d"] then
+    pvx = speed
+  end
+  if (keys["ArrowUp"] || keys["w"] || keys[" "]) && onGround then
+    pvy = jumpForce
+    onGround = false
+  end
+
+  // Gravity
+  pvy = pvy + gravity
+
+  // Move
+  px = px + pvx
+  py = py + pvy
+
+  // Platform collision
+  onGround = false
+  for each p in platforms
+    if px + 28 > p.x && px + 4 < p.x + p.w && py + 40 >= p.y && py + 40 <= p.y + p.h + 8 && pvy >= 0 then
+      py = p.y - 40
+      pvy = 0
+      onGround = true
+    end
+  end
+
+  // Bounds
+  if px < 0 then px = 0 end
+  if px > W - 32 then px = W - 32 end
+  if py > H then py = 0 end
+
+  // Draw
+  c.clear("#1a1a2e")
+
+  // Platforms
+  c.color("#4a9eff")
+  for each p in platforms
+    c.rect(p.x, p.y, p.w, p.h)
+  end
+
+  // Player
+  c.color("#ff6b6b")
+  c.rect(px + 4, py, 24, 36)
+  c.color("#ffd93d")
+  c.circle(px + 16, py - 8, 10)
+
+  // HUD
+  c.color("#ffffff")
+  c.fontSize(14)
+  c.text("Arrow keys / WASD to move, Up to jump", 10, 20)
+end
+`
+  },
+  rpg: {
+    name: 'Top-Down RPG', icon: '🗺️', desc: 'Player movement, tile map, camera',
+    code: `// AR(> Top-Down RPG Base
+// Controls: Arrow keys or WASD
+
+let c = Canvas.new()
+let W = 800
+let H = 500
+
+// Camera
+let camX = 0
+let camY = 0
+
+// Player
+let px = 200
+let py = 200
+let pspeed = 3
+let facing = "down"
+let walkFrame = 0
+let walkTimer = 0
+
+// Tile map (0=grass, 1=water, 2=tree, 3=stone)
+let TILE = 32
+let mapW = 30
+let mapH = 25
+let tileMap = []
+
+// Generate map
+let row = 0
+loop 25 times
+  let col = 0
+  let r = []
+  loop 30 times
+    let t = 0
+    let rnd = random(0, 100)
+    if rnd < 5 then t = 1
+    elif rnd < 15 then t = 2
+    elif rnd < 20 then t = 3
+    end
+    r.push(t)
+    col = col + 1
+  end
+  tileMap.push(r)
+  row = row + 1
+end
+
+let tileColors = ["#4a7c59", "#2c5f8a", "#2d5a27", "#888888"]
+
+let keys = {}
+on "keydown" event
+  keys[event.key] = true
+end
+on "keyup" event
+  keys[event.key] = false
+end
+
+fn isWalkable(tx, ty)
+  if tx < 0 || ty < 0 || tx >= mapW || ty >= mapH then return false end
+  let t = tileMap[ty][tx]
+  if t == 1 || t == 2 then return false end
+  return true
+end
+
+every 16ms
+  // Movement
+  let dx = 0
+  let dy = 0
+  if keys["ArrowLeft"] || keys["a"] then dx = 0 - pspeed; facing = "left" end
+  if keys["ArrowRight"] || keys["d"] then dx = pspeed; facing = "right" end
+  if keys["ArrowUp"] || keys["w"] then dy = 0 - pspeed; facing = "up" end
+  if keys["ArrowDown"] || keys["s"] then dy = pspeed; facing = "down" end
+
+  if dx != 0 || dy != 0 then
+    walkTimer = walkTimer + 1
+    if walkTimer > 8 then walkFrame = (walkFrame + 1) % 4; walkTimer = 0 end
+  end
+
+  let nx = px + dx
+  let ny = py + dy
+  let tx = floor(nx / TILE)
+  let ty = floor(ny / TILE)
+  if isWalkable(tx, ty) then
+    px = nx; py = ny
+  end
+
+  // Camera follow (clamp to map)
+  let targetX = px - 400
+  let targetY = py - 250
+  if targetX < 0 then targetX = 0 end
+  if targetY < 0 then targetY = 0 end
+  if targetX > mapW * TILE - W then targetX = mapW * TILE - W end
+  if targetY > mapH * TILE - H then targetY = mapH * TILE - H end
+  camX = camX + (targetX - camX) * 0.1
+  camY = camY + (targetY - camY) * 0.1
+
+  // Draw tiles
+  c.clear("#000000")
+  let startTX = floor(camX / TILE)
+  let startTY = floor(camY / TILE)
+  let endTX = startTX + 26
+  let endTY = startTY + 17
+
+  for row = startTY to endTY
+    for col = startTX to endTX
+      if row >= 0 && col >= 0 && row < mapH && col < mapW then
+        let tile = tileMap[row][col]
+        c.color(tileColors[tile])
+        c.rect(col * TILE - camX, row * TILE - camY, TILE, TILE)
+        if tile == 2 then
+          c.color("#1a3a15")
+          c.circle(col * TILE - camX + 16, row * TILE - camY + 10, 12)
+        end
+        if tile == 3 then
+          c.color("#aaaaaa")
+          c.rect(col * TILE - camX + 4, row * TILE - camY + 4, 24, 24)
+        end
+        if tile == 1 then
+          c.color("#3a7aa8")
+          c.circle(col * TILE - camX + 16, row * TILE - camY + 16, 10)
+        end
+      end
+    end
+  end
+
+  // Player shadow
+  c.color("rgba(0,0,0,0.3)")
+  c.circle(px - camX, py - camY + 14, 10)
+
+  // Player body
+  c.color("#e8c89a")
+  c.circle(px - camX, py - camY - 4, 8)
+  c.color("#4a90d9")
+  c.rect(px - camX - 8, py - camY + 4, 16, 14)
+
+  // HUD
+  c.color("rgba(0,0,0,0.5)")
+  c.rect(0, 0, W, 24)
+  c.color("#ffffff")
+  c.fontSize(12)
+  c.text("WASD / Arrow Keys to move | Top-Down RPG Base", 8, 16)
+end
+`
+  },
+  scene3d: {
+    name: '3D Scene', icon: '🎲', desc: 'Three.js scene, cube, lights',
+    code: `// AR(> 3D Scene Base
+// A rotating cube in a Three.js scene
+
+let s = Scene3D.new()
+s.sky("#111122")
+s.ambient("#ffffff", 0.4)
+s.light("directional", 5, 10, 7)
+
+// Ground plane
+let ground = s.plane(20, 20)
+ground.color("#2a4a2a")
+
+// Main cube
+let box = s.cube(2, 2, 2)
+box.color("#4f9eff")
+box.move(0, 1, 0)
+
+// Satellite spheres
+let sp1 = s.sphere(0.5)
+sp1.color("#ff6b6b")
+sp1.move(3, 1.5, 0)
+
+let sp2 = s.sphere(0.5)
+sp2.color("#ffd93d")
+sp2.move(-3, 1.5, 0)
+
+let sp3 = s.sphere(0.5)
+sp3.color("#a8ff78")
+sp3.move(0, 1.5, 3)
+
+s.camera(0, 4, 10)
+s.cameraLookAt(0, 1, 0)
+
+let angle = 0
+
+s.run()
+
+every 16ms
+  angle = angle + 0.02
+  box.rotate(angle * 0.5, angle, angle * 0.3)
+  sp1.move(sin(angle * 2) * 3.5, 1.5, cos(angle * 2) * 3.5)
+  sp2.move(cos(angle * 1.5) * 3.5, abs(sin(angle)) * 2 + 0.5, sin(angle * 1.5) * 3.5)
+  sp3.move(sin(angle) * 3.5, cos(angle * 2) * 1.5 + 1.5, cos(angle) * 3.5)
+end
+`
+  },
+  pong: {
+    name: 'Pong / Arcade', icon: '🏓', desc: 'Ball, paddles, score',
+    code: `// AR(> Pong
+// Player 1: W/S  |  Player 2: ↑/↓
+
+let c = Canvas.new()
+let W = 800
+let H = 500
+
+// Ball
+let bx = 400
+let by = 250
+let bvx = 4
+let bvy = 3
+let bsize = 10
+
+// Paddles
+let p1y = 210
+let p2y = 210
+let pw = 12
+let ph = 80
+let pspeed = 5
+
+// Score
+let s1 = 0
+let s2 = 0
+
+let keys = {}
+on "keydown" evt
+  keys[evt.key] = true
+end
+on "keyup" evt
+  keys[evt.key] = false
+end
+
+fn resetBall()
+  bx = 400
+  by = 250
+  bvx = 0 - bvx
+  bvy = (random(0, 1) > 0.5) ? 3 : -3
+end
+
+every 16ms
+  // Paddle movement
+  if (keys["w"] || keys["W"]) && p1y > 0 then
+    p1y = p1y - pspeed
+  end
+  if (keys["s"] || keys["S"]) && p1y < H - ph then
+    p1y = p1y + pspeed
+  end
+  if keys["ArrowUp"] && p2y > 0 then
+    p2y = p2y - pspeed
+  end
+  if keys["ArrowDown"] && p2y < H - ph then
+    p2y = p2y + pspeed
+  end
+
+  // Ball movement
+  bx = bx + bvx
+  by = by + bvy
+
+  // Wall bounce
+  if by <= bsize || by >= H - bsize then
+    bvy = 0 - bvy
+    by = by + bvy
+  end
+
+  // Paddle collision P1
+  if bx - bsize <= 40 && bx >= 30 && by >= p1y && by <= p1y + ph then
+    bvx = abs(bvx)
+    let rel = (by - p1y - ph / 2) / (ph / 2)
+    bvy = rel * 5
+  end
+
+  // Paddle collision P2
+  if bx + bsize >= W - 40 && bx <= W - 30 && by >= p2y && by <= p2y + ph then
+    bvx = 0 - abs(bvx)
+    let rel = (by - p2y - ph / 2) / (ph / 2)
+    bvy = rel * 5
+  end
+
+  // Scoring
+  if bx < 0 then
+    s2 = s2 + 1
+    resetBall()
+  end
+  if bx > W then
+    s1 = s1 + 1
+    resetBall()
+  end
+
+  // Draw background
+  c.clear("#0a0a1a")
+
+  // Center line
+  c.color("rgba(255,255,255,0.15)")
+  let dy = 0
+  loop 12 times
+    c.rect(398, dy * 42, 4, 28)
+    dy = dy + 1
+  end
+
+  // Paddles
+  c.color("#4f9eff")
+  c.rect(28, p1y, pw, ph)
+  c.color("#ff6b6b")
+  c.rect(W - 28 - pw, p2y, pw, ph)
+
+  // Ball
+  c.color("#ffffff")
+  c.circle(bx, by, bsize)
+
+  // Score
+  c.fontSize(48)
+  c.color("rgba(255,255,255,0.6)")
+  c.textCenter(s1, 200, 80)
+  c.textCenter(s2, 600, 80)
+
+  // Labels
+  c.fontSize(11)
+  c.color("rgba(255,255,255,0.3)")
+  c.textCenter("W/S", 34, H - 8)
+  c.textCenter("↑/↓", W - 34, H - 8)
+end
+`
+  }
+};
+
+// ═══════════════════════════════════════════════════
+//  EDITOR INIT
+// ═══════════════════════════════════════════════════
+
+function initEditor() {
+  const el = document.getElementById('code-editor');
+  state.editor = CodeMirror.fromTextArea(el, {
+    mode: 'ar',
+    theme: 'none',
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    foldGutter: true,
+    gutters: ['CodeMirror-linenumbers'],
+    indentUnit: 2,
+    tabSize: 2,
+    indentWithTabs: false,
+    lineWrapping: false,
+    extraKeys: {
+      'Ctrl-Enter': runCode,
+      'Cmd-Enter': runCode,
+      'Ctrl-S': saveCurrentFile,
+      'Cmd-S': saveCurrentFile,
+      'Ctrl-P': showCommandPalette,
+      'Cmd-P': showCommandPalette,
+      'Ctrl-/': () => state.editor.execCommand('toggleComment'),
+      'Ctrl-A': () => state.editor.execCommand('selectAll'),
+      'Tab': (cm) => {
+        if (cm.somethingSelected()) cm.indentSelection('add');
+        else cm.replaceSelection('  ', 'end');
+      },
+      'Ctrl-Space': showAutocomplete,
+    }
+  });
+
+  state.editor.on('cursorActivity', updateCursorPos);
+  state.editor.on('change', () => {
+    if (state.activeFile) {
+      state.files[state.activeFile].dirty = true;
+      updateFileTab(state.activeFile);
+    }
+  });
+
+  // Auto-complete on type
+  state.editor.on('keyup', (cm, event) => {
+    if (/^[a-zA-Z_$]$/.test(event.key)) {
+      showAutocomplete(cm);
+    }
+  });
+
+  // Create initial file
+  createFile('main.ar', PRESETS.platformer.code);
+}
+
+function showAutocomplete(cm) {
+  CodeMirror.showHint(cm, function(editor) {
+    const cursor = editor.getCursor();
+    const line = editor.getLine(cursor.line);
+    const start = cursor.ch;
+    let end = start;
+    let cur = start - 1;
+    while (cur >= 0 && /[\w$.]/.test(line[cur])) cur--;
+    const word = line.slice(cur + 1, start).toLowerCase();
+    if (!word) return;
+
+    const suggestions = [];
+    const addSugg = (text, type, detail) => {
+      if (text.toLowerCase().startsWith(word)) {
+        suggestions.push({ text, displayText: text, className: 'cm-hint-' + type, hint: () => {
+          editor.replaceRange(text, { line: cursor.line, ch: cur + 1 }, { line: cursor.line, ch: start });
+        }});
+      }
     };
 
-    window.downloadSpec = () => {
-        const spec = `AR(> LANGUAGE SPECIFICATION\n==========================\n\n- Variables: set [name] to [value]\n- Loops: repeat [n] times do ... end\n- Game Loop: every frame do ... end\n- Input: when key "[key]" do ... end\n- 2D: draw circle at x, y radius r color c\n- 3D: create box at x, y, z name n`;
-        const blob = new Blob([spec], {type: 'text/plain'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'AR_Language_Spec.txt';
-        a.click();
-    };
+    AR_KEYWORDS.forEach(k => addSugg(k, 'keyword', 'Keyword'));
+    AR_BUILTINS.forEach(b => addSugg(b, 'builtin', 'Built-in'));
+    Object.keys(state.files[state.activeFile]?.functions || {}).forEach(f => addSugg(f, 'function', 'Function'));
+    Object.keys(AR_SNIPPETS).forEach(s => addSugg(s, 'snippet', 'Snippet'));
 
-    init();
+    if (suggestions.length === 0) return;
+    return { list: suggestions.slice(0, 12), from: { line: cursor.line, ch: cur + 1 }, to: { line: cursor.line, ch: start } };
+  }, { completeSingle: false });
+}
+
+function updateCursorPos() {
+  if (!state.editor) return;
+  const c = state.editor.getCursor();
+  document.getElementById('cursor-pos').textContent = `Ln ${c.line + 1}, Col ${c.ch + 1}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  FILE MANAGEMENT
+// ═══════════════════════════════════════════════════
+
+function createFile(name, code, silent) {
+  const id = name + '_' + Date.now();
+  state.files[id] = { id, name, code: code || '', dirty: false };
+  if (!silent) {
+    switchFile(id);
+    renderFileTree();
+    renderFileTabs();
+  }
+  return id;
+}
+
+function switchFile(id) {
+  if (state.activeFile) {
+    state.files[state.activeFile].code = state.editor.getValue();
+  }
+  state.activeFile = id;
+  const f = state.files[id];
+  if (f && state.editor) {
+    state.editor.setValue(f.code);
+    state.editor.clearHistory();
+    state.editor.focus();
+    f.dirty = false;
+  }
+  renderFileTabs();
+  renderFileTree();
+  document.getElementById('sb-file').innerHTML = `<b>${f?.name || 'No file'}</b>`;
+}
+
+function saveCurrentFile() {
+  if (!state.activeFile) return;
+  state.files[state.activeFile].code = state.editor.getValue();
+  state.files[state.activeFile].dirty = false;
+  updateFileTab(state.activeFile);
+  renderFileTree();
+  showToast('✓ Saved', 'success');
+}
+
+function deleteFile(id) {
+  if (!confirm(`Delete ${state.files[id]?.name}?`)) return;
+  delete state.files[id];
+  if (state.activeFile === id) {
+    const remaining = Object.keys(state.files);
+    if (remaining.length > 0) switchFile(remaining[0]);
+    else { state.activeFile = null; state.editor.setValue(''); }
+  }
+  renderFileTree();
+  renderFileTabs();
+}
+
+function renameFile(id) {
+  const name = prompt('Rename file:', state.files[id]?.name);
+  if (name) {
+    state.files[id].name = name;
+    renderFileTree();
+    renderFileTabs();
+  }
+}
+
+function renderFileTree() {
+  const tree = document.getElementById('file-tree');
+  tree.innerHTML = '';
+  for (const [id, f] of Object.entries(state.files)) {
+    const el = document.createElement('div');
+    el.className = 'tree-item' + (id === state.activeFile ? ' active' : '');
+    el.innerHTML = `
+      <span class="ti-icon">📄</span>
+      <span class="ti-name">${f.name}${f.dirty ? ' ●' : ''}</span>
+      <div class="ti-actions">
+        <button class="ti-act-btn" onclick="event.stopPropagation();renameFile('${id}')" title="Rename">✎</button>
+        <button class="ti-act-btn" onclick="event.stopPropagation();deleteFile('${id}')" title="Delete" style="color:var(--red)">✕</button>
+      </div>
+    `;
+    el.onclick = () => switchFile(id);
+    tree.appendChild(el);
+  }
+}
+
+function renderFileTabs() {
+  const tabs = document.getElementById('file-tabs');
+  tabs.innerHTML = '';
+  for (const [id, f] of Object.entries(state.files)) {
+    const tab = document.createElement('div');
+    tab.className = 'file-tab' + (id === state.activeFile ? ' active' : '') + (f.dirty ? ' dirty' : '');
+    tab.innerHTML = `
+      <span class="tab-dot"></span>
+      <span>${f.name}</span>
+      <span class="tab-close" onclick="event.stopPropagation();deleteFile('${id}')">✕</span>
+    `;
+    tab.onclick = () => switchFile(id);
+    tabs.appendChild(tab);
+  }
+}
+
+function updateFileTab(id) { renderFileTabs(); }
+
+// ═══════════════════════════════════════════════════
+//  RUN SYSTEM
+// ═══════════════════════════════════════════════════
+
+let interpreter = null;
+
+function runCode() {
+  if (state.isRunning) return;
+  saveCurrentFile();
+
+  const code = state.editor.getValue();
+  showOutputPanel();
+  clearConsole();
+  clearCanvas();
+
+  const canvas = document.getElementById('game-canvas');
+  const threeCanvas = document.getElementById('three-canvas');
+  canvas.style.display = 'block';
+  threeCanvas.style.display = 'none';
+  document.getElementById('output-placeholder').style.display = 'none';
+
+  const panel = canvas.parentElement;
+  canvas.width = panel.clientWidth || 800;
+  canvas.height = panel.clientHeight - 2 || 500;
+
+  state.isRunning = true;
+  document.getElementById('run-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = '';
+  document.getElementById('run-status').innerHTML = '<div class="run-indicator"><div class="run-dot"></div> Running</div>';
+
+  logToConsole('▶ Running script: ' + (state.files[state.activeFile]?.name || 'untitled'), 'success');
+
+  interpreter = new ARInterpreter({
+    print: (msg) => logToConsole(msg, 'print'),
+    warn: (msg) => logToConsole('⚠ ' + msg, 'warn'),
+    error: (msg) => logToConsole('✕ ' + msg, 'error'),
+  });
+
+  // Setup input events on canvas
+  const keyDown = (e) => { interpreter.keyState[e.key.toLowerCase()] = true; };
+  const keyUp = (e) => { interpreter.keyState[e.key.toLowerCase()] = false; };
+  window.addEventListener('keydown', keyDown);
+  window.addEventListener('keyup', keyUp);
+  canvas.addEventListener('mousemove', (e) => {
+    const r = canvas.getBoundingClientRect();
+    interpreter.mouseState.x = e.clientX - r.left;
+    interpreter.mouseState.y = e.clientY - r.top;
+  });
+  canvas.addEventListener('mousedown', () => interpreter.mouseState.down = true);
+  canvas.addEventListener('mouseup', () => interpreter.mouseState.down = false);
+
+  // Global event emitter
+  const origOn = interpreter.execLine.bind(interpreter);
+  window.__arEventListeners = {};
+  const globalOnHandler = (eventName, data) => {
+    const listeners = window.__arEventListeners[eventName] || [];
+    listeners.forEach(fn => {
+      interpreter.pushScope();
+      interpreter.defVar('event', data);
+      interpreter.defVar('evt', data);
+      interpreter.execLines(fn.body, 0).catch(() => {});
+      interpreter.popScope();
+    });
+  };
+  window.addEventListener('keydown', (e) => globalOnHandler('keydown', { key: e.key, code: e.code }));
+  window.addEventListener('keyup', (e) => globalOnHandler('keyup', { key: e.key, code: e.code }));
+  canvas.addEventListener('mousedown', (e) => { const r = canvas.getBoundingClientRect(); globalOnHandler('mousedown', { x: e.clientX - r.left, y: e.clientY - r.top }); });
+  canvas.addEventListener('mouseup', (e) => { const r = canvas.getBoundingClientRect(); globalOnHandler('mouseup', { x: e.clientX - r.left, y: e.clientY - r.top }); });
+  canvas.addEventListener('touchstart', (e) => { const r = canvas.getBoundingClientRect(); const t = e.touches[0]; globalOnHandler('touchstart', { x: t.clientX - r.left, y: t.clientY - r.top }); }, { passive: true });
+
+  // Patch on/emit handling into interpreter
+  interpreter.handleOn = (eventName, body) => {
+    if (!window.__arEventListeners[eventName]) window.__arEventListeners[eventName] = [];
+    window.__arEventListeners[eventName].push({ body });
+  };
+
+  // Override execLine to handle 'on' events
+  const origExecLine = interpreter.execLine.bind(interpreter);
+  interpreter.execLine = async function(lines, i, depth) {
+    const line = (lines[i] || '').trim();
+    const onMatch = line.match(/^on\s+"([^"]+)"\s+(\w+)\s*$/);
+    if (onMatch) {
+      const eventName = onMatch[1];
+      const varName = onMatch[2];
+      const body = this.collectBlock(lines, i + 1, 'end');
+      if (!window.__arEventListeners[eventName]) window.__arEventListeners[eventName] = [];
+      window.__arEventListeners[eventName].push({ body, varName });
+      return { next: i + 1 + body.length + 1 };
+    }
+    return origExecLine(lines, i, depth);
+  };
+
+  // Handle 3D output
+  const origCreateScene = interpreter.createScene3D.bind(interpreter);
+  interpreter.createScene3D = function() {
+    canvas.style.display = 'none';
+    threeCanvas.style.display = 'block';
+    const w = threeCanvas.parentElement.clientWidth;
+    const h = threeCanvas.parentElement.clientHeight;
+    threeCanvas.width = w; threeCanvas.height = h;
+    return origCreateScene();
+  };
+
+  interpreter.run(code, canvas, threeCanvas, state.assets).then(() => {
+    if (!interpreter.useThree && interpreter.timers.length === 0) {
+      // Script ran synchronously, show done
+    }
+  }).catch(err => {
+    if (err.message !== 'STOP') logToConsole('Fatal: ' + err.message, 'error');
+  });
+
+  // Store cleanup
+  interpreter._cleanup = () => {
+    window.removeEventListener('keydown', keyDown);
+    window.removeEventListener('keyup', keyUp);
+    window.__arEventListeners = {};
+  };
+}
+
+function stopCode() {
+  if (!state.isRunning) return;
+  if (interpreter) {
+    interpreter.running = false;
+    interpreter.timers.forEach(t => {
+      if (t.type === 'interval') clearInterval(t.id);
+      else clearTimeout(t.id);
+    });
+    if (interpreter.animId) cancelAnimationFrame(interpreter.animId);
+    if (interpreter._cleanup) interpreter._cleanup();
+    interpreter = null;
+  }
+  state.isRunning = false;
+  document.getElementById('run-btn').style.display = '';
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('run-status').innerHTML = '';
+  logToConsole('■ Execution stopped', 'warn');
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function clearOutput() {
+  stopCode();
+  clearCanvas();
+  document.getElementById('output-placeholder').style.display = 'flex';
+}
+
+function closeOutput() {
+  stopCode();
+  document.getElementById('output-panel').classList.add('hidden');
+}
+
+function showOutputPanel() {
+  const panel = document.getElementById('output-panel');
+  panel.classList.remove('hidden');
+  if (window.innerWidth <= 768) panel.classList.add('mobile-open');
+  panel.style.width = '45%';
+}
+
+function toggleFullscreen() {
+  const panel = document.getElementById('output-panel');
+  if (panel.style.position === 'fixed') {
+    panel.style.position = '';
+    panel.style.inset = '';
+    panel.style.zIndex = '';
+    panel.style.width = '45%';
+  } else {
+    panel.style.position = 'fixed';
+    panel.style.inset = '0';
+    panel.style.zIndex = '900';
+    panel.style.width = '100%';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CONSOLE
+// ═══════════════════════════════════════════════════
+
+function logToConsole(msg, type = 'info') {
+  const log = document.getElementById('console-log');
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${time}</span><span class="log-${type}">${escHtml(String(msg))}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearConsole() {
+  document.getElementById('console-log').innerHTML = '';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ═══════════════════════════════════════════════════
+//  EDITOR TOOLBAR ACTIONS
+// ═══════════════════════════════════════════════════
+
+function editorSelectAll() { if (state.editor) state.editor.execCommand('selectAll'); }
+function editorUndo() { if (state.editor) state.editor.execCommand('undo'); }
+function editorRedo() { if (state.editor) state.editor.execCommand('redo'); }
+function commentLine() { if (state.editor) state.editor.execCommand('toggleComment'); }
+function formatCode() {
+  if (!state.editor) return;
+  const code = state.editor.getValue();
+  const lines = code.split('\n');
+  let depth = 0;
+  const blockers = ['fn','if','loop','repeat','while','for','class','every','after'];
+  const closers = ['end','else','elif'];
+  const formatted = lines.map(line => {
+    const t = line.trim();
+    if (!t) return '';
+    const first = t.split(/\s/)[0];
+    if (closers.includes(first)) depth = Math.max(0, depth - 1);
+    const result = '  '.repeat(depth) + t;
+    if (blockers.includes(first)) depth++;
+    return result;
+  }).join('\n');
+  state.editor.setValue(formatted);
+  showToast('✓ Formatted', 'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  COMMAND PALETTE
+// ═══════════════════════════════════════════════════
+
+const COMMANDS = [
+  { name: 'Run Script', desc: 'Execute current file', icon: '▶', shortcut: 'Ctrl+Enter', action: runCode },
+  { name: 'Stop Execution', desc: 'Halt running script', icon: '■', shortcut: '', action: stopCode },
+  { name: 'New Script', desc: 'Create a new file', icon: '＋', shortcut: '', action: showNewFile },
+  { name: 'Save File', desc: 'Save current file', icon: '💾', shortcut: 'Ctrl+S', action: saveCurrentFile },
+  { name: 'Format Code', desc: 'Auto-indent AR(> code', icon: '⟨/⟩', shortcut: '', action: formatCode },
+  { name: 'Select All', desc: 'Select all code', icon: '⊞', shortcut: 'Ctrl+A', action: editorSelectAll },
+  { name: 'Toggle Comment', desc: 'Comment/uncomment line', icon: '//', shortcut: 'Ctrl+/', action: commentLine },
+  { name: 'Settings', desc: 'Open settings panel', icon: '⚙', shortcut: '', action: showSettings },
+  { name: 'Training Manual', desc: 'AR(> language reference', icon: '📖', shortcut: '', action: () => { showSettings(); setTimeout(() => switchSettingsTab('manual'), 100); } },
+  { name: 'Toggle Sidebar', desc: 'Show/hide file tree', icon: '☰', shortcut: '', action: toggleSidebar },
+  { name: 'Toggle Output', desc: 'Show/hide output panel', icon: '▣', shortcut: '', action: () => document.getElementById('output-panel').classList.toggle('hidden') },
+  { name: 'Clear Console', desc: 'Clear console output', icon: '🗑', shortcut: '', action: clearConsole },
+  { name: 'Upload Asset', desc: 'Upload image/audio file', icon: '📂', shortcut: '', action: () => document.getElementById('file-upload').click() },
+];
+
+function showCommandPalette() {
+  openModal('cmd-modal');
+  document.getElementById('cmd-input').value = '';
+  filterCommands();
+  setTimeout(() => document.getElementById('cmd-input').focus(), 100);
+}
+
+let cmdFocusIdx = 0;
+function filterCommands() {
+  const q = document.getElementById('cmd-input').value.toLowerCase();
+  const list = document.getElementById('cmd-list');
+  let cmds = [...COMMANDS];
+  if (state.files) {
+    Object.entries(state.files).forEach(([id, f]) => {
+      cmds.push({ name: 'Open: ' + f.name, desc: 'Switch to file', icon: '📄', action: () => switchFile(id) });
+    });
+  }
+  const filtered = q ? cmds.filter(c => c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)) : cmds;
+  cmdFocusIdx = 0;
+  list.innerHTML = filtered.map((c, i) => `
+    <div class="cmd-item${i === 0 ? ' focused' : ''}" onclick="execCommand(${cmds.indexOf(c)}, ${JSON.stringify(c.name)})">
+      <div class="cmd-icon">${c.icon}</div>
+      <div>
+        <div class="cmd-name">${c.name}</div>
+        <div class="cmd-desc">${c.desc}</div>
+      </div>
+      ${c.shortcut ? `<div class="cmd-shortcut">${c.shortcut}</div>` : ''}
+    </div>
+  `).join('');
+  list.__filtered = filtered;
+}
+
+function execCommand(idx, name) {
+  const allCmds = [...COMMANDS];
+  if (state.files) Object.entries(state.files).forEach(([id, f]) => allCmds.push({ name: 'Open: ' + f.name, action: () => switchFile(id) }));
+  const list = document.getElementById('cmd-list').__filtered || allCmds;
+  const cmd = list.find(c => c.name === name);
+  if (cmd) { closeModal('cmd-modal'); cmd.action(); }
+}
+
+function cmdKeydown(e) {
+  const items = document.querySelectorAll('.cmd-item');
+  if (e.key === 'ArrowDown') { cmdFocusIdx = Math.min(cmdFocusIdx + 1, items.length - 1); }
+  else if (e.key === 'ArrowUp') { cmdFocusIdx = Math.max(cmdFocusIdx - 1, 0); }
+  else if (e.key === 'Enter') {
+    items[cmdFocusIdx]?.click();
+    return;
+  } else if (e.key === 'Escape') { closeModal('cmd-modal'); return; }
+  items.forEach((el, i) => el.classList.toggle('focused', i === cmdFocusIdx));
+  items[cmdFocusIdx]?.scrollIntoView({ block: 'nearest' });
+}
+
+// ═══════════════════════════════════════════════════
+//  NEW FILE MODAL
+// ═══════════════════════════════════════════════════
+
+function showNewFile() {
+  const grid = document.getElementById('preset-grid');
+  grid.innerHTML = Object.entries(PRESETS).map(([key, p]) => `
+    <div class="preset-card${state.selectedPreset === key ? ' selected' : ''}" onclick="selectPreset('${key}')">
+      <div class="pc-icon">${p.icon}</div>
+      <div class="pc-name">${p.name}</div>
+      <div class="pc-desc">${p.desc}</div>
+    </div>
+  `).join('');
+  openModal('new-file-modal');
+  document.getElementById('new-file-name').value = 'untitled.ar';
+  setTimeout(() => document.getElementById('new-file-name').focus(), 100);
+}
+
+function selectPreset(key) {
+  state.selectedPreset = key;
+  document.querySelectorAll('.preset-card').forEach((el, i) => {
+    el.classList.toggle('selected', Object.keys(PRESETS)[i] === key);
+  });
+}
+
+function createNewFile() {
+  const name = document.getElementById('new-file-name').value.trim() || 'untitled.ar';
+  const safeName = name.endsWith('.ar') ? name : name + '.ar';
+  const code = PRESETS[state.selectedPreset]?.code || '';
+  createFile(safeName, code);
+  closeModal('new-file-modal');
+  showToast(`✓ Created ${safeName}`, 'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════
+
+function showSettings() { openModal('settings-modal'); switchSettingsTab('editor'); }
+
+function switchSettingsTab(tab) {
+  document.querySelectorAll('.stab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.stab')[['editor','theme','manual'].indexOf(tab)]?.classList.add('active');
+  const content = document.getElementById('settings-content');
+
+  if (tab === 'editor') {
+    content.innerHTML = `
+      <div class="setting-row">
+        <div class="setting-label"><b>Font Size</b><span>Editor font size in pixels</span></div>
+        <div class="setting-control">
+          <input type="range" min="10" max="22" value="${state.settings.fontSize}" oninput="applySetting('fontSize', this.value); document.getElementById('fs-val').textContent=this.value+'px'">
+          <span id="fs-val" style="font-size:11px;margin-left:4px;color:var(--text-2)">${state.settings.fontSize}px</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label"><b>Tab Size</b><span>Spaces per indent level</span></div>
+        <div class="setting-control">
+          <select onchange="applySetting('tabSize', this.value)">
+            <option value="2" ${state.settings.tabSize==2?'selected':''}>2 spaces</option>
+            <option value="4" ${state.settings.tabSize==4?'selected':''}>4 spaces</option>
+          </select>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label"><b>Auto-Close Brackets</b><span>Auto-insert closing brackets</span></div>
+        <div class="setting-control">
+          <button class="toggle${state.settings.autoCloseBrackets?' on':''}" onclick="toggleSetting('autoCloseBrackets', this)"></button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label"><b>Line Wrap</b><span>Wrap long lines</span></div>
+        <div class="setting-control">
+          <button class="toggle${state.settings.lineWrap?' on':''}" onclick="toggleSetting('lineWrap', this)"></button>
+        </div>
+      </div>
+    `;
+  } else if (tab === 'theme') {
+    content.innerHTML = `
+      <div class="setting-row" style="border:none;padding-bottom:12px;">
+        <div class="setting-label"><b>Color Theme</b><span>Choose editor theme</span></div>
+      </div>
+      <div class="theme-grid">
+        <div class="theme-swatch ts-dark${state.settings.theme==='dark'?' active':''}" onclick="applyTheme('dark')">Dark</div>
+        <div class="theme-swatch ts-light${state.settings.theme==='light'?' active':''}" onclick="applyTheme('light')">Light</div>
+        <div class="theme-swatch ts-sol${state.settings.theme==='solarized'?' active':''}" onclick="applyTheme('solarized')">Solarized</div>
+        <div class="theme-swatch ts-retro${state.settings.theme==='retro'?' active':''}" onclick="applyTheme('retro')">Retro</div>
+        <div class="theme-swatch ts-hc${state.settings.theme==='hc'?' active':''}" onclick="applyTheme('hc')">Hi-Contrast</div>
+      </div>
+    `;
+  } else if (tab === 'manual') {
+    content.innerHTML = buildManual();
+  }
+}
+
+function applySetting(key, value) {
+  state.settings[key] = isNaN(value) ? value : Number(value);
+  if (key === 'fontSize' && state.editor) {
+    document.querySelector('.CodeMirror').style.fontSize = value + 'px';
+  }
+  if (key === 'tabSize' && state.editor) {
+    state.editor.setOption('tabSize', Number(value));
+    state.editor.setOption('indentUnit', Number(value));
+  }
+  if (key === 'lineWrap' && state.editor) state.editor.setOption('lineWrapping', !!value);
+}
+
+function toggleSetting(key, btn) {
+  state.settings[key] = !state.settings[key];
+  btn.classList.toggle('on', state.settings[key]);
+  if (key === 'autoCloseBrackets' && state.editor) state.editor.setOption('autoCloseBrackets', state.settings[key]);
+  if (key === 'lineWrap' && state.editor) state.editor.setOption('lineWrapping', state.settings[key]);
+}
+
+function applyTheme(theme) {
+  state.settings.theme = theme;
+  const map = { dark: '', light: 'light', solarized: 'solarized', retro: 'retro', hc: 'hc' };
+  document.documentElement.setAttribute('data-theme', map[theme] || '');
+  document.querySelectorAll('.theme-swatch').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  showToast('Theme: ' + theme, 'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  TRAINING MANUAL
+// ═══════════════════════════════════════════════════
+
+function buildManual() {
+  return `<div class="manual-content">
+<h2>AR(> Language Reference — v1.0</h2>
+<p>AR(> is a beginner-friendly, expressive scripting language for games, simulations, and creative coding. It reads like pseudocode but executes real behavior.</p>
+
+<h2>1. Variables</h2>
+<p>Declare variables with <span class="kw">let</span>, <span class="kw">make</span>, or <span class="kw">const</span>:</p>
+<pre><span class="kw">let</span> x = <span class="num">10</span>
+<span class="kw">let</span> name = <span class="str">"Alice"</span>
+<span class="kw">let</span> alive = true
+<span class="kw">const</span> MAX = <span class="num">100</span></pre>
+
+<h2>2. Functions</h2>
+<p>Define with <span class="kw">fn</span>, close with <span class="kw">end</span>. Use <span class="kw">return</span> to return a value:</p>
+<pre><span class="kw">fn</span> greet(name)
+  print <span class="str">"Hello, "</span> + name
+  <span class="kw">return</span> <span class="str">"done"</span>
+<span class="kw">end</span>
+
+greet(<span class="str">"World"</span>)</pre>
+
+<h2>3. Conditionals</h2>
+<p>Use <span class="kw">if</span> / <span class="kw">elif</span> / <span class="kw">else</span> / <span class="kw">end</span>:</p>
+<pre><span class="kw">if</span> x > <span class="num">5</span> then
+  print <span class="str">"big"</span>
+<span class="kw">elif</span> x == <span class="num">5</span>
+  print <span class="str">"five"</span>
+<span class="kw">else</span>
+  print <span class="str">"small"</span>
+<span class="kw">end</span></pre>
+
+<h2>4. Loops</h2>
+<table>
+<tr><th>Syntax</th><th>Description</th></tr>
+<tr><td><code>loop 10 times ... end</code></td><td>Repeat N times</td></tr>
+<tr><td><code>while condition ... end</code></td><td>While loop</td></tr>
+<tr><td><code>for each item in list ... end</code></td><td>For-each loop</td></tr>
+<tr><td><code>for i = 0 to 10 ... end</code></td><td>Range loop</td></tr>
+<tr><td><code>for i = 0 to 10 step 2</code></td><td>Range with step</td></tr>
+</table>
+
+<h2>5. Arrays & Objects</h2>
+<pre><span class="kw">let</span> arr = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+arr.push(<span class="num">4</span>)
+print arr.length   <span class="cmt">// 4</span>
+
+<span class="kw">let</span> obj = {x: <span class="num">10</span>, y: <span class="num">20</span>}
+print obj.x        <span class="cmt">// 10</span></pre>
+
+<h2>6. Events</h2>
+<p>Respond to keyboard, mouse, and touch:</p>
+<pre><span class="kw">on</span> <span class="str">"keydown"</span> event
+  print event.key
+<span class="kw">end</span>
+
+<span class="kw">on</span> <span class="str">"mousedown"</span> evt
+  print evt.x + <span class="str">","</span> + evt.y
+<span class="kw">end</span></pre>
+<p>Available events: <code>keydown</code>, <code>keyup</code>, <code>mousedown</code>, <code>mouseup</code>, <code>touchstart</code></p>
+
+<h2>7. Timers</h2>
+<pre><span class="kw">every</span> 16ms
+  <span class="cmt">// Game loop — runs every 16ms (~60fps)</span>
+<span class="kw">end</span>
+
+<span class="kw">after</span> 1000ms
+  print <span class="str">"one second later"</span>
+<span class="kw">end</span>
+
+<span class="kw">wait</span> 500ms   <span class="cmt">// async pause</span></pre>
+
+<h2>8. Canvas 2D Drawing</h2>
+<pre><span class="kw">let</span> c = Canvas.new()
+c.clear(<span class="str">"#000000"</span>)
+c.color(<span class="str">"royalblue"</span>)
+c.rect(x, y, w, h)
+c.circle(cx, cy, radius)
+c.line(x1, y1, x2, y2)
+c.text(<span class="str">"hello"</span>, x, y)
+c.textCenter(<span class="str">"centered"</span>, x, y)
+c.fontSize(<span class="num">24</span>)
+c.stroke(<span class="str">"white"</span>)
+c.lineWidth(<span class="num">2</span>)
+c.save() / c.restore()
+c.translate(x, y)
+c.rotate(angle)
+c.scale(sx, sy)
+c.alpha(<span class="num">0.5</span>)</pre>
+
+<h2>9. 3D Scenes (Three.js)</h2>
+<pre><span class="kw">let</span> s = Scene3D.new()
+s.sky(<span class="str">"#87ceeb"</span>)
+s.ambient(<span class="str">"#ffffff"</span>, <span class="num">0.5</span>)
+s.light(<span class="str">"point"</span>, x, y, z)
+s.light(<span class="str">"directional"</span>, x, y, z)
+
+<span class="kw">let</span> box = s.cube(w, h, d)
+<span class="kw">let</span> ball = s.sphere(radius)
+<span class="kw">let</span> floor = s.plane(w, h)
+
+box.color(<span class="str">"#4488ff"</span>)
+box.move(x, y, z)
+box.rotate(rx, ry, rz)
+box.scale(sx, sy, sz)
+box.wireframe(true)
+
+s.camera(x, y, z)
+s.cameraLookAt(x, y, z)
+s.run()   <span class="cmt">// starts render loop</span></pre>
+
+<h2>10. Math Functions</h2>
+<table>
+<tr><th>Function</th><th>Description</th></tr>
+<tr><td><code>random(min, max)</code></td><td>Random float in range</td></tr>
+<tr><td><code>floor(n)</code></td><td>Round down</td></tr>
+<tr><td><code>ceil(n)</code></td><td>Round up</td></tr>
+<tr><td><code>round(n)</code></td><td>Round to nearest</td></tr>
+<tr><td><code>abs(n)</code></td><td>Absolute value</td></tr>
+<tr><td><code>sqrt(n)</code></td><td>Square root</td></tr>
+<tr><td><code>sin(angle)</code></td><td>Sine (radians)</td></tr>
+<tr><td><code>cos(angle)</code></td><td>Cosine (radians)</td></tr>
+<tr><td><code>Math.PI</code></td><td>π constant</td></tr>
+<tr><td><code>Math.min(a,b)</code></td><td>Minimum</td></tr>
+<tr><td><code>Math.max(a,b)</code></td><td>Maximum</td></tr>
+<tr><td><code>Math.lerp(a,b,t)</code></td><td>Linear interpolate</td></tr>
+</table>
+
+<h2>11. String Methods</h2>
+<pre>name.upper()    <span class="cmt">// UPPERCASE</span>
+name.lower()    <span class="cmt">// lowercase</span>
+name.trim()     <span class="cmt">// remove whitespace</span>
+name.split(<span class="str">","</span>) <span class="cmt">// split to array</span>
+name.contains(<span class="str">"x"</span>)
+name.length</pre>
+
+<h2>12. Classes</h2>
+<pre><span class="kw">class</span> Player
+  <span class="kw">fn</span> init(x, y)
+    self.x = x
+    self.y = y
+    self.health = <span class="num">100</span>
+  <span class="kw">end</span>
+  <span class="kw">fn</span> move(dx, dy)
+    self.x = self.x + dx
+    self.y = self.y + dy
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">let</span> p = new Player(<span class="num">100</span>, <span class="num">200</span>)</pre>
+
+<h2>13. Assets</h2>
+<p>Upload assets via the Assets panel, then reference by filename:</p>
+<pre><span class="kw">let</span> snd = Audio.new(<span class="str">"shoot.mp3"</span>)
+snd.volume(<span class="num">0.8</span>)
+snd.play()
+
+<span class="kw">let</span> img = Image.new(<span class="str">"hero.png"</span>)
+c.image(<span class="str">"hero.png"</span>, x, y, w, h)</pre>
+
+<h2>14. Print & Logging</h2>
+<pre>print <span class="str">"Hello!"</span>         <span class="cmt">// to console</span>
+log <span class="str">"debug info"</span>      <span class="cmt">// same as print</span>
+warn <span class="str">"watch out"</span>      <span class="cmt">// yellow warning</span>
+error <span class="str">"something wrong"</span></pre>
+
+<h2>15. Input Detection</h2>
+<pre><span class="kw">let</span> keys = {}
+<span class="kw">on</span> <span class="str">"keydown"</span> e
+  keys[e.key] = true
+<span class="kw">end</span>
+<span class="kw">on</span> <span class="str">"keyup"</span> e
+  keys[e.key] = false
+<span class="kw">end</span>
+
+<span class="kw">every</span> 16ms
+  <span class="kw">if</span> keys[<span class="str">"ArrowLeft"</span>] then
+    x = x - <span class="num">3</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></pre>
+
+<button class="dl-btn" onclick="downloadReference()">⬇ Download AR(> Reference (.md)</button>
+</div>`;
+}
+
+function downloadReference() {
+  const ref = `# AR(> Language Reference v1.0
+Generated by AR(> Script Playground
+
+## Variables
+\`\`\`
+let x = 10
+let name = "Alice"
+const MAX = 100
+\`\`\`
+
+## Functions
+\`\`\`
+fn greet(name)
+  print "Hello, " + name
+  return "done"
+end
+\`\`\`
+
+## Conditionals
+\`\`\`
+if x > 5 then
+  print "big"
+elif x == 5
+  print "five"
+else
+  print "small"
+end
+\`\`\`
+
+## Loops
+\`\`\`
+loop 10 times ... end
+while condition ... end
+for each item in list ... end
+for i = 0 to 10 ... end
+for i = 0 to 100 step 5 ... end
+\`\`\`
+
+## Canvas 2D
+\`\`\`
+let c = Canvas.new()
+c.clear("#000")
+c.color("royalblue")
+c.rect(x, y, w, h)
+c.circle(cx, cy, r)
+c.line(x1,y1,x2,y2)
+c.text("hello", x, y)
+c.fontSize(24)
+c.save() / c.restore()
+c.translate(x, y) / c.rotate(a) / c.scale(s)
+\`\`\`
+
+## 3D Scenes
+\`\`\`
+let s = Scene3D.new()
+let box = s.cube(w, h, d)
+let ball = s.sphere(r)
+let floor = s.plane(w, h)
+s.light("point"/"directional", x, y, z)
+s.ambient("#fff", 0.5)
+s.sky("#87ceeb")
+s.camera(x,y,z) / s.cameraLookAt(x,y,z)
+s.run()
+box.color("#f00") / box.move(x,y,z) / box.rotate(rx,ry,rz)
+\`\`\`
+
+## Events
+\`\`\`
+on "keydown" event ... end
+on "keyup" event ... end
+on "mousedown" evt ... end   // evt.x, evt.y
+on "touchstart" evt ... end
+\`\`\`
+
+## Timers
+\`\`\`
+every 16ms ... end
+after 1000ms ... end
+wait 500ms
+\`\`\`
+
+## Math
+random(min, max) | floor(n) | ceil(n) | round(n)
+abs(n) | sqrt(n) | sin(a) | cos(a) | tan(a)
+Math.PI | Math.min(a,b) | Math.max(a,b) | Math.lerp(a,b,t)
+Math.pow(a,b) | Math.random()
+
+## String Methods
+str.upper() | str.lower() | str.trim() | str.split(d)
+str.contains(s) | str.replace(a,b) | str.length
+str.startsWith(s) | str.endsWith(s) | str.slice(a,b)
+
+## Array Methods
+arr.push(v) | arr.pop() | arr.shift() | arr.unshift(v)
+arr.length | arr.get(i) | arr.set(i, v)
+arr.contains(v) | arr.indexOf(v) | arr.join(sep)
+arr.reverse() | arr.sort() | arr.first | arr.last
+
+## Classes
+\`\`\`
+class Player
+  fn init(x, y)
+    self.x = x
+    self.y = y
+  end
+  fn move(dx, dy)
+    self.x = self.x + dx
+  end
+end
+let p = new Player(100, 200)
+\`\`\`
+
+## Audio & Images
+\`\`\`
+let snd = Audio.new("sound.mp3")
+snd.play() | snd.stop() | snd.volume(0.8) | snd.loop(true)
+c.image("sprite.png", x, y, w, h)
+\`\`\`
+
+## Output
+print "msg" | log "msg" | warn "msg" | error "msg"
+
+---
+AR(> Script Playground — ar-lang.dev
+`;
+  const blob = new Blob([ref], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ar-language-reference.md';
+  a.click();
+  showToast('⬇ Reference downloaded', 'success');
+}
+
+// ═══════════════════════════════════════════════════
+//  ASSETS
+// ═══════════════════════════════════════════════════
+
+function toggleAssets() {
+  const panel = document.getElementById('assets-panel');
+  panel.classList.toggle('open');
+}
+
+function handleFileUpload(event) {
+  const files = event.target.files;
+  for (const file of files) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = e.target.result;
+      const name = file.name;
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.src = data;
+        state.assets[name] = { type: 'image', url: data, __img: img };
+      } else if (file.type.startsWith('audio/')) {
+        const audio = new Audio(data);
+        state.assets[name] = { type: 'audio', url: data, __audio: audio };
+      } else {
+        state.assets[name] = { type: 'data', data };
+      }
+      renderAssets();
+      showToast(`✓ Loaded: ${name}`, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+  event.target.value = '';
+}
+
+function renderAssets() {
+  const zone = document.getElementById('asset-drop-zone');
+  const keys = Object.keys(state.assets);
+  document.getElementById('sb-assets').innerHTML = `<b>${keys.length}</b> asset${keys.length !== 1 ? 's' : ''}`;
+  if (keys.length === 0) {
+    zone.classList.remove('has-assets');
+    zone.innerHTML = '<span style="font-size:24px">📂</span><span>Drop files or tap to upload</span>';
+    zone.onclick = () => document.getElementById('file-upload').click();
+    return;
+  }
+  zone.classList.add('has-assets');
+  zone.innerHTML = keys.map(k => {
+    const a = state.assets[k];
+    const icon = a.type === 'image' ? '🖼️' : a.type === 'audio' ? '🎵' : '📄';
+    return `<div class="asset-item" title="${k}"><span class="asset-icon">${icon}</span><span class="asset-name">${k}</span></div>`;
+  }).join('');
+  // Re-attach click to items, not zone
+  zone.onclick = null;
+  document.querySelectorAll('.asset-item').forEach((el, i) => {
+    el.onclick = () => {
+      const name = keys[i];
+      const snippet = state.assets[name].type === 'image' ? `c.image("${name}", 0, 0)` : `let snd = Audio.new("${name}")\nsnd.play()`;
+      if (state.editor) state.editor.replaceSelection(snippet);
+      showToast(`Inserted: ${name}`, 'success');
+    };
+  });
+}
+
+// Drag-and-drop on asset zone
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('asset-drop-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+  zone.addEventListener('dragleave', () => zone.style.borderColor = '');
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    const input = document.getElementById('file-upload');
+    const dt = new DataTransfer();
+    for (const f of e.dataTransfer.files) dt.items.add(f);
+    input.files = dt.files;
+    handleFileUpload({ target: input });
+  });
+});
+
+// ═══════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const icons = { success: '✓', error: '✕', warn: '⚠', info: 'ℹ' };
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ'}</span>${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 2500);
+}
+
+// ═══════════════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════════════
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('open');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'p') { e.preventDefault(); showCommandPalette(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentFile(); }
+});
+
+// ═══════════════════════════════════════════════════
+//  DRAG HANDLES (PANEL RESIZE)
+// ═══════════════════════════════════════════════════
+
+function initDragHandles() {
+  // Sidebar resize
+  const sbHandle = document.getElementById('sidebar-handle');
+  let dragging = false, startX, startW;
+  sbHandle.addEventListener('mousedown', (e) => {
+    dragging = true; startX = e.clientX;
+    startW = document.getElementById('sidebar').offsetWidth;
+    document.body.style.cursor = 'col-resize';
+  });
+  // Output panel resize
+  const outHandle = document.getElementById('output-handle');
+  let outDragging = false, outStartX, outStartW;
+  outHandle.addEventListener('mousedown', (e) => {
+    outDragging = true; outStartX = e.clientX;
+    const panel = document.getElementById('output-panel');
+    outStartW = panel.offsetWidth;
+    document.body.style.cursor = 'col-resize';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (dragging) {
+      const newW = Math.max(120, Math.min(400, startW + (e.clientX - startX)));
+      document.getElementById('sidebar').style.width = newW + 'px';
+    }
+    if (outDragging) {
+      const panel = document.getElementById('output-panel');
+      const total = document.getElementById('main-area').offsetWidth;
+      const delta = outStartX - e.clientX;
+      const newW = Math.max(200, Math.min(total - 300, outStartW + delta));
+      panel.style.width = newW + 'px';
+      panel.classList.remove('hidden');
+    }
+  });
+  document.addEventListener('mouseup', () => {
+    dragging = false; outDragging = false; document.body.style.cursor = '';
+  });
+
+  // Console resize
+  const consoleResize = document.getElementById('console-resize');
+  let cDragging = false, cStartY, cStartH;
+  consoleResize.addEventListener('mousedown', (e) => {
+    cDragging = true; cStartY = e.clientY;
+    cStartH = document.getElementById('console-area').offsetHeight;
+    document.body.style.cursor = 'row-resize';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (cDragging) {
+      const newH = Math.max(60, Math.min(400, cStartH - (e.clientY - cStartY)));
+      document.getElementById('console-area').style.height = newH + 'px';
+    }
+  });
+  document.addEventListener('mouseup', () => { cDragging = false; });
+
+  // Touch support for handles
+  [sbHandle, outHandle].forEach(handle => {
+    handle.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const event = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
+      handle.dispatchEvent(event);
+    }, { passive: true });
+  });
+  document.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    const event = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
+    document.dispatchEvent(event);
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    dragging = false; outDragging = false; cDragging = false;
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ═══════════════════════════════════════════════════
+//  STARTUP
+// ═══════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  initEditor();
+  initDragHandles();
+  renderAssets();
+  showToast('AR(> Ready', 'success');
+  document.getElementById('sb-lang').innerHTML = 'AR(&gt; 1.0';
+
+  // Pre-select platformer preset
+  state.selectedPreset = 'platformer';
+
+  // iPad: prevent pinch zoom in editor
+  document.getElementById('editor-area').addEventListener('touchmove', (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+});
 </script>
 </body>
 </html>
